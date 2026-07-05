@@ -1,0 +1,8 @@
+anthropic[mcp]==0.116.0
+chromadb==1.5.9
+fastapi==0.139.0
+httpx==0.28.1
+langgraph==1.2.7
+mcp==1.28.1
+pydantic-settings==2.14.2
+uvicorn[standard]==0.50.0
