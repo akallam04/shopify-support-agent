@@ -1,0 +1,10 @@
+[
+  {"first_name": "Maya", "last_name": "Thompson", "email": "maya.thompson@example.com"},
+  {"first_name": "Jordan", "last_name": "Lee", "email": "jordan.lee@example.com"},
+  {"first_name": "Sofia", "last_name": "Ramirez", "email": "sofia.ramirez@example.com"},
+  {"first_name": "Ethan", "last_name": "Brooks", "email": "ethan.brooks@example.com"},
+  {"first_name": "Priya", "last_name": "Patel", "email": "priya.patel@example.com"},
+  {"first_name": "Liam", "last_name": "OConnor", "email": "liam.oconnor@example.com"},
+  {"first_name": "Grace", "last_name": "Kim", "email": "grace.kim@example.com"},
+  {"first_name": "Noah", "last_name": "Fischer", "email": "noah.fischer@example.com"}
+]

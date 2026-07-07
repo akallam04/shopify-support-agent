@@ -1,0 +1,182 @@
+[
+  {
+    "title": "Summit Ridge 2-Person Tent",
+    "handle": "summit-ridge-2-person-tent",
+    "product_type": "Camping",
+    "tags": ["camping", "tent", "backpacking"],
+    "description": "A freestanding three-season tent that pitches in under ten minutes. The 20D ripstop fly carries a 3000 mm waterproof coating with fully taped seams, and two doors with matching vestibules mean nobody climbs over anybody at 2 am. Packed weight is 2.1 kg with aluminum poles, split-packable between two hikers.",
+    "option_name": "Color",
+    "variants": [
+      {"name": "Forest Green", "price": "289.99", "stock": 12},
+      {"name": "Burnt Orange", "price": "289.99", "stock": 8}
+    ]
+  },
+  {
+    "title": "Cascade 40L Hiking Backpack",
+    "handle": "cascade-40l-hiking-backpack",
+    "product_type": "Packs",
+    "tags": ["hiking", "backpack", "daypack"],
+    "description": "Our most versatile pack: big enough for an overnight, trim enough for a long day hike. A ventilated back panel keeps airflow moving, the hip belt carries zippered pockets for snacks and a phone, and a rain cover lives in a dedicated pocket in the lid. Hydration compatible, 1.4 kg.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "S/M", "price": "149.95", "stock": 15},
+      {"name": "M/L", "price": "149.95", "stock": 10}
+    ]
+  },
+  {
+    "title": "Stormline Rain Jacket",
+    "handle": "stormline-rain-jacket",
+    "product_type": "Apparel",
+    "tags": ["rain", "jacket", "waterproof", "shell"],
+    "description": "A 2.5-layer waterproof breathable shell rated 10,000 mm / 10,000 g, with fully taped seams and an adjustable storm hood. Pit zips dump heat on the climb, and the whole jacket packs into its own chest pocket. Machine wash cold and tumble low to revive the DWR.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "S", "price": "179.99", "stock": 6},
+      {"name": "M", "price": "179.99", "stock": 14},
+      {"name": "L", "price": "179.99", "stock": 12},
+      {"name": "XL", "price": "179.99", "stock": 5}
+    ]
+  },
+  {
+    "title": "Trailblazer Merino Base Layer",
+    "handle": "trailblazer-merino-base-layer",
+    "product_type": "Apparel",
+    "tags": ["merino", "base layer"],
+    "description": "A 180 gsm merino crew that regulates temperature on the move and resists odor for days of wear. Flatlock seams sit flush under pack straps. Machine wash cold, lay flat to dry, and it will outlast a drawer full of synthetics.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "M", "price": "84.99", "stock": 10},
+      {"name": "L", "price": "84.99", "stock": 9}
+    ]
+  },
+  {
+    "title": "Glacier Point Down Parka",
+    "handle": "glacier-point-down-parka",
+    "product_type": "Apparel",
+    "tags": ["down", "parka", "winter", "insulated"],
+    "description": "Serious warmth for deep winter: 700-fill responsibly sourced down inside a DWR-treated shell, with an insulated hood, interior stash pockets, and a two-way front zip. Comfortable standing around camp to about -15 C when layered.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "M", "price": "329.99", "stock": 7},
+      {"name": "L", "price": "329.99", "stock": 7},
+      {"name": "XL", "price": "329.99", "stock": 4}
+    ]
+  },
+  {
+    "title": "Ridgeline Trekking Poles",
+    "handle": "ridgeline-trekking-poles",
+    "product_type": "Gear",
+    "tags": ["trekking", "poles", "hiking"],
+    "description": "Telescoping aluminum poles with reliable flick locks, natural cork grips, and extended foam chokes for steep sidehills. Carbide tips grip rock and ice, rubber feet are included for pavement. 245 g per pole, sold as a pair.",
+    "option_name": null,
+    "variants": [
+      {"name": null, "price": "89.95", "stock": 20}
+    ]
+  },
+  {
+    "title": "Ember 750 Sleeping Bag",
+    "handle": "ember-750-sleeping-bag",
+    "product_type": "Camping",
+    "tags": ["sleeping bag", "down", "backpacking"],
+    "description": "A 750-fill down mummy bag with a 15 F comfort limit at just 860 g. A full-length draft tube and snag-free zipper guard keep the warmth in, and it ships with both a compression sack for the trail and a loose storage sack for the closet.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "Regular", "price": "249.99", "stock": 9},
+      {"name": "Long", "price": "249.99", "stock": 6}
+    ]
+  },
+  {
+    "title": "Basecamp Titanium Cook Set",
+    "handle": "basecamp-titanium-cook-set",
+    "product_type": "Camping",
+    "tags": ["cookware", "titanium", "backpacking"],
+    "description": "A 750 ml pot and 400 ml pan in pure titanium, 265 g for the set. The pot nests a 110 g fuel canister and a small stove, the lids double as plates, and the folding handles lock solid. Boils half a liter in under four minutes on a standard canister stove.",
+    "option_name": null,
+    "variants": [
+      {"name": null, "price": "119.99", "stock": 11}
+    ]
+  },
+  {
+    "title": "Northwind Fleece Pullover",
+    "handle": "northwind-fleece-pullover",
+    "product_type": "Apparel",
+    "tags": ["fleece", "midlayer"],
+    "description": "A 200-weight fleece made from recycled polyester with a deep quarter zip and a zippered chest pocket. Anti-pill finish keeps it looking new through seasons of wear, on trail or off.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "S", "price": "94.99", "stock": 8},
+      {"name": "M", "price": "94.99", "stock": 12},
+      {"name": "L", "price": "94.99", "stock": 10}
+    ]
+  },
+  {
+    "title": "Sierra Sun Hoody",
+    "handle": "sierra-sun-hoody",
+    "product_type": "Apparel",
+    "tags": ["sun protection", "hoody", "hiking"],
+    "description": "UPF 50+ sun protection in a featherweight knit that dries almost as fast as you sweat. A fitted three-panel hood layers under helmets, and thumb loops keep the sleeves anchored over the backs of your hands on long exposed miles.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "M", "price": "69.95", "stock": 13},
+      {"name": "L", "price": "69.95", "stock": 9}
+    ]
+  },
+  {
+    "title": "Wander Insulated Bottle 32oz",
+    "handle": "wander-insulated-bottle-32oz",
+    "product_type": "Accessories",
+    "tags": ["bottle", "insulated", "hydration"],
+    "description": "Double-wall vacuum insulation keeps drinks cold for 24 hours or hot for 12. The powder-coated finish stays grippy with gloves on, and the base fits standard car cup holders. Hand wash the lid, everything else is dishwasher safe.",
+    "option_name": "Color",
+    "variants": [
+      {"name": "Slate", "price": "39.95", "stock": 25},
+      {"name": "Moss", "price": "39.95", "stock": 18}
+    ]
+  },
+  {
+    "title": "Peakfinder Headlamp 600",
+    "handle": "peakfinder-headlamp-600",
+    "product_type": "Gear",
+    "tags": ["headlamp", "lighting"],
+    "description": "600 lumens on max, USB-C rechargeable, and IPX7 waterproof, so a storm or a dunk will not end your night. A dedicated red mode preserves night vision around camp. 68 g including the washable strap.",
+    "option_name": null,
+    "variants": [
+      {"name": null, "price": "59.99", "stock": 16}
+    ]
+  },
+  {
+    "title": "Alpine Crossing Hiking Boots",
+    "handle": "alpine-crossing-hiking-boots",
+    "product_type": "Footwear",
+    "tags": ["boots", "hiking", "waterproof"],
+    "description": "Waterproof nubuck leather uppers over a Vibram outsole that bites on wet rock and loose scree. A gusseted tongue keeps grit out, and the midsole splits the difference between trail feel and all-day support. True to size with room for a midweight sock.",
+    "option_name": "Size",
+    "variants": [
+      {"name": "9", "price": "219.99", "stock": 6},
+      {"name": "10", "price": "219.99", "stock": 8},
+      {"name": "11", "price": "219.99", "stock": 5}
+    ]
+  },
+  {
+    "title": "Drift Camp Chair",
+    "handle": "drift-camp-chair",
+    "product_type": "Camping",
+    "tags": ["chair", "camp furniture"],
+    "description": "A packable chair that weighs 900 g and sets up in about a minute from a bag the size of a water bottle. The aluminum frame is rated to 120 kg, and the ripstop seat sheds sparks and spills alike.",
+    "option_name": null,
+    "variants": [
+      {"name": null, "price": "74.99", "stock": 14}
+    ]
+  },
+  {
+    "title": "Meridian Ski Goggles",
+    "handle": "meridian-ski-goggles",
+    "product_type": "Snow",
+    "tags": ["goggles", "ski", "snowboard"],
+    "description": "A cylindrical dual lens with anti-fog coating and full UV protection, sized to fit over most prescription glasses. Ships with a bonus low-light lens for storm days and a microfiber sleeve that doubles as a lens cloth.",
+    "option_name": null,
+    "variants": [
+      {"name": null, "price": "129.99", "stock": 10}
+    ]
+  }
+]
