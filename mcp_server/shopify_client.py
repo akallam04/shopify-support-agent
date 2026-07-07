@@ -20,6 +20,7 @@ query Products($cursor: String) {
       title
       handle
       status
+      isGiftCard
       productType
       vendor
       tags

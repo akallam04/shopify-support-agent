@@ -18,8 +18,14 @@ def main() -> None:
     with ShopifyClient(
         s.shopify_store_domain, s.shopify_admin_token, s.shopify_api_version
     ) as client:
-        # only ACTIVE products, drafts and archived items must never reach customers
-        products = [p for p in client.iterate_products() if p["status"] == "ACTIVE"]
+        # only ACTIVE products, drafts and archived items must never reach customers;
+        # gift cards are excluded too, they carry no real inventory and the policy
+        # FAQ owns the gift card story
+        products = [
+            p
+            for p in client.iterate_products()
+            if p["status"] == "ACTIVE" and not p.get("isGiftCard")
+        ]
 
     docs = [build_product_document(p) for p in products]
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

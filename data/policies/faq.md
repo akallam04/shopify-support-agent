@@ -8,7 +8,7 @@ If an item you bought drops in price within 14 days of your order date, we will 
 
 ## Gift cards
 
-Gift cards are digital and delivered by email, usually within minutes of purchase. They never expire, carry no fees, and can be used across multiple orders. Gift cards cannot be refunded or exchanged for cash. To check a balance, contact support with the gift card code.
+Gift cards are digital and delivered by email, usually within minutes of purchase. They are available in 10, 25, 50, and 100 USD denominations. They never expire, carry no fees, and can be used across multiple orders. Gift cards cannot be refunded or exchanged for cash. To check a balance, contact support with the gift card code.
 
 ## Order changes and cancellations
 
