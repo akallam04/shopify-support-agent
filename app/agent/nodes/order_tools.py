@@ -23,7 +23,6 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: ShopifyTool
             response = await client.messages.create(
                 model=model,
                 max_tokens=1000,
-                temperature=0.2,
                 system=ORDER_SYSTEM,
                 messages=messages,
                 tools=tools.anthropic_tools,

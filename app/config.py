@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     router_model: str = "claude-haiku-4-5"
     answer_model: str = "claude-haiku-4-5"
 
+    # judge stays a tier above whatever is being judged
+    judge_model: str = "claude-sonnet-5"
+
 
 @lru_cache
 def get_settings() -> Settings:

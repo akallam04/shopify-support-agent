@@ -11,10 +11,11 @@ from app.agent.state import AgentState
 
 def make_route_node(client: AsyncAnthropic, model: str):
     async def route(state: AgentState) -> dict[str, Any]:
+        # no sampling params: newer models reject them, and the enum schema
+        # constrains the output anyway
         response = await client.messages.create(
             model=model,
             max_tokens=300,
-            temperature=0,
             system=ROUTER_SYSTEM,
             messages=state["messages"],
             output_config={"format": {"type": "json_schema", "schema": ROUTER_SCHEMA}},

@@ -61,7 +61,6 @@ def make_respond_node(client: AsyncAnthropic, model: str):
         response = await client.messages.create(
             model=model,
             max_tokens=1000,
-            temperature=0.3,
             system=system,
             messages=state["messages"],
         )
