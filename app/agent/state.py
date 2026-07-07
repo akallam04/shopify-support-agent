@@ -4,25 +4,35 @@ from typing import Any, TypedDict
 
 
 class AgentState(TypedDict, total=False):
-    # full chat history in anthropic message format
+    # chat history in anthropic message format, latest user turn last
     messages: list[dict[str, Any]]
 
-    # product | policy | order | smalltalk | out_of_scope | injection | handoff
+    # product | policy | order | smalltalk | handoff | out_of_scope | injection
     intent: str
 
-    # order number + email pulled out by the router, None until an order intent shows up
-    order_query: dict[str, str] | None
+    # set by the deterministic pre-filter, skips the router entirely
+    hard_injection: bool
+
+    # router extractions, empty string when absent
+    search_query: str
+    order_number: str
+    email: str
 
     # docs with ids and scores, citations must come from here
     retrieved: list[dict[str, Any]]
 
-    # raw MCP tool outputs, the only valid source of order facts
+    # mcp tool calls made this turn, the only valid source of order facts
     tool_results: list[dict[str, Any]]
 
     # candidate answer waiting on the verify gate
     draft: str
 
-    citations: list[str]
-
-    # verify allows one retry before falling back to a safe reply
+    # verify feedback for the single retry pass
+    verify_feedback: str | None
     retry_count: int
+
+    # what actually goes back to the customer
+    response: str
+
+    # per-call token usage, consumed by the eval harness
+    usage: list[dict[str, Any]]
