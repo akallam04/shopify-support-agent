@@ -61,7 +61,7 @@ cp .env.example .env   # then fill in the values
 
 - [x] Scaffold: package layout, pinned dependencies, health endpoint, smoke test
 - [x] Store data: audited demo data, seeded a realistic catalog (30 products) and 15 orders across fulfillment states, catalog ingestion
-- [ ] RAG pipeline with citations
+- [x] RAG pipeline: Chroma index over catalog + policies, heading-scoped policy chunks, 8/8 retrieval smoke checks at rank 1
 - [ ] MCP server with Shopify tools
 - [ ] LangGraph agent end to end
 - [ ] Guardrails hardening
