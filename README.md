@@ -63,7 +63,7 @@ cp .env.example .env   # then fill in the values
 - [x] Store data: audited demo data, seeded a realistic catalog (30 products) and 15 orders across fulfillment states, catalog ingestion
 - [x] RAG pipeline: Chroma index over catalog + policies, heading-scoped policy chunks, 8/8 retrieval smoke checks at rank 1
 - [x] MCP server: three read-only Shopify tools over stdio, email-match authorization, verified with a live protocol session
-- [ ] LangGraph agent end to end
+- [x] LangGraph agent end to end: all seven intents verified live from a terminal REPL, hard injection refused with zero model calls
 - [ ] Guardrails hardening
 - [ ] Eval harness: baseline, iterate, model decision
 - [ ] Chat frontend
