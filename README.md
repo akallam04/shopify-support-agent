@@ -60,7 +60,7 @@ cp .env.example .env   # then fill in the values
 ## Roadmap
 
 - [x] Scaffold: package layout, pinned dependencies, health endpoint, smoke test
-- [ ] Store data: verify demo data, catalog ingestion
+- [x] Store data: audited demo data, seeded a realistic catalog (30 products) and 15 orders across fulfillment states, catalog ingestion
 - [ ] RAG pipeline with citations
 - [ ] MCP server with Shopify tools
 - [ ] LangGraph agent end to end
