@@ -24,7 +24,10 @@ def _after_route(state: AgentState) -> str:
     if intent in ("product", "policy"):
         return "retrieve"
     if intent == "order":
-        return "order_tools"
+        # both tools need the email; without it the model has nothing to look
+        # up, so the graph routes straight to an ask instead of trusting the
+        # model to resist calling tools
+        return "order_tools" if state.get("email") else "respond"
     return "respond"
 
 

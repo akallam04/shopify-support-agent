@@ -8,6 +8,7 @@ from app.agent.prompts import (
     GROUNDED_SYSTEM,
     HANDOFF_RESPONSE,
     INJECTION_RESPONSE,
+    ORDER_ASK_SYSTEM,
     OUT_OF_SCOPE_RESPONSE,
     RETRY_SYSTEM,
     SMALLTALK_SYSTEM,
@@ -43,15 +44,24 @@ def make_respond_node(client: AsyncAnthropic, model: str):
         if intent == "smalltalk":
             system = SMALLTALK_SYSTEM
         elif intent == "order":
-            # only reached on a verify retry, regenerate from stored tool results
-            context = "\n\n".join(
-                f"tool {t['name']} returned:\n{t['result']}"
-                for t in state.get("tool_results", [])
-            )
-            system = RETRY_SYSTEM.format(
-                feedback=feedback or "ground every claim in the tool results",
-                context=context or "(no tool results this turn)",
-            )
+            if state.get("tool_results") or feedback:
+                # verify retry, regenerate from stored tool results
+                context = "\n\n".join(
+                    f"tool {t['name']} returned:\n{t['result']}"
+                    for t in state.get("tool_results", [])
+                )
+                system = RETRY_SYSTEM.format(
+                    feedback=feedback or "ground every claim in the tool results",
+                    context=context or "(no tool results this turn)",
+                )
+            else:
+                # the graph sent the order here because the email is missing
+                missing = []
+                if not state.get("order_number"):
+                    missing.append("the order number")
+                if not state.get("email"):
+                    missing.append("the email address used at checkout")
+                system = ORDER_ASK_SYSTEM.format(missing=" and ".join(missing))
         else:
             context = _context_block(state.get("retrieved", []))
             system = GROUNDED_SYSTEM.format(context=context or "(no matching documents found)")
