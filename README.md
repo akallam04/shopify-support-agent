@@ -74,10 +74,13 @@ Requires Python 3.11+.
 ```
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env   # then fill in the values
-.venv/bin/uvicorn app.main:app --reload
+cp .env.example .env                       # then fill in the values
+.venv/bin/python -m app.rag.index          # build the vector index
+.venv/bin/uvicorn app.main:app --reload    # chat UI at http://127.0.0.1:8000
 .venv/bin/pytest
 ```
+
+Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m evals.run_evals --label run` (eval suite), `python -m scripts.check_mcp` (drive the MCP server directly).
 
 ## Roadmap
 
@@ -88,6 +91,6 @@ cp .env.example .env   # then fill in the values
 - [x] LangGraph agent end to end: all seven intents verified live from a terminal REPL, hard injection refused with zero model calls
 - [x] Guardrails hardening, folded into eval-driven iteration (graph-level gating beat prompt-level rules)
 - [x] Eval harness: 53 cases, baseline 96%, iterated to 100%, model decision documented above
-- [ ] Chat frontend
+- [x] FastAPI `/chat` backend (one MCP session per app via a lifespan handler) and a polished vanilla-JS chat UI
 - [ ] Deploy: AWS backend, Vercel frontend, live demo link
 - [ ] Final eval numbers and cost report
