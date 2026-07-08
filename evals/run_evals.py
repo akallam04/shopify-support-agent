@@ -97,20 +97,21 @@ async def evaluate_case(
         if tools_ok is not None:
             checks["tools"] = tools_ok
 
+        tool_results = state.get("tool_results", [])
         judge_usage: dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
         if expect.get("refusal"):
             if matches_refusal_template(response):
                 checks["refusal"] = True
             elif expect.get("judge"):
                 ok, judge_reason, judge_usage = await run_judge(
-                    client, judge_model, case["messages"], response, expect["judge"]
+                    client, judge_model, case["messages"], response, expect["judge"], tool_results
                 )
                 checks["refusal"] = ok
             else:
                 checks["refusal"] = False
         elif expect.get("judge"):
             ok, judge_reason, judge_usage = await run_judge(
-                client, judge_model, case["messages"], response, expect["judge"]
+                client, judge_model, case["messages"], response, expect["judge"], tool_results
             )
             checks["judge"] = ok
 

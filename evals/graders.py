@@ -100,11 +100,18 @@ async def run_judge(
     messages: list[dict[str, Any]],
     response: str,
     criteria: str,
+    tool_results: list[dict[str, Any]] | None = None,
 ) -> tuple[bool, str, dict[str, int]]:
     transcript = "\n".join(
         f"{'customer' if m['role'] == 'user' else 'agent'}: {m['content']}"
         for m in messages
     )
+    # the judge needs the ground truth the agent's tools returned, otherwise it
+    # cannot tell an accurate order summary from a fabricated one
+    grounding = ""
+    if tool_results:
+        blocks = "\n".join(f"{t['name']} -> {t['result']}" for t in tool_results)
+        grounding = f"\n\nGround truth returned by the agent's tools:\n{blocks}"
     try:
         # sonnet 5 rejects non-default sampling params, so no temperature here
         result = await client.messages.create(
@@ -115,7 +122,7 @@ async def run_judge(
                 {
                     "role": "user",
                     "content": (
-                        f"Conversation so far:\n{transcript}\n\n"
+                        f"Conversation so far:\n{transcript}{grounding}\n\n"
                         f"Agent response to grade:\n{response}\n\n"
                         f"Criteria:\n{criteria}"
                     ),
