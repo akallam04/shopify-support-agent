@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     # judge stays a tier above whatever is being judged
     judge_model: str = "claude-sonnet-5"
 
+    # comma-separated origins allowed to call /chat, "*" for local dev
+    cors_origins: str = "*"
+    # cap history the frontend can send, bounds cost and abuse
+    max_history_messages: int = 20
+
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
 
 @lru_cache
 def get_settings() -> Settings:
