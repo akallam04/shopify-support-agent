@@ -1,6 +1,7 @@
 """MCP client wrapper: one stdio session to the shopify tool server for the app's lifetime."""
 
 import json
+import os
 import sys
 from contextlib import AsyncExitStack
 from typing import Any
@@ -20,7 +21,14 @@ class ShopifyTools:
 
     async def start(self) -> None:
         self._stack = AsyncExitStack()
-        params = StdioServerParameters(command=sys.executable, args=["-m", "mcp_server.server"])
+        # pass our env through: the sdk otherwise spawns the server with a minimal
+        # default env, so the subprocess would not see the shopify credentials
+        # (and there is no .env file to fall back on inside the container)
+        params = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "mcp_server.server"],
+            env=os.environ.copy(),
+        )
         read, write = await self._stack.enter_async_context(stdio_client(params))
         self._session = await self._stack.enter_async_context(ClientSession(read, write))
         await self._session.initialize()
