@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # cap history the frontend can send, bounds cost and abuse
     max_history_messages: int = 20
 
+    # vector index location, pointed at writable /tmp inside lambda
+    chroma_path: str = "chroma_db"
+
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 

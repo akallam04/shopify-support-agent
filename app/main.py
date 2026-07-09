@@ -43,7 +43,8 @@ def create_app(graph: Any = None, tools: ShopifyTools | None = None) -> FastAPI:
             live_tools = ShopifyTools()
             await live_tools.start()
             app.state.tools = live_tools
-            app.state.graph = build_graph(settings, ChromaVectorStore(), live_tools)
+            store = ChromaVectorStore(settings.chroma_path)
+            app.state.graph = build_graph(settings, store, live_tools)
         else:
             app.state.tools = tools
             app.state.graph = graph
