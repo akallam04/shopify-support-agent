@@ -6,20 +6,36 @@
     <meta name="api-base" content="" />
     <title>Aurora Outfitters Support</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main class="chat" role="main">
       <header class="chat__header">
+        <svg class="topo" viewBox="0 0 480 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="1.1">
+            <path d="M-20 150 C 80 120 130 170 240 140 S 420 110 500 150" />
+            <path d="M-20 120 C 90 88 140 138 250 108 S 430 78 500 118" />
+            <path d="M-20 92 C 100 60 150 108 260 78 S 440 50 500 88" />
+            <path d="M-20 66 C 110 36 160 82 270 52 S 450 26 500 62" />
+            <path d="M-20 42 C 120 16 170 58 280 30 S 460 6 500 40" />
+          </g>
+        </svg>
         <div class="brand">
-          <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-            <path d="M2 27 L11 9 L16 18 L20 12 L30 27 Z" />
-            <circle cx="24" cy="7" r="3" />
-          </svg>
-          <div class="brand__text">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40">
+              <path class="peak" d="M4 33 L14 12 L20 22 L25 14 L36 33 Z" />
+              <circle class="sun" cx="29" cy="9" r="3.4" />
+            </svg>
+          </span>
+          <span class="brand__text">
             <span class="brand__name">Aurora Outfitters</span>
-            <span class="brand__role">Support Assistant</span>
-          </div>
+            <span class="brand__role">Customer Support</span>
+          </span>
         </div>
         <span class="status" title="Online"><span class="status__dot"></span>Online</span>
       </header>
@@ -36,10 +52,10 @@
           maxlength="1000"
         />
         <button class="composer__send" id="send" type="submit" aria-label="Send">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 L21 3 L13 21 L11 13 Z" /></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 L21 12 L3.4 3.6 L3.4 10 L15 12 L3.4 14 Z" /></svg>
         </button>
       </form>
-      <p class="disclaimer">Demo assistant for a test store. Answers come from live catalog, order, and policy data.</p>
+      <p class="disclaimer">Demo assistant on a test store. Replies use live catalog, order, and policy data.</p>
     </main>
 
     <script src="./app.js"></script>

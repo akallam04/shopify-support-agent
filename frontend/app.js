@@ -32,6 +32,12 @@ function renderWelcome() {
   wrap.className = "welcome";
   wrap.id = "welcome";
   wrap.innerHTML = `
+    <div class="welcome__badge">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path class="peak" d="M4 33 L14 12 L20 22 L25 14 L36 33 Z" />
+        <circle class="sun" cx="29" cy="9" r="3.4" />
+      </svg>
+    </div>
     <div>
       <div class="welcome__title">How can we help?</div>
       <p class="welcome__sub">Ask about our gear, track an order, or check our shipping and return policies.</p>
