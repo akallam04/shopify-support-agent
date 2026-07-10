@@ -5,9 +5,10 @@ FROM public.ecr.aws/docker/library/python:3.11-slim
 # aws lambda web adapter, forwards lambda invokes to the http app on $PORT
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 
-ENV HOME=/root \
+# HOME under /opt so the embedding model bakes into a world-readable path, since
+# lambda only gives us /tmp as writable and may not run the container as root
+ENV HOME=/opt/apphome \
     PORT=8080 \
-    CHROMA_PATH=/tmp/chroma_db \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
@@ -19,9 +20,11 @@ COPY app ./app
 COPY mcp_server ./mcp_server
 COPY data ./data
 
-# build the index at image-build time: downloads the embedding model into
-# /root/.cache (baked, read at runtime) and writes chroma_db into /app
-RUN python -m app.rag.index
+# bake the index into /app/chroma_db and the embedding model into $HOME/.cache,
+# both world-readable so the entrypoint can stage them into /tmp at cold start
+RUN mkdir -p /opt/apphome \
+    && CHROMA_PATH=/app/chroma_db python -m app.rag.index \
+    && chmod -R a+rX /opt/apphome /app/chroma_db
 
 COPY deploy/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
