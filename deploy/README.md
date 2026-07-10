@@ -1,19 +1,21 @@
 # Deployment
 
-The backend runs as a container image on AWS Lambda (arm64 / Graviton) behind a Function URL. The frontend is static files on Vercel. Lambda scales to zero, so idle cost is nothing.
+The backend runs as a container image on AWS Lambda (arm64 / Graviton) behind an API Gateway HTTP API. The frontend is static files on Vercel. Lambda scales to zero, so idle cost is nothing.
 
 ## What runs where
 
-- **Backend**: the FastAPI app plus its stdio MCP server, packaged in one image. The AWS Lambda Web Adapter forwards Lambda invokes to uvicorn, so the app and its lifespan-managed MCP session run unchanged. The vector index and embedding model are baked into the image at build time; the entrypoint copies the index into the writable `/tmp` before serving, since Lambda's filesystem is read-only everywhere else.
-- **Frontend**: `frontend/` is plain static files. Set its `api-base` meta tag to the Function URL and deploy to Vercel.
+- **Backend**: the FastAPI app plus its stdio MCP server, packaged in one image. The AWS Lambda Web Adapter forwards invokes to uvicorn, so the app and its lifespan-managed MCP session run unchanged. The vector index and embedding model are baked into the image under a world-readable path at build time; the entrypoint stages both into `/tmp` (Lambda's only writable path) before serving.
+- **Public entry**: an API Gateway HTTP API in front of the Lambda. A Lambda Function URL would be simpler, but brand-new AWS accounts block public Function URLs (`AuthType NONE` returns `403 Forbidden` regardless of the resource policy), and there is no per-account switch to disable that. API Gateway HTTP API is a separate public-endpoint path that is not subject to that block. The app needs no changes; the Web Adapter handles the API Gateway payload identically.
+- **Frontend**: `frontend/` is plain static files. Its `api-base` meta tag points at the API Gateway URL; deploy to Vercel.
 
 ## Cost
 
-- Lambda compute and the Function URL: free tier covers demo traffic (1M requests, 400k GB-seconds/month, always free).
+- Lambda compute: free tier covers demo traffic (1M requests, 400k GB-seconds/month, always free).
+- API Gateway HTTP API: free for 1M requests/month for the first 12 months, then $1.00/million.
 - ECR image storage: about 1.2 GB, free for the first year (500 MB tier), then roughly $0.15/month.
 - Vercel Hobby and Anthropic tokens (~$0.18 per 100 conversations): already accounted for.
 
-Effectively $0/month. The one tradeoff is a cold start of a few seconds while the model loads after idle.
+Effectively $0/month at demo scale. The one tradeoff is a cold start of a few seconds while the model loads after idle; the frontend retries a cold-start 503 transparently.
 
 ## Backend deploy (run from the repo root)
 
@@ -22,25 +24,23 @@ Set these once:
 ```
 export AWS_REGION=us-east-1
 export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-export REPO=aurora-support
-export ECR=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO
+export ECR=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aurora-support
 ```
 
-1. Create the ECR repository (one time). Free:
+1. Create the ECR repository (one time, free):
 
    ```
-   aws ecr create-repository --repository-name $REPO --region $AWS_REGION
+   aws ecr create-repository --repository-name aurora-support --region $AWS_REGION
    ```
 
-2. Build the arm64 image and push it. This is the only slow step:
+2. Build the arm64 image and push it. `--provenance=false` is required, otherwise buildx pushes a multi-manifest index that Lambda rejects with "image manifest ... not supported":
 
    ```
    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR
-   docker build --platform linux/arm64 -f deploy/Dockerfile -t $ECR:latest .
-   docker push $ECR:latest
+   docker buildx build --platform linux/arm64 --provenance=false -f deploy/Dockerfile -t $ECR:latest --push .
    ```
 
-3. Create the Lambda execution role (one time). Free:
+3. Create the Lambda execution role (one time, free):
 
    ```
    aws iam create-role --role-name aurora-support-lambda \
@@ -49,33 +49,31 @@ export ECR=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO
      --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
    ```
 
-4. Create the function. 1024 MB memory, 60s timeout, credentials as env vars (fill in your real values):
+4. Create the function. `deploy/create_function.sh` reads the credentials from `.env` so no secrets are typed on the command line:
 
    ```
-   aws lambda create-function --function-name aurora-support \
-     --package-type Image --code ImageUri=$ECR:latest \
-     --role arn:aws:iam::$ACCOUNT_ID:role/aurora-support-lambda \
-     --architectures arm64 --memory-size 1024 --timeout 60 \
-     --environment "Variables={SHOPIFY_STORE_DOMAIN=...,SHOPIFY_ADMIN_TOKEN=...,SHOPIFY_API_VERSION=2026-01,ANTHROPIC_API_KEY=...,CORS_ORIGINS=https://YOUR-VERCEL-APP.vercel.app}" \
-     --region $AWS_REGION
+   sh deploy/create_function.sh
    ```
 
-5. Add a public Function URL:
+5. Put an API Gateway HTTP API in front of it and allow it to invoke the Lambda:
 
    ```
-   aws lambda create-function-url-config --function-name aurora-support --auth-type NONE --region $AWS_REGION
-   aws lambda add-permission --function-name aurora-support \
-     --statement-id public-url --action lambda:InvokeFunctionUrl \
-     --principal '*' --function-url-auth-type NONE --region $AWS_REGION
+   API_ID=$(aws apigatewayv2 create-api --name aurora-support-api --protocol-type HTTP \
+     --target arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:aurora-support \
+     --query ApiId --output text --region $AWS_REGION)
+   aws lambda add-permission --function-name aurora-support --statement-id apigw-invoke \
+     --action lambda:InvokeFunction --principal apigateway.amazonaws.com \
+     --source-arn "arn:aws:execute-api:$AWS_REGION:$ACCOUNT_ID:$API_ID/*/*" --region $AWS_REGION
+   echo "https://$API_ID.execute-api.$AWS_REGION.amazonaws.com"
    ```
 
-   The command prints `FunctionUrl`. That is the backend base URL.
+   That URL is the backend base.
 
-6. Smoke test:
+6. Smoke test (the first call cold-starts, allow ~15s):
 
    ```
-   curl -s <FunctionUrl>health
-   curl -s -X POST <FunctionUrl>chat -H "Content-Type: application/json" \
+   curl -s <api-url>/health
+   curl -s -X POST <api-url>/chat -H "Content-Type: application/json" \
      -d '{"messages":[{"role":"user","content":"do you have waterproof jackets?"}]}'
    ```
 
@@ -84,10 +82,11 @@ To ship a new build later: repeat step 2, then
 
 ## Frontend deploy (Vercel)
 
-1. Put the Function URL (without a trailing slash) into `frontend/index.html`:
-   `<meta name="api-base" content="https://<FunctionUrl-host>" />`
+1. Put the API Gateway URL (no trailing slash) into `frontend/index.html`:
+   `<meta name="api-base" content="https://<api-id>.execute-api.us-east-1.amazonaws.com" />`
 2. In Vercel, import the repo, set the root directory to `frontend`, framework preset "Other", no build command.
-3. After it deploys, copy the Vercel URL back into the Lambda `CORS_ORIGINS` env var (step 4) so the browser is allowed to call the backend:
-   `aws lambda update-function-configuration --function-name aurora-support --environment "Variables={...,CORS_ORIGINS=https://<your>.vercel.app}" --region $AWS_REGION`
+3. After it deploys, restrict the backend to the Vercel origin so only the demo page can call it:
+   `sh deploy/create_function.sh` sets `CORS_ORIGINS=*`; update it with
+   `aws lambda update-function-configuration --function-name aurora-support --environment "Variables={...,CORS_ORIGINS=https://<your>.vercel.app}" --region us-east-1`
 
 The Vercel URL is the live demo link.
