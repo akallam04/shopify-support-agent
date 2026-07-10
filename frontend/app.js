@@ -44,17 +44,19 @@ function renderWelcome() {
     </div>`;
   const chips = document.createElement("div");
   chips.className = "chips";
-  for (const text of SUGGESTIONS) {
+  SUGGESTIONS.forEach((text, i) => {
     const chip = document.createElement("button");
     chip.className = "chip";
     chip.type = "button";
     chip.textContent = text;
+    // stagger each chip in after the intro copy has landed
+    chip.style.animationDelay = `${0.26 + i * 0.07}s`;
     chip.addEventListener("click", () => {
       inputEl.value = text;
       formEl.requestSubmit();
     });
     chips.appendChild(chip);
-  }
+  });
   wrap.appendChild(chips);
   messagesEl.appendChild(wrap);
 }
@@ -99,7 +101,7 @@ function showTyping() {
   const msg = document.createElement("div");
   msg.className = "msg msg--agent";
   msg.id = "typing";
-  msg.innerHTML = `<div class="msg__bubble typing"><span></span><span></span><span></span></div>`;
+  msg.innerHTML = `<div class="msg__bubble wave"><span></span><span></span><span></span><span></span><span></span></div>`;
   messagesEl.appendChild(msg);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
