@@ -1,8 +1,8 @@
 # Shopify AI Support Agent
 
-An AI customer support agent for a Shopify store. It answers product questions with RAG over the live store catalog, looks up order status through a self-built MCP server wrapping the Shopify Admin API, answers shipping and returns questions from a policy document set, and refuses or escalates anything out of scope. The agent is an explicit LangGraph state machine served by FastAPI, and every behavior is measured by an eval harness with 40+ labeled test cases.
+An AI customer support agent for a Shopify store. It answers product questions with RAG over the live store catalog, looks up order status through a self-built MCP server wrapping the Shopify Admin API, answers shipping and returns questions from a policy document set, and refuses or escalates anything out of scope. The agent is an explicit LangGraph state machine served by FastAPI, and every behavior is measured by an eval harness with 53 labeled test cases.
 
-Status: in active development. Eval tables and a live demo link land as the roadmap below completes.
+**Live demo: https://shopify-support-agent.vercel.app** (React-free chat UI on Vercel, FastAPI backend on AWS Lambda). The first message after an idle period cold-starts the backend and takes a few seconds; the UI retries automatically.
 
 ## Architecture
 
@@ -92,5 +92,5 @@ Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m ev
 - [x] Guardrails hardening, folded into eval-driven iteration (graph-level gating beat prompt-level rules)
 - [x] Eval harness: 53 cases, baseline 96%, iterated to 100%, model decision documented above
 - [x] FastAPI `/chat` backend (one MCP session per app via a lifespan handler) and a polished vanilla-JS chat UI
-- [ ] Deploy: AWS backend, Vercel frontend, live demo link
-- [ ] Final eval numbers and cost report
+- [x] Deploy: container on AWS Lambda behind API Gateway, frontend on Vercel, live demo link above
+- [x] Final eval numbers and cost report (see Eval results above)
