@@ -3,6 +3,8 @@
 An AI customer support agent for a Shopify store. It answers product questions with RAG over the live store catalog, looks up order status through a self-built MCP server wrapping the Shopify Admin API, answers shipping and returns questions from a policy document set, and refuses or escalates anything out of scope. The agent is an explicit LangGraph state machine served by FastAPI, and every behavior is measured by an eval harness with 53 labeled test cases.
 
 **Live demo: https://shopify-support-agent.vercel.app** (React-free chat UI on Vercel, FastAPI backend on AWS Lambda). The first message after an idle period cold-starts the backend and takes a few seconds; the UI retries automatically.
+<img width="1028" height="1580" alt="image" src="https://github.com/user-attachments/assets/9a93feac-318b-42c8-9bd9-daba4b82e954" />
+
 
 ## Architecture
 
