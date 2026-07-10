@@ -116,15 +116,11 @@ async function send(text) {
   setBusy(true);
   showTyping();
 
+  // the backend scales to zero, so the first request after idle can cold start
+  // and return a transient 503, retry a couple of times before giving up
   try {
-    const res = await fetch(`${API_BASE}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history }),
-    });
+    const data = await postWithRetry();
     document.getElementById("typing")?.remove();
-    if (!res.ok) throw new Error(`request failed (${res.status})`);
-    const data = await res.json();
     addMessage("agent", data.response, { intent: data.intent, latency_s: data.latency_s });
     history.push({ role: "assistant", content: data.response });
   } catch (err) {
@@ -136,6 +132,23 @@ async function send(text) {
     console.error(err);
   } finally {
     setBusy(false);
+  }
+}
+
+async function postWithRetry(attempts = 3, delayMs = 2500) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      if (res.ok) return res.json();
+      if (res.status !== 503 || i === attempts - 1) throw new Error(`request failed (${res.status})`);
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+    }
+    await new Promise((r) => setTimeout(r, delayMs));
   }
 }
 
