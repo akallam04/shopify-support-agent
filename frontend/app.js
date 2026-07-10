@@ -8,11 +8,15 @@ const sendEl = document.getElementById("send");
 // full conversation, sent to the agent every turn since the api is stateless
 const history = [];
 
+// short labels on the chips, fuller prompts sent to the agent
 const SUGGESTIONS = [
-  "Do you have waterproof jackets?",
-  "What is your return policy?",
-  "Where is my order #1001? (maya.thompson@example.com)",
-  "Do you ship to Canada?",
+  { label: "Do you have waterproof jackets?", text: "Do you have waterproof jackets?" },
+  { label: "What is your return policy?", text: "What is your return policy?" },
+  {
+    label: "Track my order #1001",
+    text: "Where is my order #1001? My email is maya.thompson@example.com",
+  },
+  { label: "Do you ship to Canada?", text: "Do you ship to Canada?" },
 ];
 
 const INTENT_LABELS = {
@@ -26,33 +30,60 @@ const INTENT_LABELS = {
 };
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
+const CITATION_RE = /\s*\[([a-z0-9][a-z0-9-]*)\]/g;
+
+// pull the [id] grounding markers out of the prose and return them separately,
+// so the bubble reads cleanly and the sources show as their own tags
+function extractCitations(text) {
+  const ids = [];
+  const clean = text
+    .replace(CITATION_RE, (_, id) => {
+      ids.push(id);
+      return "";
+    })
+    .replace(/\s*[—–]\s*/g, " - ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ ([.,!?])/g, "$1")
+    .trim();
+  return { clean, ids: [...new Set(ids)] };
+}
+
+function prettySource(id) {
+  return id.replace(/^policy-/, "").replace(/-/g, " ");
+}
 
 function renderWelcome() {
   const wrap = document.createElement("div");
   wrap.className = "welcome";
   wrap.id = "welcome";
   wrap.innerHTML = `
-    <div class="welcome__badge">
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <path class="peak" d="M4 33 L14 12 L20 22 L25 14 L36 33 Z" />
-        <circle class="sun" cx="29" cy="9" r="3.4" />
+    <div class="emblem">
+      <svg class="emblem__ring" viewBox="0 0 128 128" aria-hidden="true">
+        <defs>
+          <path id="ring" d="M64,64 m-50,0 a50,50 0 1,1 100,0 a50,50 0 1,1 -100,0" />
+        </defs>
+        <text><textPath href="#ring">AURORA OUTFITTERS &#183; CUSTOMER SUPPORT &#183; </textPath></text>
       </svg>
+      <div class="emblem__core">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path class="peak" d="M5 32 L15 13 L21 23 L26 15 L35 32 Z" />
+          <circle class="sun" cx="29" cy="10" r="3.2" />
+        </svg>
+      </div>
     </div>
-    <div>
-      <div class="welcome__title">How can we help?</div>
-      <p class="welcome__sub">Ask about our gear, track an order, or check our shipping and return policies.</p>
-    </div>`;
+    <div class="welcome__title">How can we <em>help?</em></div>
+    <p class="welcome__sub">Ask about our gear, track an order, or check our shipping and return policies.</p>`;
   const chips = document.createElement("div");
   chips.className = "chips";
-  SUGGESTIONS.forEach((text, i) => {
+  SUGGESTIONS.forEach((s, i) => {
     const chip = document.createElement("button");
     chip.className = "chip";
     chip.type = "button";
-    chip.textContent = text;
+    chip.textContent = s.label;
     // stagger each chip in after the intro copy has landed
-    chip.style.animationDelay = `${0.26 + i * 0.07}s`;
+    chip.style.animationDelay = `${0.3 + i * 0.08}s`;
     chip.addEventListener("click", () => {
-      inputEl.value = text;
+      inputEl.value = s.text;
       formEl.requestSubmit();
     });
     chips.appendChild(chip);
@@ -82,10 +113,24 @@ function addMessage(role, text, meta) {
   document.getElementById("welcome")?.remove();
   const msg = document.createElement("div");
   msg.className = `msg msg--${role}`;
+
+  const { clean, ids } = role === "agent" ? extractCitations(text) : { clean: text, ids: [] };
   const bubble = document.createElement("div");
   bubble.className = "msg__bubble";
-  linkify(bubble, text);
+  linkify(bubble, clean);
   msg.appendChild(bubble);
+
+  if (ids.length) {
+    const sources = document.createElement("div");
+    sources.className = "msg__sources";
+    for (const id of ids) {
+      const tag = document.createElement("span");
+      tag.className = "source";
+      tag.textContent = prettySource(id);
+      sources.appendChild(tag);
+    }
+    msg.appendChild(sources);
+  }
   if (meta) {
     const metaEl = document.createElement("div");
     metaEl.className = "msg__meta";
@@ -101,7 +146,7 @@ function showTyping() {
   const msg = document.createElement("div");
   msg.className = "msg msg--agent";
   msg.id = "typing";
-  msg.innerHTML = `<div class="msg__bubble wave"><span></span><span></span><span></span><span></span><span></span></div>`;
+  msg.innerHTML = `<div class="msg__bubble dots"><span></span><span></span><span></span></div>`;
   messagesEl.appendChild(msg);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
