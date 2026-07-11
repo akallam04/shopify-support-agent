@@ -31,7 +31,7 @@ Key decisions:
 - **Self-built MCP server for Shopify tools.** The tool contract is standardized, so any MCP host can consume the same server, and the Admin API token only ever exists in the server process. Tools are read-only by design: `get_order_status`, `list_customer_orders`, `check_inventory`.
 - **Grounding is enforced, not requested.** The `verify` node programmatically rejects any draft that states order facts absent from tool results or cites documents that were not retrieved. Failed lookups produce an honest "could not find it" instead of a guess.
 - **RAG on Chroma** with local embeddings behind a thin interface, one collection for products (one document per product) and one for policies (chunked by heading), with metadata ids feeding the citations.
-- **Model selection is eval-driven**: the cheapest Anthropic model that passes the eval suite wins, and the numbers backing that choice will be published here.
+- **Model selection is eval-driven**: the cheapest Anthropic model that passes the eval suite wins; the numbers backing that choice are in the eval results below.
 
 ## Eval results
 
@@ -61,7 +61,7 @@ Full per-case records for every run live in `evals/results/`.
 app/                 FastAPI service + agent (graph, nodes, prompts, RAG)
 mcp_server/          self-built MCP server exposing Shopify Admin API tools
 data/policies/       demo store policy documents
-evals/               40+ case dataset, graders, run script, results history
+evals/               53-case dataset, graders, run script, results history
 frontend/            minimal chat UI (Vercel)
 tests/               unit tests
 deploy/              container + AWS deployment
