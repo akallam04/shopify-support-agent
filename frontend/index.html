@@ -8,58 +8,152 @@
     <meta name="theme-color" content="#3d93d6" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./favicon.svg" />
-    <title>Aurora Outfitters Support</title>
+    <title>Aurora Outfitters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;450;500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div class="liquid" aria-hidden="true">
-      <span class="liquid__blob liquid__blob--sky"></span>
-      <span class="liquid__blob liquid__blob--water"></span>
-      <span class="liquid__blob liquid__blob--mist"></span>
-    </div>
+    <!-- mock storefront, the stage that shows the widget in context -->
+    <header class="nav">
+      <a class="nav__brand" href="#">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40">
+            <path class="peak" d="M5 32 L15 13 L21 23 L26 15 L35 32 Z" />
+            <circle class="sun" cx="29" cy="10" r="3.2" />
+          </svg>
+        </span>
+        <span class="nav__name">Aurora Outfitters</span>
+      </a>
+      <nav class="nav__links">
+        <a href="#gear">Gear</a>
+        <a href="#gear">Camp</a>
+        <a href="#gear">Apparel</a>
+        <a href="#gear">Journal</a>
+      </nav>
+      <div class="nav__actions">
+        <button class="nav__icon" aria-label="Search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="M16 16 L21 21" /></svg>
+        </button>
+        <button class="nav__icon" aria-label="Cart">
+          <svg viewBox="0 0 24 24"><path d="M4 6 H20 L18.5 16 H5.5 Z" /><path d="M9 20 h.01 M15 20 h.01" /></svg>
+          <span class="nav__badge">2</span>
+        </button>
+      </div>
+    </header>
 
-    <main class="chat" role="main">
-      <header class="chat__header">
-        <div class="brand">
-          <span class="brand__mark" aria-hidden="true">
-            <svg viewBox="0 0 40 40">
-              <path class="peak" d="M5 32 L15 13 L21 23 L26 15 L35 32 Z" />
-              <circle class="sun" cx="29" cy="10" r="3.2" />
-            </svg>
-          </span>
-          <span class="brand__text">
-            <span class="brand__name">Aurora Outfitters</span>
-            <span class="brand__role">Customer Support</span>
-          </span>
+    <main class="page">
+      <section class="hero">
+        <div class="hero__copy">
+          <span class="eyebrow">New season</span>
+          <h1>Gear that keeps up<br /><em>with the weather.</em></h1>
+          <p>Tested on ridgelines and rainy trailheads. Free shipping on orders over 75 USD, and a support team that actually answers.</p>
+          <div class="hero__cta">
+            <a class="btn btn--solid" href="#gear">Shop the collection</a>
+            <button class="btn btn--ghost" data-open-chat>Ask our assistant</button>
+          </div>
         </div>
-        <span class="status" title="Online"><span class="status__dot"></span>Online</span>
-      </header>
-
-      <section class="messages" id="messages" aria-live="polite"></section>
-
-      <form class="composer" id="composer" autocomplete="off">
-        <div class="composer__field">
-          <input
-            class="composer__input"
-            id="input"
-            type="text"
-            placeholder="Ask about products, orders, or policies..."
-            aria-label="Message"
-            maxlength="1000"
-          />
-          <button class="composer__send" id="send" type="submit" aria-label="Send">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 L20 11 M13 4 L20 11 L13 18" /></svg>
-          </button>
+        <div class="hero__art" aria-hidden="true">
+          <svg viewBox="0 0 400 320">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#cfe8fb" /><stop offset="1" stop-color="#eaf6f4" />
+              </linearGradient>
+              <linearGradient id="ridge" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#4a9fe0" /><stop offset="1" stop-color="#2bbdb2" />
+              </linearGradient>
+              <linearGradient id="ridge2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#7cc0ea" /><stop offset="1" stop-color="#66d3c9" />
+              </linearGradient>
+            </defs>
+            <rect width="400" height="320" rx="24" fill="url(#sky)" />
+            <circle cx="305" cy="78" r="26" fill="#ffffff" opacity="0.85" />
+            <path d="M0 250 L95 120 L150 200 L200 140 L280 250 Z" fill="url(#ridge)" />
+            <path d="M150 250 L235 155 L300 235 L340 190 L400 250 Z" fill="url(#ridge2)" opacity="0.9" />
+            <rect y="250" width="400" height="70" fill="#dff0f4" />
+            <path d="M0 268 q 50 10 100 0 t 100 0 t 100 0 t 100 0" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+            <path d="M0 288 q 50 10 100 0 t 100 0 t 100 0 t 100 0" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.5" />
+          </svg>
         </div>
-      </form>
-      <p class="disclaimer">Demo assistant on a test store. Replies use live catalog, order, and policy data.</p>
+      </section>
+
+      <section class="gear" id="gear">
+        <div class="gear__head">
+          <h2>Trail favorites</h2>
+          <span class="gear__note">Live inventory from the store</span>
+        </div>
+        <div class="grid" id="grid"></div>
+      </section>
+
+      <footer class="foot">
+        <span>Aurora Outfitters, Denver Colorado</span>
+        <span>A demo storefront built to showcase the AI support agent</span>
+      </footer>
     </main>
+
+    <!-- chat widget -->
+    <div class="widget">
+      <div class="teaser" id="teaser" hidden>
+        <button class="teaser__close" id="teaserClose" aria-label="Dismiss">
+          <svg viewBox="0 0 24 24"><path d="M6 6 L18 18 M18 6 L6 18" /></svg>
+        </button>
+        <p class="teaser__text">Hi there, I am the Aurora assistant. Ask me about gear, an order, or our policies.</p>
+      </div>
+
+      <button class="launcher" id="launcher" aria-label="Open support chat" aria-expanded="false">
+        <span class="launcher__ring" aria-hidden="true"></span>
+        <span class="launcher__icon launcher__icon--open" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 1 1-3.2-6.4" /><path d="M8 11h8M8 15h5" /></svg>
+        </span>
+        <span class="launcher__icon launcher__icon--close" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 6 L18 18 M18 6 L6 18" /></svg>
+        </span>
+        <span class="launcher__badge" id="badge" hidden>1</span>
+      </button>
+
+      <section class="panel" id="panel" role="dialog" aria-label="Aurora Outfitters support chat" aria-hidden="true">
+        <header class="panel__header">
+          <div class="brand">
+            <span class="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 40 40">
+                <path class="peak" d="M5 32 L15 13 L21 23 L26 15 L35 32 Z" />
+                <circle class="sun" cx="29" cy="10" r="3.2" />
+              </svg>
+            </span>
+            <span class="brand__text">
+              <span class="brand__name">Aurora Assistant</span>
+              <span class="brand__role"><span class="status__dot"></span>Online, replies in seconds</span>
+            </span>
+          </div>
+          <button class="panel__min" id="minimize" aria-label="Minimize chat">
+            <svg viewBox="0 0 24 24"><path d="M6 13 H18" /></svg>
+          </button>
+        </header>
+
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <form class="composer" id="composer" autocomplete="off">
+          <div class="composer__field">
+            <input
+              class="composer__input"
+              id="input"
+              type="text"
+              placeholder="Ask about products, orders, or policies..."
+              aria-label="Message"
+              maxlength="1000"
+            />
+            <button class="composer__send" id="send" type="submit" aria-label="Send">
+              <svg viewBox="0 0 24 24"><path d="M4 11 L20 11 M13 4 L20 11 L13 18" /></svg>
+            </button>
+          </div>
+        </form>
+        <p class="disclaimer">Demo assistant on a test store, answering from live store data.</p>
+      </section>
+    </div>
 
     <script src="./app.js"></script>
   </body>
