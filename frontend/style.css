@@ -517,7 +517,10 @@ body {
   50% { box-shadow: 0 0 0 5px rgba(43, 189, 178, 0.08); }
 }
 
-.panel__min {
+.panel__tools { display: flex; align-items: center; gap: 6px; }
+
+.panel__btn {
+  position: relative;
   width: 30px; height: 30px;
   border: none;
   border-radius: 9px;
@@ -529,12 +532,18 @@ body {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.panel__min:hover { background: #fff; color: var(--ink); }
+.panel__btn:hover { background: #fff; color: var(--ink); }
 
-.panel__min svg {
+.panel__btn svg {
   width: 16px; height: 16px;
-  fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round;
+  fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
+
+#sound svg { grid-area: 1 / 1; }
+#sound .ico--off { display: none; }
+#sound.is-muted .ico--on { display: none; }
+#sound.is-muted .ico--off { display: block; }
 
 /* messages */
 .messages {

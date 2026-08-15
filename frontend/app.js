@@ -7,6 +7,7 @@ const teaserEl = document.getElementById("teaser");
 const teaserCloseEl = document.getElementById("teaserClose");
 const badgeEl = document.getElementById("badge");
 const minimizeEl = document.getElementById("minimize");
+const soundEl = document.getElementById("sound");
 const messagesEl = document.getElementById("messages");
 const formEl = document.getElementById("composer");
 const inputEl = document.getElementById("input");
@@ -222,6 +223,7 @@ async function send(text) {
     document.getElementById("typing")?.remove();
     addMessage("agent", data.response, { intent: data.intent, latency_s: data.latency_s });
     history.push({ role: "assistant", content: data.response });
+    ping();
   } catch (err) {
     document.getElementById("typing")?.remove();
     addMessage(
@@ -251,6 +253,55 @@ async function postWithRetry(attempts = 3, delayMs = 2500) {
   }
 }
 
+/* notification sound, synthesized so there is no audio file to ship */
+const MUTE_KEY = "aurora_chat_muted";
+let audioCtx = null;
+let muted = localStorage.getItem(MUTE_KEY) === "1";
+
+function unlockAudio() {
+  if (audioCtx) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audioCtx = new Ctx();
+}
+
+// two soft sine notes with a quick decay, quiet enough to sit under a page
+function ping(notes = [880, 1174.7], gain = 0.05) {
+  if (muted || !audioCtx) return;
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  notes.forEach((freq, i) => {
+    const t = audioCtx.currentTime + i * 0.1;
+    const osc = audioCtx.createOscillator();
+    const amp = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, t);
+    amp.gain.setValueAtTime(0, t);
+    amp.gain.linearRampToValueAtTime(gain, t + 0.012);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    osc.connect(amp).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  });
+}
+
+function syncSoundButton() {
+  soundEl.classList.toggle("is-muted", muted);
+  soundEl.setAttribute("aria-pressed", String(!muted));
+  soundEl.setAttribute("aria-label", muted ? "Unmute notification sound" : "Mute notification sound");
+}
+
+soundEl.addEventListener("click", () => {
+  muted = !muted;
+  localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+  syncSoundButton();
+  if (!muted) ping([1046.5], 0.04);
+});
+
+// browsers only allow audio after a gesture, so arm the context on the first one
+for (const evt of ["pointerdown", "keydown"]) {
+  window.addEventListener(evt, unlockAudio, { once: true });
+}
+
 /* widget shell */
 function hideTeaser() {
   if (teaserEl.hidden) return;
@@ -275,6 +326,7 @@ function openChat() {
 }
 
 function closeChat() {
+  sessionStorage.setItem(CLOSED_KEY, "1");
   widgetEl.classList.remove("is-open");
   launcherEl.setAttribute("aria-expanded", "false");
   panelEl.setAttribute("aria-hidden", "true");
@@ -311,11 +363,25 @@ formEl.addEventListener("submit", (e) => {
   send(text);
 });
 
-// the proactive nudge a real support widget does after a beat
-setTimeout(() => {
-  if (widgetEl.classList.contains("is-open")) return;
-  teaserEl.hidden = false;
-  badgeEl.hidden = false;
-}, 3200);
+/* opening behaviour: this is a demo, so the panel introduces itself.
+   it springs open from the launcher a beat after load, which shows the
+   visitor where the widget lives instead of leaving a mystery circle. */
+const CLOSED_KEY = "aurora_chat_closed";
 
+if (sessionStorage.getItem(CLOSED_KEY)) {
+  // they closed it already, fall back to the quiet nudge
+  setTimeout(() => {
+    if (widgetEl.classList.contains("is-open")) return;
+    teaserEl.hidden = false;
+    badgeEl.hidden = false;
+  }, 3200);
+} else {
+  setTimeout(() => {
+    if (widgetEl.classList.contains("is-open")) return;
+    openChat();
+    ping();
+  }, 1100);
+}
+
+syncSoundButton();
 renderStore();

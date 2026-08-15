@@ -129,9 +129,15 @@
               <span class="brand__role"><span class="status__dot"></span>Online, replies in seconds</span>
             </span>
           </div>
-          <button class="panel__min" id="minimize" aria-label="Minimize chat">
-            <svg viewBox="0 0 24 24"><path d="M6 13 H18" /></svg>
-          </button>
+          <div class="panel__tools">
+            <button class="panel__btn" id="sound" aria-label="Mute notification sound" aria-pressed="true">
+              <svg class="ico ico--on" viewBox="0 0 24 24"><path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 Z" /><path d="M16.5 9.2a4 4 0 0 1 0 5.6" /><path d="M19 6.8a7.5 7.5 0 0 1 0 10.4" /></svg>
+              <svg class="ico ico--off" viewBox="0 0 24 24"><path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 Z" /><path d="M17 10 L21 14 M21 10 L17 14" /></svg>
+            </button>
+            <button class="panel__btn" id="minimize" aria-label="Minimize chat">
+              <svg viewBox="0 0 24 24"><path d="M6 13 H18" /></svg>
+            </button>
+          </div>
         </header>
 
         <div class="messages" id="messages" aria-live="polite"></div>
