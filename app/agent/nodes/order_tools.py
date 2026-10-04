@@ -1,21 +1,25 @@
-"""Tool-calling loop over the MCP session, capped so a confused model cannot spin."""
+"""Tool-calling loop over the store tools, capped so a confused model cannot spin."""
 
 import json
 from typing import Any
 
 from anthropic import AsyncAnthropic
 
-from app.agent.prompts import ORDER_SYSTEM, SAFE_FALLBACK_RESPONSE
+from app.agent.prompts import ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE, with_digest
 from app.agent.state import AgentState
-from app.mcp_client import ShopifyTools
+from app.config import Settings
 
 MAX_TOOL_ROUNDS = 3
 
 
-def make_order_tools_node(client: AsyncAnthropic, model: str, tools: ShopifyTools):
+def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settings: Settings):
+    base_system = ORDER_SYSTEM + (ORDER_WRITE_RULES if tools.write_tool_names else "")
+
     async def order_tools(state: AgentState) -> dict[str, Any]:
+        system = with_digest(base_system, state.get("context_digest"))
         messages: list[Any] = list(state["messages"])
-        tool_results: list[dict[str, Any]] = []
+        tool_results: list[dict[str, Any]] = list(state.get("tool_results", []))
+        executed: list[dict[str, Any]] = list(state.get("executed_actions", []))
         usage = list(state.get("usage", []))
         draft = ""
 
@@ -23,7 +27,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: ShopifyTool
             response = await client.messages.create(
                 model=model,
                 max_tokens=1000,
-                system=ORDER_SYSTEM,
+                system=system,
                 messages=messages,
                 tools=tools.anthropic_tools,
             )
@@ -40,24 +44,32 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: ShopifyTool
                 draft = "".join(b.text for b in response.content if b.type == "text").strip()
                 break
 
+            gated = next((tu for tu in tool_uses if tu.name in tools.gated_tool_names), None)
+            if gated is not None and settings.mutation_gate:
+                candidate = {"name": gated.name, "args": dict(gated.input) if isinstance(gated.input, dict) else {}}
+                return {
+                    "candidate_action": candidate,
+                    "tool_results": tool_results,
+                    "executed_actions": executed,
+                    "usage": usage,
+                    "draft": "",
+                }
+
             messages.append({"role": "assistant", "content": response.content})
             results_content = []
             for tu in tool_uses:
-                # allowlist + shape check before anything reaches the server
                 if tu.name not in tools.tool_names or not isinstance(tu.input, dict):
                     result_text = json.dumps({"error": f"unknown tool {tu.name}"})
                 else:
                     result_text = await tools.call(tu.name, dict(tu.input))
-                tool_results.append(
-                    {"name": tu.name, "args": dict(tu.input), "result": result_text}
-                )
-                results_content.append(
-                    {"type": "tool_result", "tool_use_id": tu.id, "content": result_text}
-                )
+                if tu.name in tools.write_tool_names:
+                    executed.append(json.loads(result_text))
+                tool_results.append({"name": tu.name, "args": dict(tu.input), "result": result_text})
+                results_content.append({"type": "tool_result", "tool_use_id": tu.id, "content": result_text})
             messages.append({"role": "user", "content": results_content})
 
         if not draft:
             draft = SAFE_FALLBACK_RESPONSE
-        return {"draft": draft, "tool_results": tool_results, "usage": usage}
+        return {"draft": draft, "tool_results": tool_results, "executed_actions": executed, "usage": usage}
 
     return order_tools

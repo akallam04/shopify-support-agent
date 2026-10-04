@@ -12,6 +12,7 @@ from app.agent.prompts import (
     OUT_OF_SCOPE_RESPONSE,
     RETRY_SYSTEM,
     SMALLTALK_SYSTEM,
+    with_digest,
 )
 from app.agent.state import AgentState
 
@@ -71,7 +72,7 @@ def make_respond_node(client: AsyncAnthropic, model: str):
         response = await client.messages.create(
             model=model,
             max_tokens=1000,
-            system=system,
+            system=with_digest(system, state.get("context_digest")),
             messages=state["messages"],
         )
         draft = "".join(b.text for b in response.content if b.type == "text").strip()

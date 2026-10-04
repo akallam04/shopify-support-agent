@@ -44,6 +44,7 @@ def verify_node(state: AgentState) -> dict[str, Any]:
         grounding += " " + " ".join(
             str(m["content"]) for m in state["messages"] if m["role"] == "user"
         )
+        grounding += " " + (state.get("context_digest") or "")
         ok, feedback = check_order_facts(draft, grounding)
     else:
         allowed: set[str] = set()

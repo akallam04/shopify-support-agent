@@ -6,7 +6,7 @@ Aurora Outfitters is an online outdoor gear store (camping, hiking, and snow gea
 Classify the LATEST customer message, using the conversation for context, into exactly one intent:
 - product: questions about products, sizing, features, recommendations, prices, or stock, including whether the store sells or carries some type of item at all.
 - policy: questions about shipping, returns, exchanges, refunds, warranty, gift cards, discounts, price adjustments, or how the store works. This includes a customer asking whether a stated policy applies to their situation, such as "can I get the price difference back" (price adjustment) or "can I still return this" (return window), even when phrased as a request. Answer these from the policy documents.
-- order: anything about the customer's own order, like status, tracking, history, or cancelling.
+- order: anything about the customer's own order, like status, tracking, or history, or a request to cancel it, change its shipping address, or return items from it.
 - smalltalk: greetings, thanks, or casual chat with no support request in it.
 - handoff: the customer explicitly asks for a human, is angry or hostile, or demands an exception BEYOND stated policy such as a refund after the return window or a special discount that does not exist. If a normal store policy would answer the question, choose policy, not handoff.
 - out_of_scope: not about this store at all, like other companies, general knowledge, news, coding, or personal advice.
@@ -97,3 +97,71 @@ SAFE_FALLBACK_RESPONSE = (
     "answer just now. Please email support@auroraoutfitters.com with your question "
     "and order number, and the team will sort it out within one business day."
 )
+
+ORDER_WRITE_RULES = """
+
+You can also change orders with tools: cancel_order, update_shipping_address, and request_return.
+- Use them only for the customer's own order, with the order number and email they gave you.
+- Before calling one, be sure of the exact order, the items and quantities, the new address, and the reason the customer gave. Ask if any of it is unclear. Do not guess a reason.
+- The tools enforce store policy. If a tool refuses, tell the customer the reason it gave, plainly.
+- Call at most one change tool per turn.
+- Use transfer_to_human only for things these tools cannot do, like warranty claims, damaged items, or exceptions to policy."""
+
+POLICY_RULES = {
+    "cancel_order": "Orders can be cancelled only within 2 hours of being placed and before they ship. The customer must give a reason.",
+    "update_shipping_address": "A shipping address can be changed only within 2 hours of the order being placed and before it ships. The store ships only to the United States and Canada.",
+    "request_return": "Items can be returned within 30 days of delivery. Final sale items and gift cards cannot be returned. Only the items and quantities the customer named should be returned, for the reason the customer gave.",
+}
+
+REFLECTION_SYSTEM = """You check one proposed change to a customer's order before it is shown to the customer for confirmation.
+
+Approve it only if it matches exactly what the customer asked for in this conversation: the right order, the right items and quantities, the right new address, and a reason the customer actually gave or clearly implied. Eligibility under store policy has already been checked by code; your job is whether this is the action the customer wants.
+
+The store rule for this action: {rule}
+
+If anything does not match or was never stated, answer "ask" and write one short, friendly question to the customer that resolves it. Plain text, no em dashes."""
+
+REFLECTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "verdict": {"type": "string", "enum": ["proceed", "ask"]},
+        "issues": {"type": "array", "items": {"type": "string"}},
+        "question": {"type": "string"},
+    },
+    "required": ["verdict", "issues", "question"],
+    "additionalProperties": False,
+}
+
+CONFIRM_CLASSIFIER_SYSTEM = """A customer was asked to confirm this action: {summary}
+
+Classify their reply into exactly one label:
+- confirm: a clear yes to exactly this action.
+- decline: a clear no, or they do not want it done.
+- unclear: ambiguous, a question about the action, or a partial answer.
+- change: they now want something different, such as a different order, items, address, or another request entirely."""
+
+CONFIRM_CLASSIFIER_SCHEMA = {
+    "type": "object",
+    "properties": {"label": {"type": "string", "enum": ["confirm", "decline", "unclear", "change"]}},
+    "required": ["label"],
+    "additionalProperties": False,
+}
+
+CONFIRMATION_TEMPLATE = "Just to confirm, I will {summary}. Should I go ahead? Please reply yes or no."
+
+REASK_TEMPLATE = "Sorry, I want to be sure before I change anything. Should I {summary}? Please reply yes or no."
+
+DECLINED_RESPONSE = "No problem, I have not changed anything. Is there anything else I can help with?"
+
+GATE_INPUT_RESPONSE = (
+    "I need a little more to do that: the order number and the email address on the order, "
+    "plus exactly what you would like changed."
+)
+
+NOT_FOUND_HINT = "Please double-check the order number and the email address on the order."
+
+
+def with_digest(system: str, digest: str | None) -> str:
+    if not digest:
+        return system
+    return f"{system}\n\nEarlier in this conversation (summarized):\n{digest}"

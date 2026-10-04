@@ -5,7 +5,7 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
-from app.agent.prompts import ROUTER_SCHEMA, ROUTER_SYSTEM
+from app.agent.prompts import ROUTER_SCHEMA, ROUTER_SYSTEM, with_digest
 from app.agent.state import AgentState
 
 
@@ -16,7 +16,7 @@ def make_route_node(client: AsyncAnthropic, model: str):
         response = await client.messages.create(
             model=model,
             max_tokens=300,
-            system=ROUTER_SYSTEM,
+            system=with_digest(ROUTER_SYSTEM, state.get("context_digest")),
             messages=state["messages"],
             output_config={"format": {"type": "json_schema", "schema": ROUTER_SCHEMA}},
         )

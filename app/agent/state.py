@@ -36,3 +36,10 @@ class AgentState(TypedDict, total=False):
 
     # per-call token usage, consumed by the eval harness
     usage: list[dict[str, Any]]
+
+    pending_action: dict[str, Any] | None
+    candidate_action: dict[str, Any] | None
+    confirmation: str
+    gate_trace: list[dict[str, Any]]
+    executed_actions: list[dict[str, Any]]
+    context_digest: str

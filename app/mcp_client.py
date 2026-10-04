@@ -9,6 +9,8 @@ from typing import Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from mcp_server.tools import HANDOFF_ACTION, WRITE_ACTIONS
+
 
 class ShopifyTools:
     """Launches the mcp server as a subprocess and holds the session open."""
@@ -48,11 +50,11 @@ class ShopifyTools:
 
     @property
     def write_tool_names(self) -> set[str]:
-        return set()
+        return self.tool_names & (set(WRITE_ACTIONS) | {HANDOFF_ACTION})
 
     @property
     def gated_tool_names(self) -> set[str]:
-        return set()
+        return self.tool_names & set(WRITE_ACTIONS)
 
     async def call(self, name: str, args: dict[str, Any]) -> str:
         if self._session is None:
