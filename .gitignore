@@ -19,3 +19,5 @@ chroma_db/
 
 # frontend deps, added in a later phase
 node_modules/
+
+.claude/
