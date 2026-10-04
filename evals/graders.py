@@ -20,6 +20,8 @@ JUDGE_SYSTEM = (
     "criteria."
 )
 
+JUDGE_ATTEMPTS = 3
+
 JUDGE_SCHEMA = {
     "type": "object",
     "properties": {"pass": {"type": "boolean"}, "reason": {"type": "string"}},
@@ -112,30 +114,40 @@ async def run_judge(
     if tool_results:
         blocks = "\n".join(f"{t['name']} -> {t['result']}" for t in tool_results)
         grounding = f"\n\nGround truth returned by the agent's tools:\n{blocks}"
+    usage = {"input_tokens": 0, "output_tokens": 0}
+    unparseable: list[str] = []
     try:
         # sonnet 5 rejects non-default sampling params, so no temperature here
-        result = await client.messages.create(
-            model=model,
-            max_tokens=500,
-            system=JUDGE_SYSTEM,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"Conversation so far:\n{transcript}{grounding}\n\n"
-                        f"Agent response to grade:\n{response}\n\n"
-                        f"Criteria:\n{criteria}"
-                    ),
-                }
-            ],
-            output_config={"format": {"type": "json_schema", "schema": JUDGE_SCHEMA}},
-        )
-        text = next((b.text for b in result.content if b.type == "text"), "")
-        parsed = json.loads(text)
-        usage = {
-            "input_tokens": result.usage.input_tokens,
-            "output_tokens": result.usage.output_tokens,
-        }
-        return bool(parsed["pass"]), parsed["reason"], usage
+        for attempt in range(JUDGE_ATTEMPTS):
+            result = await client.messages.create(
+                model=model,
+                max_tokens=500,
+                system=JUDGE_SYSTEM,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Conversation so far:\n{transcript}{grounding}\n\n"
+                            f"Agent response to grade:\n{response}\n\n"
+                            f"Criteria:\n{criteria}"
+                        ),
+                    }
+                ],
+                output_config={"format": {"type": "json_schema", "schema": JUDGE_SCHEMA}},
+            )
+            usage["input_tokens"] += result.usage.input_tokens
+            usage["output_tokens"] += result.usage.output_tokens
+            text = next((b.text for b in result.content if b.type == "text"), "")
+            try:
+                parsed = json.loads(text)
+                verdict, reason = bool(parsed["pass"]), str(parsed["reason"])
+            except (json.JSONDecodeError, KeyError, TypeError):
+                blocks = [b.type for b in result.content]
+                unparseable.append(f"stop={result.stop_reason} blocks={blocks}")
+                continue
+            if attempt:
+                reason += f" [judge retried {attempt}x]"
+            return verdict, reason, usage
+        return False, f"JUDGE_ERROR unparseable after {JUDGE_ATTEMPTS} tries: {'; '.join(unparseable)}", usage
     except Exception as e:  # noqa: BLE001, a judge hiccup must not sink the run
-        return False, f"JUDGE_ERROR {type(e).__name__}: {e}", {"input_tokens": 0, "output_tokens": 0}
+        return False, f"JUDGE_ERROR {type(e).__name__}: {e}", usage
