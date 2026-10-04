@@ -9,20 +9,20 @@ from app.config import get_settings
 from mcp_server.backends.shopify import (
     SNAPSHOT_CUSTOMERS_QUERY,
     SNAPSHOT_ORDERS_QUERY,
+    SNAPSHOT_ORDERS_WITH_RETURNS_QUERY,
     SNAPSHOT_PRODUCTS_QUERY,
     map_customer,
     map_order,
     map_product,
+    map_returns,
 )
 from mcp_server.shopify_client import ShopifyClient
 from mcp_server.simdb import Customer, Order, Product, SimDB, SnapshotMeta, db_hash, save_db
 
 DEFAULT_OUT = "data/sim/seed.json"
-FROZEN_NOW = "2026-10-04T22:54:00Z"
-NOTES = [
-    "Exported read-only from the development store.",
-    "Order returns are not exported until the app holds the read_returns scope, so every order starts with none.",
-]
+FROZEN_NOW = "2026-10-04T23:03:00Z"
+NOTES = ["Exported read-only from the development store."]
+NO_RETURNS_NOTE = "Exported without returns: only the write-test token can read them, so every order starts with none."
 
 
 def integrity_problems(
@@ -48,7 +48,10 @@ def main() -> None:
     args = parser.parse_args()
 
     s = get_settings()
-    with ShopifyClient(s.shopify_store_domain, s.shopify_admin_token, s.shopify_api_version) as client:
+    with_returns = bool(s.shopify_write_token)
+    token = s.shopify_write_token or s.shopify_admin_token
+    orders_query = SNAPSHOT_ORDERS_WITH_RETURNS_QUERY if with_returns else SNAPSHOT_ORDERS_QUERY
+    with ShopifyClient(s.shopify_store_domain, token, s.shopify_api_version) as client:
         shop = client.shop_info()
         if not shop["plan"]["partnerDevelopment"]:
             raise SystemExit("refusing to export: this is not a development store")
@@ -62,8 +65,10 @@ def main() -> None:
             for c in map(map_customer, client.paginate(SNAPSHOT_CUSTOMERS_QUERY, "customers"))
         }
         orders: dict[str, Order] = {}
-        for node in client.paginate(SNAPSHOT_ORDERS_QUERY, "orders"):
+        for node in client.paginate(orders_query, "orders"):
             found = map_order(node)
+            if with_returns:
+                found.order.returns = map_returns(node)
             orders[found.order.name] = found.order
             if found.customer:
                 customers.setdefault(found.customer.customer_id, found.customer)
@@ -78,7 +83,7 @@ def main() -> None:
             store_domain=shop["myshopifyDomain"],
             api_version=s.shopify_api_version,
             frozen_now=args.frozen_now,
-            notes=NOTES,
+            notes=NOTES if with_returns else NOTES + [NO_RETURNS_NOTE],
         ),
         products=products,
         customers=customers,
@@ -87,7 +92,8 @@ def main() -> None:
     save_db(db, args.out)
 
     print(f"store {shop['myshopifyDomain']} at api {s.shopify_api_version}")
-    print(f"products {len(products)}, customers {len(customers)}, orders {len(orders)}")
+    returns = sum(len(o.returns) for o in orders.values())
+    print(f"products {len(products)}, customers {len(customers)}, orders {len(orders)}, returns {returns}")
     print(f"deprecated fields used: {', '.join(deprecations) or 'none'}")
     print(f"wrote {args.out}")
     print(f"state hash {db_hash(db)}")

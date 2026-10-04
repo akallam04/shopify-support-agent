@@ -97,21 +97,39 @@ query ProductSearch($query: String!, $limit: Int!) {
     + PRODUCT_FRAGMENT
 )
 
+RETURNS_SELECTION = """
+returns(first: 10) {
+  nodes {
+    status
+    returnLineItems(first: 20) {
+      nodes {
+        quantity
+        ... on ReturnLineItem { fulfillmentLineItem { lineItem { id } } returnReasonDefinition { handle } }
+      }
+    }
+  }
+}
+"""
+
 ORDER_WITH_RETURNS_QUERY = (
     """
 query OrderWithReturns($query: String!) {
-  orders(first: 5, query: $query) {
-    nodes {
-      ...OrderFields
-      returns(first: 20) {
-        nodes {
-          status
-          returnLineItems(first: 50) {
-            nodes { quantity ... on ReturnLineItem { fulfillmentLineItem { lineItem { id } } } }
-          }
-        }
-      }
-    }
+  orders(first: 5, query: $query) { nodes { ...OrderFields """
+    + RETURNS_SELECTION
+    + """ } }
+}
+"""
+    + ORDER_FRAGMENT
+)
+
+SNAPSHOT_ORDERS_WITH_RETURNS_QUERY = (
+    """
+query SnapshotOrdersWithReturns($cursor: String) {
+  orders(first: 10, after: $cursor, sortKey: CREATED_AT) {
+    pageInfo { hasNextPage endCursor }
+    nodes { ...OrderFields """
+    + RETURNS_SELECTION
+    + """ }
   }
 }
 """
@@ -171,6 +189,8 @@ RETURN_REASON_HANDLES = {
     "color": "color",
     "other": "other-reason",
 }
+
+RETURN_REASON_FROM_HANDLE = {handle: reason for reason, handle in RETURN_REASON_HANDLES.items()}
 
 CANCEL_POLL_ATTEMPTS = 15
 INACTIVE_RETURN_STATUSES = frozenset({"DECLINED", "CANCELED"})
@@ -349,12 +369,11 @@ def map_returns(node: dict[str, Any]) -> list[ReturnRequest]:
     for r in node.get("returns", {}).get("nodes", []):
         if r["status"] in INACTIVE_RETURN_STATUSES:
             continue
-        lines = [
-            ReturnLine(line_item_id=li["fulfillmentLineItem"]["lineItem"]["id"], quantity=li["quantity"])
-            for li in r["returnLineItems"]["nodes"]
-            if li.get("fulfillmentLineItem")
-        ]
-        requests.append(ReturnRequest(status=r["status"], reason="unknown", line_items=lines))
+        items = [li for li in r["returnLineItems"]["nodes"] if li.get("fulfillmentLineItem")]
+        lines = [ReturnLine(line_item_id=li["fulfillmentLineItem"]["lineItem"]["id"], quantity=li["quantity"]) for li in items]
+        handles = [(li.get("returnReasonDefinition") or {}).get("handle") for li in items]
+        reason = RETURN_REASON_FROM_HANDLE.get(handles[0] if handles else "", "other")
+        requests.append(ReturnRequest(status=r["status"], reason=reason, line_items=lines))
     return requests
 
 

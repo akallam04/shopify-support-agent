@@ -85,7 +85,7 @@ def test_address_change_uses_shopify_field_names() -> None:
 
 def delivered_node() -> dict[str, Any]:
     node = order_node("#2002", delivered_at="2026-09-29T22:54:00Z")
-    node["returns"] = {"nodes": [{"status": "DECLINED", "returnLineItems": {"nodes": [{"quantity": 1, "fulfillmentLineItem": {"lineItem": {"id": "gid://shopify/LineItem/1"}}}]}}]}
+    node["returns"] = {"nodes": [{"status": "DECLINED", "returnLineItems": {"nodes": [{"quantity": 1, "fulfillmentLineItem": {"lineItem": {"id": "gid://shopify/LineItem/1"}}, "returnReasonDefinition": {"handle": "too-small"}}]}}]}
     return node
 
 
@@ -116,3 +116,13 @@ def test_live_writes_need_the_write_token() -> None:
 
 def test_read_only_backend_reports_no_write_support() -> None:
     assert ShopifyAdminBackend(ScriptedGraphQL({})).supports_writes is False
+
+
+def test_returns_map_back_to_the_agent_reasons() -> None:
+    from mcp_server.backends.shopify import map_returns
+
+    node = {"returns": {"nodes": [{"status": "REQUESTED", "returnLineItems": {"nodes": [
+        {"quantity": 1, "fulfillmentLineItem": {"lineItem": {"id": "l1"}}, "returnReasonDefinition": {"handle": "too-small"}}
+    ]}}]}}
+    [request] = map_returns(node)
+    assert (request.status, request.reason, request.line_items[0].line_item_id) == ("REQUESTED", "size_too_small", "l1")

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from mcp_server.simdb import ReturnLine, ReturnRequest, SimDB, db_hash, load_db, save_db
 
 SEED_PATH = "data/sim/seed.json"
-SEED_HASH = "80006c9215c6ff66f58b5f1b4adba6128e44fbd05c1ad2743485491e1d649a32"
+SEED_HASH = "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94"
 
 
 def test_hash_ignores_key_and_list_order(db: SimDB) -> None:

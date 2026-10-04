@@ -125,10 +125,9 @@
   },
   "meta": {
     "api_version": "2026-10",
-    "frozen_now": "2026-10-04T22:54:00Z",
+    "frozen_now": "2026-10-04T23:03:00Z",
     "notes": [
-      "Exported read-only from the development store.",
-      "Order returns are not exported until the app holds the read_returns scope, so every order starts with none."
+      "Exported read-only from the development store."
     ],
     "store_domain": "aurora-outfitters-co.myshopify.com"
   },
@@ -1017,7 +1016,18 @@
       "name": "#1017",
       "order_id": "gid://shopify/Order/18923716313384",
       "processed_at": "2026-09-25T22:54:00Z",
-      "returns": [],
+      "returns": [
+        {
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/50759108198696",
+              "quantity": 1
+            }
+          ],
+          "reason": "size_too_small",
+          "status": "REQUESTED"
+        }
+      ],
       "shipping_address": {
         "address1": "123 Trailhead Way",
         "address2": null,
@@ -1163,14 +1173,14 @@
       "total": "149.95"
     },
     "#1020": {
-      "cancel_reason": null,
-      "cancelled_at": null,
+      "cancel_reason": "CUSTOMER",
+      "cancelled_at": "2026-10-04T23:00:15Z",
       "created_at": "2026-10-04T22:55:50Z",
       "currency": "USD",
       "customer_id": "gid://shopify/Customer/10697756311848",
       "email": "maya.thompson@example.com",
-      "financial_status": "PAID",
-      "fulfillment_status": "UNFULFILLED",
+      "financial_status": "REFUNDED",
+      "fulfillment_status": "FULFILLMENT_NOT_REQUIRED",
       "fulfillments": [],
       "line_items": [
         {
@@ -1231,7 +1241,7 @@
       "processed_at": "2026-10-04T22:24:00Z",
       "returns": [],
       "shipping_address": {
-        "address1": "123 Trailhead Way",
+        "address1": "9 Pine St",
         "address2": null,
         "city": "Boulder",
         "country_code": "US",
@@ -1245,6 +1255,112 @@
         "v2-live-test"
       ],
       "total": "39.95"
+    },
+    "#1022": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-10-04T23:03:32Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756344616",
+      "email": "jordan.lee@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-10-04T23:03:33Z",
+          "delivered_at": "2026-09-29T23:03:00Z",
+          "display_status": "DELIVERED",
+          "fulfillment_id": "gid://shopify/Fulfillment/7268623974696",
+          "line_items": [
+            {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/18578569855272",
+              "line_item_id": "gid://shopify/LineItem/50759121928488",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "UPS",
+              "number": "1Z999AA10123450002",
+              "url": "https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123450002"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/50759121928488",
+          "product_id": "gid://shopify/Product/10334135484712",
+          "quantity": 1,
+          "sku": null,
+          "title": "Stormline Rain Jacket",
+          "unit_price": "179.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528550696",
+          "variant_title": "L"
+        }
+      ],
+      "name": "#1022",
+      "order_id": "gid://shopify/Order/18923723751720",
+      "processed_at": "2026-09-25T23:03:00Z",
+      "returns": [],
+      "shipping_address": {
+        "address1": "123 Trailhead Way",
+        "address2": null,
+        "city": "Boulder",
+        "country_code": "US",
+        "first_name": "Jordan",
+        "last_name": "Lee",
+        "province_code": "CO",
+        "zip": "80302"
+      },
+      "tags": [
+        "fixture-return-in-window",
+        "v2-live-test"
+      ],
+      "total": "179.99"
+    },
+    "#1023": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-10-04T23:03:47Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756311848",
+      "email": "maya.thompson@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/50759122977064",
+          "product_id": "gid://shopify/Product/10334135517480",
+          "quantity": 1,
+          "sku": null,
+          "title": "Trailblazer Merino Base Layer",
+          "unit_price": "84.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528649000",
+          "variant_title": "L"
+        }
+      ],
+      "name": "#1023",
+      "order_id": "gid://shopify/Order/18923724144936",
+      "processed_at": "2026-10-04T22:03:00Z",
+      "returns": [],
+      "shipping_address": {
+        "address1": "123 Trailhead Way",
+        "address2": null,
+        "city": "Boulder",
+        "country_code": "US",
+        "first_name": "Maya",
+        "last_name": "Thompson",
+        "province_code": "CO",
+        "zip": "80302"
+      },
+      "tags": [
+        "fixture-cancel-eligible",
+        "v2-live-test"
+      ],
+      "total": "84.99"
     }
   },
   "products": {
