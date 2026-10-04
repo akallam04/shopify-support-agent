@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     shopify_store_domain: str = ""
     shopify_admin_token: str = ""
-    shopify_api_version: str = "2026-01"
+    shopify_api_version: str = "2026-10"
 
     store_backend: Literal["shopify", "sim"] = "shopify"
     sim_seed_path: str = "data/sim/seed.json"
