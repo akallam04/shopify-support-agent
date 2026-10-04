@@ -125,6 +125,32 @@ simulated store live. At that point:
 The live Lambda already calls API 2026-10. Only its `SHOPIFY_API_VERSION` variable changed,
 after a probe showed every query in the deployed code returns cleanly at 2026-10.
 
+### Public API limits
+
+API Gateway throttles the stage at a burst of 5 and 0.5 requests per second sustained,
+enforced best-effort by AWS, and the account's Lambda concurrency limit of 10 caps parallel
+work. Reserved concurrency cannot go lower because AWS keeps at least 10 unreserved. Throttled
+responses carry no CORS headers, so the frontend treats them like network errors: two retries
+with backoff, then a busy message with a retry button. Details are in `deploy/README.md`.
+
+## Budget
+
+Model API spend for Phases 2 to 4 is planned around roughly $12 in total.
+
+- A reserve of at least $1 is always left unspent so the live demo keeps answering.
+- Phase 2 is mostly code and unit tests against stubbed model clients. Its paid runs stay
+  small: the 53-case regression suite (about $0.19 a run) once at the end of the phase, plus
+  a few short write-flow conversations.
+- The user simulator, and any other role where the model choice does not change the result,
+  runs on an OpenAI-compatible provider with free credits (Qwen Cloud or Nebius).
+- Before Phase 3 runs anything large, a run plan with cost estimates covers Phases 3 and 4:
+  harness bring-up, task validation, the baseline, gate on versus off, a model comparison on a
+  subset, and the final run. The gate on versus off comparison is the headline result, so its
+  budget is reserved first.
+- Any single run estimated above $1 needs approval before it starts.
+- AWS spend has a budget alert at $5 a month.
+- The project stays API-only, with no GPU training and no locally hosted models.
+
 ## Phases
 
 ### Phase 1: simulated store backend
