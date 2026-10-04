@@ -25,7 +25,10 @@ Set these once:
 export AWS_REGION=us-east-1
 export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 export ECR=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aurora-support
+export LAMBDA_ROLE_NAME=aurora-support-lambda
 ```
+
+`LAMBDA_ROLE_NAME` also goes in `.env`, where `deploy/create_function.sh` reads it.
 
 1. Create the ECR repository (one time, free):
 
@@ -43,13 +46,13 @@ export ECR=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/aurora-support
 3. Create the Lambda execution role (one time, free):
 
    ```
-   aws iam create-role --role-name aurora-support-lambda \
+   aws iam create-role --role-name $LAMBDA_ROLE_NAME \
      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
-   aws iam attach-role-policy --role-name aurora-support-lambda \
+   aws iam attach-role-policy --role-name $LAMBDA_ROLE_NAME \
      --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
    ```
 
-4. Create the function. `deploy/create_function.sh` reads the credentials from `.env` so no secrets are typed on the command line:
+4. Create the function. `deploy/create_function.sh` looks up the account ID, reads the credentials and role name from `.env`, and hands the secrets to AWS through a private temp file, so they never appear on a command line or in the process list:
 
    ```
    sh deploy/create_function.sh
@@ -85,8 +88,12 @@ To ship a new build later: repeat step 2, then
 1. Put the API Gateway URL (no trailing slash) into `frontend/index.html`:
    `<meta name="api-base" content="https://<api-id>.execute-api.us-east-1.amazonaws.com" />`
 2. In Vercel, import the repo, set the root directory to `frontend`, framework preset "Other", no build command.
-3. After it deploys, restrict the backend to the Vercel origin so only the demo page can call it:
-   `sh deploy/create_function.sh` sets `CORS_ORIGINS=*`; update it with
-   `aws lambda update-function-configuration --function-name aurora-support --environment "Variables={...,CORS_ORIGINS=https://<your>.vercel.app}" --region us-east-1`
+3. After it deploys, restrict the backend to the Vercel origin so only the demo page can call it.
+   `sh deploy/create_function.sh` sets `CORS_ORIGINS=*`; tighten it with
+   `sh deploy/update_cors.sh https://<your>.vercel.app`, which changes only that variable.
+
+To rotate a credential later, update `.env` and run
+`.venv/bin/python deploy/sync_lambda_env.py <KEY>`. It merges the key into the function's
+existing variables and never prints values.
 
 The Vercel URL is the live demo link.

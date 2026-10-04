@@ -5,6 +5,7 @@ merges in the requested keys, and writes it back through a private temp file rat
 the command line, where values would show up in the process list.
 
 Run from the repo root: .venv/bin/python deploy/sync_lambda_env.py SHOPIFY_ADMIN_TOKEN [KEY ...]
+A KEY=VALUE argument sets a literal, non-secret value such as CORS_ORIGINS=https://example.com.
 """
 
 import json
@@ -35,28 +36,43 @@ def scrub(text: str, secrets: list[str]) -> str:
     return text
 
 
-def main(keys: list[str]) -> int:
-    if not keys:
+def requested_values(args: list[str], env: dict[str, str | None]) -> tuple[dict[str, str], list[str]]:
+    wanted: dict[str, str] = {}
+    missing: list[str] = []
+    for arg in args:
+        key, sep, literal = arg.partition("=")
+        if sep:
+            wanted[key] = literal
+        elif env.get(key):
+            wanted[key] = env[key] or ""
+        else:
+            missing.append(key)
+    return wanted, missing
+
+
+def main(args: list[str]) -> int:
+    if not args:
         print("name at least one key from .env to copy, values are never printed")
         return 2
     env = dotenv_values(Path(".env"))
-    missing = [k for k in keys if not env.get(k)]
+    wanted, missing = requested_values(args, env)
     if missing:
         print(f"not set in .env: {', '.join(missing)}")
         return 2
+    keys = list(wanted)
 
     current = aws("get-function-configuration", "--query", "Environment.Variables", "--output", "json")
     if current.returncode != 0:
         print("could not read the Lambda configuration, check your AWS credentials")
         return 1
     variables: dict[str, str] = json.loads(current.stdout) or {}
-    secrets = list(variables.values()) + [env[k] for k in keys]
+    secrets = list(variables.values()) + list(wanted.values())
 
-    changed = [k for k in keys if variables.get(k) != env[k]]
+    changed = [k for k in keys if variables.get(k) != wanted[k]]
     if not changed:
         print(f"already in sync: {', '.join(keys)}")
         return 0
-    variables.update({k: env[k] for k in changed})
+    variables.update({k: wanted[k] for k in changed})
 
     fd, path = tempfile.mkstemp(suffix=".json")
     try:
