@@ -6,18 +6,27 @@ import pytest
 from scripts.reseed_test_orders import ExistingOrder, Line, creation_order, is_usable, order_input, plan
 
 NOW = datetime(2026, 10, 4, 12, 0, tzinfo=UTC)
-UNFULFILLED = {"key": "cancel-eligible", "state": "unfulfilled"}
-SHIPPED = {"key": "shipped-not-delivered", "state": "fulfilled"}
-IN_WINDOW = {"key": "return-in-window", "state": "delivered", "delivered_days_ago": 5}
-OUT_OF_WINDOW = {"key": "return-out-of-window", "state": "delivered", "delivered_days_ago": 45}
+UNFULFILLED = {"key": "cancel-eligible", "state": "unfulfilled", "placed_ago": "1h"}
+SHIPPED = {"key": "shipped-not-delivered", "state": "fulfilled", "placed_ago": "4d"}
+IN_WINDOW = {"key": "return-in-window", "state": "delivered", "placed_ago": "9d", "delivered_ago": "5d"}
+OUT_OF_WINDOW = {"key": "return-out-of-window", "state": "delivered", "placed_ago": "50d", "delivered_ago": "45d"}
 
 
 def existing(
-    status: str = "UNFULFILLED", cancelled: bool = False, delivered_days_ago: int | None = None, returned: bool = False
+    status: str = "UNFULFILLED",
+    cancelled: bool = False,
+    delivered_days_ago: int | None = None,
+    returned: bool = False,
+    placed_minutes_ago: int = 30,
 ) -> ExistingOrder:
     delivered = NOW - timedelta(days=delivered_days_ago) if delivered_days_ago is not None else None
     return ExistingOrder(
-        name="#2001", cancelled=cancelled, fulfillment_status=status, delivered_at=delivered, returned=returned
+        name="#2001",
+        cancelled=cancelled,
+        fulfillment_status=status,
+        delivered_at=delivered,
+        returned=returned,
+        placed_at=NOW - timedelta(minutes=placed_minutes_ago),
     )
 
 
@@ -27,6 +36,7 @@ def existing(
         (UNFULFILLED, existing(), True),
         (UNFULFILLED, existing(cancelled=True), False),
         (UNFULFILLED, existing(status="FULFILLED"), False),
+        (UNFULFILLED, existing(placed_minutes_ago=100), False),
         (SHIPPED, existing(status="FULFILLED"), True),
         (SHIPPED, existing(status="FULFILLED", delivered_days_ago=1), False),
         (IN_WINDOW, existing(status="FULFILLED", delivered_days_ago=5), True),
@@ -64,7 +74,7 @@ LINES = [
 
 
 def test_order_input_backdates_the_order_and_pays_the_full_total() -> None:
-    spec = {"key": "return-in-window", "customer_email": "maya.thompson@example.com", "state": "unfulfilled", "placed_days_ago": 9}
+    spec = {"key": "return-in-window", "customer_email": "maya.thompson@example.com", "state": "unfulfilled", "placed_ago": "9d"}
     order = order_input(spec, LINES, CUSTOMER, "gid://shopify/Location/1", NOW)
     assert order["processedAt"] == "2026-09-25T12:00:00Z"
     assert order["financialStatus"] == "PAID"
@@ -79,7 +89,7 @@ def test_shipped_fixtures_get_an_in_transit_fulfillment() -> None:
         "key": "shipped-not-delivered",
         "customer_email": "maya.thompson@example.com",
         "state": "fulfilled",
-        "placed_days_ago": 4,
+        "placed_ago": "4d",
         "tracking": {"number": "1Z1", "company": "UPS"},
     }
     order = order_input(spec, LINES, CUSTOMER, "gid://shopify/Location/1", NOW)
@@ -92,3 +102,13 @@ def test_the_most_backdated_delivery_is_created_first_as_the_probe() -> None:
     keys = [s["key"] for s in creation_order([UNFULFILLED, IN_WINDOW, OUT_OF_WINDOW, SHIPPED])]
     assert keys[0] == "return-out-of-window"
     assert keys[1] == "return-in-window"
+
+
+def test_durations_parse_and_reject_bad_input() -> None:
+    from scripts.reseed_test_orders import parse_ago
+
+    assert parse_ago("45d") == timedelta(days=45)
+    assert parse_ago("2h") == timedelta(hours=2)
+    assert parse_ago("30m") == timedelta(minutes=30)
+    with pytest.raises(ValueError):
+        parse_ago("two hours")

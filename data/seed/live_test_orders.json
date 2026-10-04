@@ -3,55 +3,103 @@
     "key": "return-out-of-window",
     "purpose": "request_return is refused for items delivered more than 30 days ago",
     "customer_email": "maya.thompson@example.com",
-    "items": [{"handle": "alpine-crossing-hiking-boots", "variant": "10", "quantity": 1}],
+    "items": [
+      {
+        "handle": "alpine-crossing-hiking-boots",
+        "variant": "10",
+        "quantity": 1
+      }
+    ],
     "state": "delivered",
-    "placed_days_ago": 50,
-    "delivered_days_ago": 45,
-    "tracking": {"number": "1Z999AA10123450003", "company": "UPS"}
+    "tracking": {
+      "number": "1Z999AA10123450003",
+      "company": "UPS"
+    },
+    "placed_ago": "50d",
+    "delivered_ago": "45d"
   },
   {
     "key": "return-in-window",
     "purpose": "request_return succeeds on items delivered inside the 30 day window",
     "customer_email": "jordan.lee@example.com",
-    "items": [{"handle": "stormline-rain-jacket", "variant": "L", "quantity": 1}],
+    "items": [
+      {
+        "handle": "stormline-rain-jacket",
+        "variant": "L",
+        "quantity": 1
+      }
+    ],
     "state": "delivered",
-    "placed_days_ago": 9,
-    "delivered_days_ago": 5,
-    "tracking": {"number": "1Z999AA10123450002", "company": "UPS"}
+    "tracking": {
+      "number": "1Z999AA10123450002",
+      "company": "UPS"
+    },
+    "placed_ago": "9d",
+    "delivered_ago": "5d"
   },
   {
     "key": "return-final-sale",
     "purpose": "request_return is refused for a final-sale item even inside the window",
     "customer_email": "sofia.ramirez@example.com",
-    "items": [{"handle": "meridian-ski-goggles", "variant": "Default Title", "quantity": 1}],
+    "items": [
+      {
+        "handle": "meridian-ski-goggles",
+        "variant": "Default Title",
+        "quantity": 1
+      }
+    ],
     "state": "delivered",
-    "placed_days_ago": 8,
-    "delivered_days_ago": 4,
-    "tracking": {"number": "1Z999AA10123450004", "company": "UPS"}
+    "tracking": {
+      "number": "1Z999AA10123450004",
+      "company": "UPS"
+    },
+    "placed_ago": "8d",
+    "delivered_ago": "4d"
   },
   {
     "key": "shipped-not-delivered",
     "purpose": "cancel_order and update_shipping_address are refused once an order ships",
     "customer_email": "maya.thompson@example.com",
-    "items": [{"handle": "cascade-40l-hiking-backpack", "variant": "S/M", "quantity": 1}],
+    "items": [
+      {
+        "handle": "cascade-40l-hiking-backpack",
+        "variant": "S/M",
+        "quantity": 1
+      }
+    ],
     "state": "fulfilled",
-    "placed_days_ago": 4,
-    "tracking": {"number": "1Z999AA10123450001", "company": "UPS"}
+    "tracking": {
+      "number": "1Z999AA10123450001",
+      "company": "UPS"
+    },
+    "placed_ago": "4d"
   },
   {
     "key": "cancel-eligible",
     "purpose": "cancel_order succeeds on a paid order that has not shipped",
     "customer_email": "maya.thompson@example.com",
-    "items": [{"handle": "trailblazer-merino-base-layer", "variant": "L", "quantity": 1}],
+    "items": [
+      {
+        "handle": "trailblazer-merino-base-layer",
+        "variant": "L",
+        "quantity": 1
+      }
+    ],
     "state": "unfulfilled",
-    "placed_days_ago": 2
+    "placed_ago": "1h"
   },
   {
     "key": "address-eligible",
     "purpose": "update_shipping_address succeeds on an order that has not shipped",
     "customer_email": "jordan.lee@example.com",
-    "items": [{"handle": "wander-insulated-bottle-32oz", "variant": "Moss", "quantity": 1}],
+    "items": [
+      {
+        "handle": "wander-insulated-bottle-32oz",
+        "variant": "Moss",
+        "quantity": 1
+      }
+    ],
     "state": "unfulfilled",
-    "placed_days_ago": 1
+    "placed_ago": "30m"
   }
 ]

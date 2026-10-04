@@ -1,8 +1,9 @@
 """Tops up the development store's live-write test orders, since cancellation cannot be undone.
 
 Orders are created with orderCreate so their order and delivery dates can sit in the past,
-which lets one store hold returns both inside and outside the 30 day window. Dry run by
-default. Writing needs --apply and SHOPIFY_WRITE_TOKEN (see docs/live-write-testing.md).
+which lets one store hold returns both inside and outside the 30 day window. Every fixture time
+is an offset from one anchor instant (default: now); export the simulated store with that same
+anchor as its frozen time. Dry run by default. Writing needs --apply and SHOPIFY_WRITE_TOKEN (see docs/live-write-testing.md).
 Fixture orders carry the v2-live-test tag and are never deleted.
 
 Run from the repo root: .venv/bin/python -m scripts.reseed_test_orders [--apply]
@@ -10,6 +11,7 @@ Run from the repo root: .venv/bin/python -m scripts.reseed_test_orders [--apply]
 
 import argparse
 import json
+import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -25,6 +27,9 @@ from scripts.seed_store import check, pick_location
 FIXTURES_PATH = Path("data/seed/live_test_orders.json")
 SUITE_TAG = "v2-live-test"
 RETURN_WINDOW_DAYS = 30
+CHANGE_WINDOW = timedelta(hours=2)
+FRESHNESS_MARGIN = timedelta(minutes=30)
+DURATION_RE = re.compile(r"^(\d+)([dhm])$")
 ORDER_CREATE_PACING_S = 13
 DELIVERY_TOLERANCE = timedelta(minutes=5)
 REQUIRED_WRITE_SCOPES = frozenset(
@@ -41,7 +46,7 @@ TEST_ADDRESS = {
 FIXTURE_ORDERS_QUERY = """
 query FixtureOrders($query: String!) {
   orders(first: 100, query: $query) {
-    nodes { id name tags cancelledAt displayFulfillmentStatus returnStatus fulfillments { deliveredAt } }
+    nodes { id name tags processedAt cancelledAt displayFulfillmentStatus returnStatus fulfillments { deliveredAt } }
   }
 }
 """
@@ -90,6 +95,7 @@ class ExistingOrder:
     fulfillment_status: str
     delivered_at: datetime | None
     returned: bool = False
+    placed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +116,14 @@ def iso(moment: datetime) -> str:
     return moment.astimezone(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def parse_ago(value: str) -> timedelta:
+    match = DURATION_RE.match(value)
+    if not match:
+        raise ValueError(f"durations look like 45d, 2h or 30m, got {value!r}")
+    amount, unit = int(match.group(1)), match.group(2)
+    return {"d": timedelta(days=amount), "h": timedelta(hours=amount), "m": timedelta(minutes=amount)}[unit]
+
+
 def fixture_tag(key: str) -> str:
     return f"fixture-{key}"
 
@@ -119,14 +133,15 @@ def is_usable(spec: dict[str, Any], order: ExistingOrder, now: datetime) -> bool
         return False
     state = spec["state"]
     if state == "unfulfilled":
-        return order.fulfillment_status == "UNFULFILLED"
+        fresh = order.placed_at is not None and now - order.placed_at <= CHANGE_WINDOW - FRESHNESS_MARGIN
+        return order.fulfillment_status == "UNFULFILLED" and fresh
     if state == "fulfilled":
         return order.fulfillment_status == "FULFILLED" and order.delivered_at is None
     if state == "delivered":
         if order.delivered_at is None:
             return False
         inside = now - order.delivered_at <= timedelta(days=RETURN_WINDOW_DAYS)
-        return inside == (spec["delivered_days_ago"] <= RETURN_WINDOW_DAYS)
+        return inside == (parse_ago(spec["delivered_ago"]) <= timedelta(days=RETURN_WINDOW_DAYS))
     raise ValueError(f"unknown fixture state {state}")
 
 
@@ -145,13 +160,13 @@ def plan(
 
 
 def creation_order(specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(specs, key=lambda s: -s.get("delivered_days_ago", -1))
+    return sorted(specs, key=lambda s: -parse_ago(s["delivered_ago"]) if "delivered_ago" in s else timedelta(0))
 
 
 def order_input(
     spec: dict[str, Any], lines: list[Line], customer: dict[str, Any], location_id: str, now: datetime
 ) -> dict[str, Any]:
-    placed = iso(now - timedelta(days=spec["placed_days_ago"]))
+    placed = iso(now - parse_ago(spec["placed_ago"]))
     total = sum((line.price * line.quantity for line in lines), Decimal("0"))
     order: dict[str, Any] = {
         "lineItems": [{"variantId": line.variant_id, "quantity": line.quantity} for line in lines],
@@ -218,6 +233,7 @@ def load_existing(client: ShopifyClient) -> dict[str, list[ExistingOrder]]:
             fulfillment_status=node["displayFulfillmentStatus"],
             delivered_at=parse_instant(max(delivered)) if delivered else None,
             returned=node["returnStatus"] != "NO_RETURN",
+            placed_at=parse_instant(node["processedAt"]),
         )
         for tag in node["tags"]:
             if tag.startswith("fixture-"):
@@ -248,7 +264,7 @@ def create_fixture(
     )
     order = created["order"]
     if spec["state"] == "delivered":
-        target = now - timedelta(days=spec["delivered_days_ago"])
+        target = now - parse_ago(spec["delivered_ago"])
         for fulfillment in order["fulfillments"]:
             event = {"fulfillmentId": fulfillment["id"], "status": "DELIVERED", "happenedAt": iso(target)}
             check(client.graphql(DELIVERED_EVENT_MUTATION, {"event": event}), "fulfillmentEventCreate")
@@ -265,6 +281,7 @@ def create_fixture(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--anchor", help="ISO time every fixture offset counts back from (default: now)")
     args = parser.parse_args()
 
     s = get_settings()
@@ -272,7 +289,11 @@ def main() -> None:
         raise SystemExit("SHOPIFY_WRITE_TOKEN is not set in .env, see docs/live-write-testing.md")
     token = s.shopify_write_token or s.shopify_admin_token
     specs = json.loads(FIXTURES_PATH.read_text())
-    now = SystemClock().now()
+    real_now = SystemClock().now()
+    now = parse_instant(args.anchor) if args.anchor else real_now.replace(second=0, microsecond=0)
+    if now > real_now:
+        raise SystemExit("the anchor cannot be in the future, Shopify clamps future order dates")
+    print(f"anchor {iso(now)}: export the simulated store with --frozen-now {iso(now)}")
 
     with ShopifyClient(s.shopify_store_domain, token, s.shopify_api_version) as client:
         if not client.shop_info()["plan"]["partnerDevelopment"]:
@@ -283,19 +304,15 @@ def main() -> None:
                 raise SystemExit(f"the write-test app is missing scopes: {', '.join(sorted(missing))}")
         catalog = load_catalog(client)
         lines = {spec["key"]: resolve_lines(spec, catalog) for spec in specs}
-        decisions = plan(specs, load_existing(client), now)
+        decisions = plan(specs, load_existing(client), real_now)
 
         for d in decisions:
             print(f"{d.key:<24} {d.action:<7} {d.reason}")
         wanted = {d.key for d in decisions if d.action == "create"}
         to_create = [spec for spec in creation_order(specs) if spec["key"] in wanted]
         for spec in to_create:
-            placed = iso(now - timedelta(days=spec["placed_days_ago"]))
-            delivered = (
-                f", delivered {iso(now - timedelta(days=spec['delivered_days_ago']))}"
-                if spec["state"] == "delivered"
-                else ""
-            )
+            placed = iso(now - parse_ago(spec["placed_ago"]))
+            delivered = f", delivered {iso(now - parse_ago(spec['delivered_ago']))}" if "delivered_ago" in spec else ""
             print(f"  would create {spec['key']}: placed {placed}{delivered}")
         if not args.apply:
             print(f"\ndry run: {len(to_create)} order(s) would be created. Re-run with --apply to write.")
