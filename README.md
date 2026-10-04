@@ -95,3 +95,16 @@ Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m ev
 - [x] FastAPI `/chat` backend (one MCP session per app via a lifespan handler) and a polished vanilla-JS chat UI
 - [x] Deploy: container on AWS Lambda behind API Gateway, frontend on Vercel, live demo link above
 - [x] Final eval numbers and cost report (see Eval results above)
+
+### v2: an agent that takes actions, measured by simulation
+
+Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
+
+- [x] Phase 0: audit, baseline re-confirmed at 53/53, write mutations and scopes verified, session state design
+- [ ] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing
+- [ ] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a confirmation gate
+- [ ] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k
+- [ ] Phase 4: baseline, gate on versus off ablation, fixes, model comparison, prompt caching
+- [ ] Phase 5: CI, release manifest, structured logs, public demo sandbox and rate limits
+- [ ] Phase 6: site upgrade with a confirmation card, an inside-the-agent panel, and a how-it-works page
+- [ ] Phase 7: README rewrite and write-up with numbers from saved runs
