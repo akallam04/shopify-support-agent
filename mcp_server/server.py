@@ -6,12 +6,13 @@ Any MCP host can consume this: our agent, the check script, or Claude Desktop.
 """
 
 import sys
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel
 
 from app.config import Settings, get_settings
-from mcp_server import tools
+from mcp_server import policy, tools
 from mcp_server.backends.base import StoreBackend
 from mcp_server.backends.shopify import ShopifyAdminBackend
 from mcp_server.backends.sim import SimStoreBackend
@@ -20,6 +21,15 @@ from mcp_server.shopify_client import ShopifyClient
 from mcp_server.simdb import load_db
 
 mcp = FastMCP("aurora-outfitters-support")
+
+CancelReason = Literal[policy.CANCEL_REASONS]
+ReturnReason = Literal[policy.RETURN_REASONS]
+
+
+class ReturnItem(BaseModel):
+    title: str
+    variant: str = ""
+    quantity: int = 1
 
 _backend: StoreBackend | None = None
 
@@ -75,8 +85,112 @@ def check_inventory(product_query: str) -> dict[str, Any]:
     return tools.check_inventory(_store(), product_query)
 
 
+def cancel_order(order_number: str, email: str, reason: CancelReason) -> dict[str, Any]:
+    """Cancel an order that has not shipped yet.
+
+    Store policy allows cancelling only within 2 hours of the order being placed and before it
+    ships; the tool refuses with a reason otherwise. Needs the order number, the email on the
+    order, and the customer's reason.
+
+    Args:
+        order_number: The customer's order number, for example #1001.
+        email: The email address the order was placed with.
+        reason: Why the customer is cancelling.
+    """
+    return tools.execute(_store(), "cancel_order", {"order_number": order_number, "email": email, "reason": reason})
+
+
+def update_shipping_address(
+    order_number: str,
+    email: str,
+    address1: str,
+    city: str,
+    province_code: str,
+    zip: str,
+    country_code: str,
+    address2: str = "",
+    first_name: str = "",
+    last_name: str = "",
+) -> dict[str, Any]:
+    """Change the shipping address on an order that has not shipped yet.
+
+    Store policy allows this only within 2 hours of the order being placed and before it ships,
+    to the United States or Canada; the tool refuses with a reason otherwise.
+
+    Args:
+        order_number: The customer's order number, for example #1001.
+        email: The email address the order was placed with.
+        address1: Street address.
+        city: City.
+        province_code: Two letter state or province code, for example CO or BC.
+        zip: ZIP or postal code.
+        country_code: Two letter country code, US or CA.
+        address2: Apartment, suite, or unit, if any.
+        first_name: Recipient first name, if it changes.
+        last_name: Recipient last name, if it changes.
+    """
+    args = {
+        "order_number": order_number,
+        "email": email,
+        "address1": address1,
+        "address2": address2,
+        "city": city,
+        "province_code": province_code,
+        "zip": zip,
+        "country_code": country_code,
+        "first_name": first_name,
+        "last_name": last_name,
+    }
+    return tools.execute(_store(), "update_shipping_address", args)
+
+
+def request_return(order_number: str, email: str, items: list[ReturnItem], reason: ReturnReason) -> dict[str, Any]:
+    """Request a return for delivered items, for the store to approve.
+
+    Store policy allows returns within 30 days of delivery, never for final sale items or gift
+    cards; the tool refuses with a reason otherwise. Name each item as it appears on the order,
+    with its variant when the order has more than one of that item.
+
+    Args:
+        order_number: The customer's order number, for example #1001.
+        email: The email address the order was placed with.
+        items: The items to return, each with its title, variant if needed, and quantity.
+        reason: Why the customer is returning the items.
+    """
+    args = {
+        "order_number": order_number,
+        "email": email,
+        "items": [i.model_dump() if isinstance(i, BaseModel) else i for i in items],
+        "reason": reason,
+    }
+    return tools.execute(_store(), "request_return", args)
+
+
+def transfer_to_human(summary: str, order_number: str = "") -> dict[str, Any]:
+    """Hand the conversation to the human support team.
+
+    Use only when the request cannot be handled with the other tools, such as warranty claims,
+    damaged items, or exceptions to store policy.
+
+    Args:
+        summary: A short summary of what the customer needs, for the support team.
+        order_number: The order this is about, if any.
+    """
+    return tools.execute(_store(), "transfer_to_human", {"summary": summary, "order_number": order_number})
+
+
+READ_TOOLS = (get_order_status, list_customer_orders, check_inventory)
+WRITE_TOOLS = (cancel_order, update_shipping_address, request_return, transfer_to_human)
+
+
 def main() -> None:
+    settings = get_settings()
     backend = _store()
+    if settings.write_actions:
+        if not backend.supports_writes:
+            raise SystemExit(f"WRITE_ACTIONS is on but the {backend.name} backend does not accept writes")
+        for fn in WRITE_TOOLS:
+            mcp.add_tool(fn)
     print(f"aurora support mcp server using the {backend.name} backend", file=sys.stderr)
     mcp.run()
 

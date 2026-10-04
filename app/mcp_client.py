@@ -46,6 +46,14 @@ class ShopifyTools:
     def tool_names(self) -> set[str]:
         return {t["name"] for t in self.anthropic_tools}
 
+    @property
+    def write_tool_names(self) -> set[str]:
+        return set()
+
+    @property
+    def gated_tool_names(self) -> set[str]:
+        return set()
+
     async def call(self, name: str, args: dict[str, Any]) -> str:
         if self._session is None:
             raise RuntimeError("ShopifyTools.start() was never called")
