@@ -1,16 +1,19 @@
-"""Support tools over the Shopify client: validated inputs, honest not-found results.
+"""Support tools over any store backend: validated inputs, shared authorization, honest not-found.
 
 Two failure modes on purpose: bad input raises ToolInputError (the caller sent
 garbage and should fix its arguments), while a clean lookup with no match returns
 found=False (the honest answer a customer gets). A wrong email on a real order
 returns the same not-found shape as a missing order, so order numbers cannot be
-probed for existence.
+probed for existence. Authorization lives here, above the backend, so the live
+and simulated stores enforce it identically.
 """
 
 import re
 from typing import Any
 
-from mcp_server.shopify_client import ShopifyClient
+from mcp_server.backends.base import FoundOrder, StoreBackend
+from mcp_server.search import WORD_RE, title_score
+from mcp_server.simdb import Order, Product
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -19,77 +22,32 @@ ORDER_NOT_FOUND = {
     "message": "No order found matching that order number and email address.",
 }
 
-ORDER_STATUS_QUERY = """
-query OrderStatus($query: String!) {
-  orders(first: 1, query: $query) {
-    nodes {
-      name
-      createdAt
-      cancelledAt
-      email
-      displayFinancialStatus
-      displayFulfillmentStatus
-      totalPriceSet { shopMoney { amount currencyCode } }
-      customer { displayName email }
-      lineItems(first: 20) { nodes { title quantity } }
-      fulfillments { status trackingInfo { number company url } }
-    }
-  }
-}
-"""
-
-CUSTOMER_ORDERS_QUERY = """
-query CustomerOrders($query: String!) {
-  orders(first: 10, query: $query, sortKey: PROCESSED_AT, reverse: true) {
-    nodes {
-      name
-      createdAt
-      displayFinancialStatus
-      displayFulfillmentStatus
-      totalPriceSet { shopMoney { amount currencyCode } }
-    }
-  }
-}
-"""
-
-INVENTORY_SEARCH_QUERY = """
-query InventorySearch($query: String!) {
-  products(first: 3, query: $query) {
-    nodes {
-      title
-      handle
-      status
-      variants(first: 100) {
-        nodes { title price inventoryQuantity availableForSale }
-      }
-    }
-  }
-}
-"""
+CUSTOMER_ORDER_LIMIT = 10
+PRODUCT_CANDIDATE_LIMIT = 10
+PRODUCT_RESULT_LIMIT = 3
 
 
 class ToolInputError(ValueError):
     """Raised when a tool argument fails validation."""
 
 
-def _normalize_order_number(raw: str) -> str:
+def normalize_order_name(raw: str) -> str:
     digits = re.sub(r"\D", "", raw or "")
     if not digits or len(digits) > 10:
         raise ToolInputError(
             "order_number must contain the order's digits, for example #1001"
         )
-    return digits
+    return f"#{digits}"
 
 
-def _validate_email(raw: str) -> str:
+def validate_email(raw: str) -> str:
     email = (raw or "").strip()
     if not EMAIL_RE.match(email):
         raise ToolInputError("email must be a valid email address")
     return email
 
 
-def _sanitize_search_text(raw: str) -> str:
-    # strip shopify search operators so user text cannot rewrite the query
+def sanitize_search_text(raw: str) -> str:
     text = re.sub(r"[^A-Za-z0-9\s-]", " ", raw or "").strip()
     text = re.sub(r"\s+", " ", text)[:100]
     if not text:
@@ -97,94 +55,85 @@ def _sanitize_search_text(raw: str) -> str:
     return text
 
 
-def _money(price_set: dict[str, Any]) -> str:
-    money = price_set["shopMoney"]
-    return f"{money['amount']} {money['currencyCode']}"
-
-
-def get_order_status(client: ShopifyClient, order_number: str, email: str) -> dict[str, Any]:
-    number = _normalize_order_number(order_number)
-    email = _validate_email(email)
-
-    data = client.graphql(ORDER_STATUS_QUERY, {"query": f"name:#{number}"})
-    nodes = data["orders"]["nodes"]
-    if not nodes:
-        return dict(ORDER_NOT_FOUND)
-
-    order = nodes[0]
-    emails_on_order = {
+def owns_order(found: FoundOrder, email: str) -> bool:
+    on_file = {
         e.lower()
-        for e in (order.get("email"), (order.get("customer") or {}).get("email"))
+        for e in (found.order.email, found.customer.email if found.customer else None)
         if e
     }
-    if email.lower() not in emails_on_order:
-        return dict(ORDER_NOT_FOUND)
+    return email.lower() in on_file
 
-    tracking = [
-        {"number": t["number"], "carrier": t["company"], "url": t.get("url")}
-        for f in order["fulfillments"]
-        for t in f["trackingInfo"]
-    ]
+
+def _order_status_view(order: Order) -> dict[str, Any]:
     return {
         "found": True,
-        "order_number": order["name"],
-        "placed_at": order["createdAt"],
-        "cancelled": order["cancelledAt"] is not None,
-        "fulfillment_status": order["displayFulfillmentStatus"],
-        "financial_status": order["displayFinancialStatus"],
-        "total": _money(order["totalPriceSet"]),
-        "items": [
-            {"title": li["title"], "quantity": li["quantity"]}
-            for li in order["lineItems"]["nodes"]
+        "order_number": order.name,
+        "placed_at": order.created_at,
+        "cancelled": order.cancelled_at is not None,
+        "fulfillment_status": order.fulfillment_status,
+        "financial_status": order.financial_status,
+        "total": f"{order.total} {order.currency}",
+        "items": [{"title": li.title, "quantity": li.quantity} for li in order.line_items],
+        "tracking": [
+            {"number": t.number, "carrier": t.company, "url": t.url}
+            for f in order.fulfillments
+            for t in f.tracking
         ],
-        "tracking": tracking,
     }
 
 
-def list_customer_orders(client: ShopifyClient, email: str) -> dict[str, Any]:
-    email = _validate_email(email)
+def _product_view(product: Product) -> dict[str, Any]:
+    return {
+        "title": product.title,
+        "handle": product.handle,
+        "variants": [
+            {
+                "option": v.title if v.title != "Default Title" else "Standard",
+                "price": v.price,
+                "available": v.available_for_sale,
+                "quantity": v.inventory_quantity,
+            }
+            for v in product.variants.values()
+        ],
+    }
 
-    data = client.graphql(CUSTOMER_ORDERS_QUERY, {"query": f"email:{email}"})
-    nodes = data["orders"]["nodes"]
-    if not nodes:
+
+def get_order_status(backend: StoreBackend, order_number: str, email: str) -> dict[str, Any]:
+    name = normalize_order_name(order_number)
+    email = validate_email(email)
+    found = backend.find_order(name)
+    if found is None or not owns_order(found, email):
+        return dict(ORDER_NOT_FOUND)
+    return _order_status_view(found.order)
+
+
+def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
+    email = validate_email(email)
+    orders = backend.orders_for_email(email, CUSTOMER_ORDER_LIMIT)
+    if not orders:
         return {"found": False, "message": "No orders found for that email address."}
-
     return {
         "found": True,
-        "count": len(nodes),
+        "count": len(orders),
         "orders": [
             {
-                "order_number": o["name"],
-                "placed_at": o["createdAt"],
-                "fulfillment_status": o["displayFulfillmentStatus"],
-                "financial_status": o["displayFinancialStatus"],
-                "total": _money(o["totalPriceSet"]),
+                "order_number": o.name,
+                "placed_at": o.created_at,
+                "fulfillment_status": o.fulfillment_status,
+                "financial_status": o.financial_status,
+                "total": f"{o.total} {o.currency}",
             }
-            for o in nodes
+            for o in orders
         ],
     }
 
 
-def check_inventory(client: ShopifyClient, product_query: str) -> dict[str, Any]:
-    text = _sanitize_search_text(product_query)
-
-    data = client.graphql(INVENTORY_SEARCH_QUERY, {"query": f"status:active {text}"})
-    nodes = data["products"]["nodes"]
-    if not nodes:
+def check_inventory(backend: StoreBackend, product_query: str) -> dict[str, Any]:
+    text = sanitize_search_text(product_query)
+    candidates = backend.search_products(text, PRODUCT_CANDIDATE_LIMIT)
+    tokens = WORD_RE.findall(text.lower())
+    ranked = sorted(candidates, key=lambda p: -title_score(tokens, p.title))
+    products = ranked[:PRODUCT_RESULT_LIMIT]
+    if not products:
         return {"found": False, "message": f"No products found matching '{text}'."}
-
-    products = []
-    for p in nodes:
-        variants = []
-        for v in p["variants"]["nodes"]:
-            qty = v.get("inventoryQuantity")
-            variants.append(
-                {
-                    "option": v["title"] if v["title"] != "Default Title" else "Standard",
-                    "price": v["price"],
-                    "available": bool(v["availableForSale"]),
-                    "quantity": qty if isinstance(qty, int) else None,
-                }
-            )
-        products.append({"title": p["title"], "handle": p["handle"], "variants": variants})
-    return {"found": True, "products": products}
+    return {"found": True, "products": [_product_view(p) for p in products]}

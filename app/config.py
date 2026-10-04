@@ -1,6 +1,7 @@
 """Central settings. Everything sensitive comes from .env, nothing secret lives in code."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,9 +9,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    shopify_store_domain: str
-    shopify_admin_token: str
+    shopify_store_domain: str = ""
+    shopify_admin_token: str = ""
     shopify_api_version: str = "2026-01"
+
+    store_backend: Literal["shopify", "sim"] = "shopify"
+    sim_seed_path: str = "data/sim/seed.json"
+    sim_now: str = ""
 
     # empty is allowed so the mcp server can run without it, the agent
     # checks for a real key when it builds the anthropic client

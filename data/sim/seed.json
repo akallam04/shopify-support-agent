@@ -1,0 +1,1856 @@
+{
+  "customers": {
+    "gid://shopify/Customer/10697734684968": {
+      "customer_id": "gid://shopify/Customer/10697734684968",
+      "default_address": {
+        "address1": "105 Victoria St",
+        "address2": null,
+        "city": "Toronto",
+        "country_code": "CA",
+        "first_name": "Russell",
+        "last_name": "Winfield",
+        "province_code": null,
+        "zip": "M5C1N7"
+      },
+      "email": "Russel.winfield@example.com",
+      "first_name": "Russell",
+      "last_name": "Winfield"
+    },
+    "gid://shopify/Customer/10697734717736": {
+      "customer_id": "gid://shopify/Customer/10697734717736",
+      "default_address": {
+        "address1": "Box 42 - 151 O'Connor St",
+        "address2": null,
+        "city": "Ottawa",
+        "country_code": "CA",
+        "first_name": "Karine",
+        "last_name": "Ruby",
+        "province_code": null,
+        "zip": "K2P2L8"
+      },
+      "email": "karine.ruby@example.com",
+      "first_name": "Karine",
+      "last_name": "Ruby"
+    },
+    "gid://shopify/Customer/10697734750504": {
+      "customer_id": "gid://shopify/Customer/10697734750504",
+      "default_address": null,
+      "email": "ayumu.hirano@example.com",
+      "first_name": "Ayumu",
+      "last_name": "Hirano"
+    },
+    "gid://shopify/Customer/10697756311848": {
+      "customer_id": "gid://shopify/Customer/10697756311848",
+      "default_address": null,
+      "email": "maya.thompson@example.com",
+      "first_name": "Maya",
+      "last_name": "Thompson"
+    },
+    "gid://shopify/Customer/10697756344616": {
+      "customer_id": "gid://shopify/Customer/10697756344616",
+      "default_address": null,
+      "email": "jordan.lee@example.com",
+      "first_name": "Jordan",
+      "last_name": "Lee"
+    },
+    "gid://shopify/Customer/10697756377384": {
+      "customer_id": "gid://shopify/Customer/10697756377384",
+      "default_address": null,
+      "email": "sofia.ramirez@example.com",
+      "first_name": "Sofia",
+      "last_name": "Ramirez"
+    },
+    "gid://shopify/Customer/10697756410152": {
+      "customer_id": "gid://shopify/Customer/10697756410152",
+      "default_address": null,
+      "email": "ethan.brooks@example.com",
+      "first_name": "Ethan",
+      "last_name": "Brooks"
+    },
+    "gid://shopify/Customer/10697756442920": {
+      "customer_id": "gid://shopify/Customer/10697756442920",
+      "default_address": null,
+      "email": "priya.patel@example.com",
+      "first_name": "Priya",
+      "last_name": "Patel"
+    },
+    "gid://shopify/Customer/10697756475688": {
+      "customer_id": "gid://shopify/Customer/10697756475688",
+      "default_address": null,
+      "email": "liam.oconnor@example.com",
+      "first_name": "Liam",
+      "last_name": "OConnor"
+    },
+    "gid://shopify/Customer/10697756541224": {
+      "customer_id": "gid://shopify/Customer/10697756541224",
+      "default_address": null,
+      "email": "grace.kim@example.com",
+      "first_name": "Grace",
+      "last_name": "Kim"
+    },
+    "gid://shopify/Customer/10697756573992": {
+      "customer_id": "gid://shopify/Customer/10697756573992",
+      "default_address": null,
+      "email": "noah.fischer@example.com",
+      "first_name": "Noah",
+      "last_name": "Fischer"
+    }
+  },
+  "meta": {
+    "api_version": "2026-10",
+    "frozen_now": "2026-08-12T16:00:00Z",
+    "notes": [
+      "Exported read-only from the development store.",
+      "Order returns are not exported until the app holds the read_returns scope, so every order starts with none."
+    ],
+    "store_domain": "aurora-outfitters-co.myshopify.com"
+  },
+  "orders": {
+    "#1001": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:32Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756311848",
+      "email": "maya.thompson@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:34Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318455592",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104312922408",
+              "quantity": 1
+            },
+            {
+              "line_item_id": "gid://shopify/LineItem/18104312955176",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "UPS",
+              "number": "1Z999AA10123456784",
+              "url": "https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456784"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104312922408",
+          "product_id": "gid://shopify/Product/10334135484712",
+          "quantity": 1,
+          "sku": null,
+          "title": "Stormline Rain Jacket",
+          "unit_price": "179.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528517928",
+          "variant_title": "M"
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104312955176",
+          "product_id": "gid://shopify/Product/10334135845160",
+          "quantity": 1,
+          "sku": null,
+          "title": "Wander Insulated Bottle 32oz",
+          "unit_price": "39.95",
+          "variant_id": "gid://shopify/ProductVariant/52063529173288",
+          "variant_title": "Slate"
+        }
+      ],
+      "name": "#1001",
+      "order_id": "gid://shopify/Order/7640187142440",
+      "processed_at": "2026-07-07T00:26:32Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "219.94"
+    },
+    "#1002": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:36Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756311848",
+      "email": "maya.thompson@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313119016",
+          "product_id": "gid://shopify/Product/10334135517480",
+          "quantity": 2,
+          "sku": null,
+          "title": "Trailblazer Merino Base Layer",
+          "unit_price": "84.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528616232",
+          "variant_title": "M"
+        }
+      ],
+      "name": "#1002",
+      "order_id": "gid://shopify/Order/7640187207976",
+      "processed_at": "2026-07-07T00:26:35Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "169.98"
+    },
+    "#1003": {
+      "cancel_reason": "CUSTOMER",
+      "cancelled_at": "2026-07-07T00:26:42Z",
+      "created_at": "2026-07-07T00:26:38Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756311848",
+      "email": "maya.thompson@example.com",
+      "financial_status": "REFUNDED",
+      "fulfillment_status": "FULFILLMENT_NOT_REQUIRED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313151784",
+          "product_id": "gid://shopify/Product/10334136074536",
+          "quantity": 1,
+          "sku": null,
+          "title": "Meridian Ski Goggles",
+          "unit_price": "129.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529468200",
+          "variant_title": null
+        }
+      ],
+      "name": "#1003",
+      "order_id": "gid://shopify/Order/7640187240744",
+      "processed_at": "2026-07-07T00:26:38Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "129.99"
+    },
+    "#1004": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:41Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756344616",
+      "email": "jordan.lee@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:42Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318521128",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313184552",
+              "quantity": 1
+            },
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313217320",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "USPS",
+              "number": "9400111899223197428490",
+              "url": "https://tools.usps.com/go/TrackConfirmAction_input?qtc_tLabels1=9400111899223197428490"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313184552",
+          "product_id": "gid://shopify/Product/10334110155048",
+          "quantity": 1,
+          "sku": null,
+          "title": "The Complete Snowboard",
+          "unit_price": "699.95",
+          "variant_id": "gid://shopify/ProductVariant/52063483625768",
+          "variant_title": "Dawn"
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313217320",
+          "product_id": "gid://shopify/Product/10334110056744",
+          "quantity": 1,
+          "sku": null,
+          "title": "Selling Plans Ski Wax",
+          "unit_price": "24.95",
+          "variant_id": "gid://shopify/ProductVariant/52063483429160",
+          "variant_title": "Selling Plans Ski Wax"
+        }
+      ],
+      "name": "#1004",
+      "order_id": "gid://shopify/Order/7640187273512",
+      "processed_at": "2026-07-07T00:26:41Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "724.9"
+    },
+    "#1005": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:44Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756344616",
+      "email": "jordan.lee@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:46Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318553896",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313315624",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "FedEx",
+              "number": "748912345671",
+              "url": "https://www.fedex.com/fedextrack/?trknbr=748912345671"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313315624",
+          "product_id": "gid://shopify/Product/10334135910696",
+          "quantity": 1,
+          "sku": null,
+          "title": "Peakfinder Headlamp 600",
+          "unit_price": "59.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529271592",
+          "variant_title": null
+        }
+      ],
+      "name": "#1005",
+      "order_id": "gid://shopify/Order/7640187371816",
+      "processed_at": "2026-07-07T00:26:44Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "59.99"
+    },
+    "#1006": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:48Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756377384",
+      "email": "sofia.ramirez@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:49Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318619432",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313479464",
+              "quantity": 1
+            },
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313512232",
+              "quantity": 2
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "UPS",
+              "number": "1Z999AA10123456790",
+              "url": "https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456790"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313479464",
+          "product_id": "gid://shopify/Product/10334135386408",
+          "quantity": 1,
+          "sku": null,
+          "title": "Summit Ridge 2-Person Tent",
+          "unit_price": "289.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528288552",
+          "variant_title": "Forest Green"
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313512232",
+          "product_id": "gid://shopify/Product/10334135681320",
+          "quantity": 2,
+          "sku": null,
+          "title": "Ember 750 Sleeping Bag",
+          "unit_price": "249.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528878376",
+          "variant_title": "Regular"
+        }
+      ],
+      "name": "#1006",
+      "order_id": "gid://shopify/Order/7640187470120",
+      "processed_at": "2026-07-07T00:26:47Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "789.97"
+    },
+    "#1007": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:51Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756377384",
+      "email": "sofia.ramirez@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313577768",
+          "product_id": "gid://shopify/Product/10334135714088",
+          "quantity": 1,
+          "sku": null,
+          "title": "Basecamp Titanium Cook Set",
+          "unit_price": "119.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528943912",
+          "variant_title": null
+        }
+      ],
+      "name": "#1007",
+      "order_id": "gid://shopify/Order/7640187568424",
+      "processed_at": "2026-07-07T00:26:51Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "119.99"
+    },
+    "#1008": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:54Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756410152",
+      "email": "ethan.brooks@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:55Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318684968",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313676072",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "USPS",
+              "number": "9400111899223197428506",
+              "url": "https://tools.usps.com/go/TrackConfirmAction_input?qtc_tLabels1=9400111899223197428506"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313676072",
+          "product_id": "gid://shopify/Product/10334110449960",
+          "quantity": 1,
+          "sku": null,
+          "title": "The Collection Snowboard: Liquid",
+          "unit_price": "749.95",
+          "variant_id": "gid://shopify/ProductVariant/52063484215592",
+          "variant_title": null
+        }
+      ],
+      "name": "#1008",
+      "order_id": "gid://shopify/Order/7640187633960",
+      "processed_at": "2026-07-07T00:26:53Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "749.95"
+    },
+    "#1009": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:26:57Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756410152",
+      "email": "ethan.brooks@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:26:59Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318717736",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313708840",
+              "quantity": 1
+            },
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313741608",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "FedEx",
+              "number": "748912345688",
+              "url": "https://www.fedex.com/fedextrack/?trknbr=748912345688"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313708840",
+          "product_id": "gid://shopify/Product/10334135943464",
+          "quantity": 1,
+          "sku": null,
+          "title": "Alpine Crossing Hiking Boots",
+          "unit_price": "219.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529337128",
+          "variant_title": "10"
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313741608",
+          "product_id": "gid://shopify/Product/10334135812392",
+          "quantity": 1,
+          "sku": null,
+          "title": "Sierra Sun Hoody",
+          "unit_price": "69.95",
+          "variant_id": "gid://shopify/ProductVariant/52063529107752",
+          "variant_title": "M"
+        }
+      ],
+      "name": "#1009",
+      "order_id": "gid://shopify/Order/7640187666728",
+      "processed_at": "2026-07-07T00:26:57Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "289.94"
+    },
+    "#1010": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:01Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756442920",
+      "email": "priya.patel@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:27:02Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318750504",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313774376",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "UPS",
+              "number": "1Z999AA10123456805",
+              "url": "https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456805"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313774376",
+          "product_id": "gid://shopify/Product/10334135419176",
+          "quantity": 1,
+          "sku": null,
+          "title": "Cascade 40L Hiking Backpack",
+          "unit_price": "149.95",
+          "variant_id": "gid://shopify/ProductVariant/52063528386856",
+          "variant_title": "S/M"
+        }
+      ],
+      "name": "#1010",
+      "order_id": "gid://shopify/Order/7640187732264",
+      "processed_at": "2026-07-07T00:27:00Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "149.95"
+    },
+    "#1011": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:04Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756442920",
+      "email": "priya.patel@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313839912",
+          "product_id": "gid://shopify/Product/10334135746856",
+          "quantity": 1,
+          "sku": null,
+          "title": "Northwind Fleece Pullover",
+          "unit_price": "94.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529009448",
+          "variant_title": "M"
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313872680",
+          "product_id": "gid://shopify/Product/10334135845160",
+          "quantity": 2,
+          "sku": null,
+          "title": "Wander Insulated Bottle 32oz",
+          "unit_price": "39.95",
+          "variant_id": "gid://shopify/ProductVariant/52063529206056",
+          "variant_title": "Moss"
+        }
+      ],
+      "name": "#1011",
+      "order_id": "gid://shopify/Order/7640187797800",
+      "processed_at": "2026-07-07T00:27:03Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "174.89"
+    },
+    "#1012": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:06Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756475688",
+      "email": "liam.oconnor@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:27:07Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318783272",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104313970984",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "USPS",
+              "number": "9400111899223197428513",
+              "url": "https://tools.usps.com/go/TrackConfirmAction_input?qtc_tLabels1=9400111899223197428513"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104313970984",
+          "product_id": "gid://shopify/Product/10334135583016",
+          "quantity": 1,
+          "sku": null,
+          "title": "Glacier Point Down Parka",
+          "unit_price": "329.99",
+          "variant_id": "gid://shopify/ProductVariant/52063528747304",
+          "variant_title": "L"
+        }
+      ],
+      "name": "#1012",
+      "order_id": "gid://shopify/Order/7640187830568",
+      "processed_at": "2026-07-07T00:27:06Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "329.99"
+    },
+    "#1013": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:10Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756475688",
+      "email": "liam.oconnor@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104314298664",
+          "product_id": "gid://shopify/Product/10334135615784",
+          "quantity": 1,
+          "sku": null,
+          "title": "Ridgeline Trekking Poles",
+          "unit_price": "89.95",
+          "variant_id": "gid://shopify/ProductVariant/52063528812840",
+          "variant_title": null
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104314331432",
+          "product_id": "gid://shopify/Product/10334136009000",
+          "quantity": 1,
+          "sku": null,
+          "title": "Drift Camp Chair",
+          "unit_price": "74.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529435432",
+          "variant_title": null
+        }
+      ],
+      "name": "#1013",
+      "order_id": "gid://shopify/Order/7640188027176",
+      "processed_at": "2026-07-07T00:27:09Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "164.94"
+    },
+    "#1014": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:12Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756541224",
+      "email": "grace.kim@example.com",
+      "financial_status": "PENDING",
+      "fulfillment_status": "UNFULFILLED",
+      "fulfillments": [],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104314364200",
+          "product_id": "gid://shopify/Product/10334109958440",
+          "quantity": 1,
+          "sku": null,
+          "title": "The Minimal Snowboard",
+          "unit_price": "885.95",
+          "variant_id": "gid://shopify/ProductVariant/52063483396392",
+          "variant_title": null
+        }
+      ],
+      "name": "#1014",
+      "order_id": "gid://shopify/Order/7640188059944",
+      "processed_at": "2026-07-07T00:27:12Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "885.95"
+    },
+    "#1015": {
+      "cancel_reason": null,
+      "cancelled_at": null,
+      "created_at": "2026-07-07T00:27:15Z",
+      "currency": "USD",
+      "customer_id": "gid://shopify/Customer/10697756573992",
+      "email": "noah.fischer@example.com",
+      "financial_status": "PAID",
+      "fulfillment_status": "FULFILLED",
+      "fulfillments": [
+        {
+          "created_at": "2026-07-07T00:27:16Z",
+          "delivered_at": null,
+          "display_status": "FULFILLED",
+          "fulfillment_id": "gid://shopify/Fulfillment/6477318816040",
+          "line_items": [
+            {
+              "line_item_id": "gid://shopify/LineItem/18104314429736",
+              "quantity": 1
+            },
+            {
+              "line_item_id": "gid://shopify/LineItem/18104314462504",
+              "quantity": 1
+            }
+          ],
+          "status": "SUCCESS",
+          "tracking": [
+            {
+              "company": "UPS",
+              "number": "1Z999AA10123456812",
+              "url": "https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456812"
+            }
+          ]
+        }
+      ],
+      "line_items": [
+        {
+          "line_item_id": "gid://shopify/LineItem/18104314429736",
+          "product_id": "gid://shopify/Product/10334110286120",
+          "quantity": 1,
+          "sku": null,
+          "title": "The Multi-location Snowboard",
+          "unit_price": "729.95",
+          "variant_id": "gid://shopify/ProductVariant/52063483953448",
+          "variant_title": null
+        },
+        {
+          "line_item_id": "gid://shopify/LineItem/18104314462504",
+          "product_id": "gid://shopify/Product/10334136074536",
+          "quantity": 1,
+          "sku": null,
+          "title": "Meridian Ski Goggles",
+          "unit_price": "129.99",
+          "variant_id": "gid://shopify/ProductVariant/52063529468200",
+          "variant_title": null
+        }
+      ],
+      "name": "#1015",
+      "order_id": "gid://shopify/Order/7640188092712",
+      "processed_at": "2026-07-07T00:27:14Z",
+      "returns": [],
+      "shipping_address": null,
+      "tags": [
+        "seeded"
+      ],
+      "total": "859.94"
+    }
+  },
+  "products": {
+    "gid://shopify/Product/10334109860136": {
+      "description": "This is a gift card for the store",
+      "handle": "gift-card",
+      "is_gift_card": true,
+      "product_id": "gid://shopify/Product/10334109860136",
+      "product_type": "giftcard",
+      "status": "ACTIVE",
+      "tags": [],
+      "title": "Gift Card",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483265320": {
+          "available_for_sale": false,
+          "inventory_quantity": 0,
+          "price": "10.00",
+          "sku": null,
+          "title": "$10",
+          "variant_id": "gid://shopify/ProductVariant/52063483265320"
+        },
+        "gid://shopify/ProductVariant/52063483298088": {
+          "available_for_sale": false,
+          "inventory_quantity": 0,
+          "price": "25.00",
+          "sku": null,
+          "title": "$25",
+          "variant_id": "gid://shopify/ProductVariant/52063483298088"
+        },
+        "gid://shopify/ProductVariant/52063483330856": {
+          "available_for_sale": false,
+          "inventory_quantity": 0,
+          "price": "50.00",
+          "sku": null,
+          "title": "$50",
+          "variant_id": "gid://shopify/ProductVariant/52063483330856"
+        },
+        "gid://shopify/ProductVariant/52063483363624": {
+          "available_for_sale": false,
+          "inventory_quantity": 0,
+          "price": "100.00",
+          "sku": null,
+          "title": "$100",
+          "variant_id": "gid://shopify/ProductVariant/52063483363624"
+        }
+      },
+      "vendor": "Snowboard Vendor"
+    },
+    "gid://shopify/Product/10334109892904": {
+      "description": "A dependable all-mountain board for riders who just want to get out and ride. Medium flex, a forgiving rocker profile, and a sintered base that holds speed on groomers and stays loose in soft snow. Available in a 156 cm length that suits most intermediate riders.",
+      "handle": "the-inventory-not-tracked-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334109892904",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Inventory Not Tracked Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483134248": {
+          "available_for_sale": true,
+          "inventory_quantity": 0,
+          "price": "949.95",
+          "sku": "sku-untracked-1",
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483134248"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334109925672": {
+      "description": "The lightest board in our Collection series. A full poplar core with carbon stringers keeps the swing weight low, so quick trees and tight moguls feel effortless. Directional twin shape, medium-soft flex, best between 152 and 158 cm rider sizing.",
+      "handle": "the-collection-snowboard-hydrogen",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334109925672",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Collection Snowboard: Hydrogen",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483822376": {
+          "available_for_sale": true,
+          "inventory_quantity": 50,
+          "price": "600.00",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483822376"
+        }
+      },
+      "vendor": "Hydrogen Vendor"
+    },
+    "gid://shopify/Product/10334109958440": {
+      "description": "Clean lines, no graphics, all business. The Minimal is a stiff directional charger built for carving hardpack at speed, with a camber-dominant profile and a full-length birch core. Suits confident intermediate to advanced riders.",
+      "handle": "the-minimal-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334109958440",
+      "product_type": "",
+      "status": "ACTIVE",
+      "tags": [],
+      "title": "The Minimal Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483396392": {
+          "available_for_sale": true,
+          "inventory_quantity": 49,
+          "price": "885.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483396392"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334109991208": {
+      "description": "Last season's flagship shape at a friendly price. Full camber, responsive mid-stiff flex, and a durable extruded base that shrugs off early-season rocks. An easy pick for riders who want performance without paying for this year's paint job.",
+      "handle": "the-compare-at-price-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334109991208",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Compare at Price Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483167016": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "785.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483167016"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110023976": {
+      "description": "Our most popular powder shape, with a tapered directional outline, setback stance, and generous nose rocker that floats without effort. Restocks sell through fast, so join the waitlist if it shows as unavailable.",
+      "handle": "the-out-of-stock-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110023976",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Out of Stock Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483756840": {
+          "available_for_sale": false,
+          "inventory_quantity": 0,
+          "price": "885.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483756840"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110056744": {
+      "description": "All-temperature glide wax that works on skis and snowboards alike. Rub on, cork in, ride. One bar covers roughly ten full tune-ups, and the sample size is a great way to try it before committing to the full bar.",
+      "handle": "selling-plans-ski-wax",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110056744",
+      "product_type": "accessories",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "Selling Plans Ski Wax",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483429160": {
+          "available_for_sale": true,
+          "inventory_quantity": 9,
+          "price": "24.95",
+          "sku": null,
+          "title": "Selling Plans Ski Wax",
+          "variant_id": "gid://shopify/ProductVariant/52063483429160"
+        },
+        "gid://shopify/ProductVariant/52063483461928": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "49.95",
+          "sku": null,
+          "title": "Special Selling Plans Ski Wax",
+          "variant_id": "gid://shopify/ProductVariant/52063483461928"
+        },
+        "gid://shopify/ProductVariant/52063483494696": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "9.95",
+          "sku": null,
+          "title": "Sample Selling Plans Ski Wax",
+          "variant_id": "gid://shopify/ProductVariant/52063483494696"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110089512": {
+      "description": "",
+      "handle": "the-archived-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110089512",
+      "product_type": "snowboard",
+      "status": "ARCHIVED",
+      "tags": [
+        "Archived",
+        "Premium",
+        "Snow",
+        "Snowboard",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Archived Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483232552": {
+          "available_for_sale": true,
+          "inventory_quantity": 50,
+          "price": "629.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483232552"
+        }
+      },
+      "vendor": "Snowboard Vendor"
+    },
+    "gid://shopify/Product/10334110122280": {
+      "description": "",
+      "handle": "the-draft-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110122280",
+      "product_type": "snowboard",
+      "status": "DRAFT",
+      "tags": [],
+      "title": "The Draft Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483560232": {
+          "available_for_sale": true,
+          "inventory_quantity": 20,
+          "price": "2629.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483560232"
+        }
+      },
+      "vendor": "Snowboard Vendor"
+    },
+    "gid://shopify/Product/10334110155048": {
+      "description": "This PREMIUM snowboard is so SUPERDUPER awesome!",
+      "handle": "the-complete-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110155048",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Premium",
+        "Snow",
+        "Snowboard",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Complete Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483593000": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "699.95",
+          "sku": null,
+          "title": "Ice",
+          "variant_id": "gid://shopify/ProductVariant/52063483593000"
+        },
+        "gid://shopify/ProductVariant/52063483625768": {
+          "available_for_sale": true,
+          "inventory_quantity": 9,
+          "price": "699.95",
+          "sku": null,
+          "title": "Dawn",
+          "variant_id": "gid://shopify/ProductVariant/52063483625768"
+        },
+        "gid://shopify/ProductVariant/52063483658536": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "699.95",
+          "sku": null,
+          "title": "Powder",
+          "variant_id": "gid://shopify/ProductVariant/52063483658536"
+        },
+        "gid://shopify/ProductVariant/52063483691304": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "699.95",
+          "sku": null,
+          "title": "Electric",
+          "variant_id": "gid://shopify/ProductVariant/52063483691304"
+        },
+        "gid://shopify/ProductVariant/52063483724072": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "699.95",
+          "sku": null,
+          "title": "Sunset",
+          "variant_id": "gid://shopify/ProductVariant/52063483724072"
+        }
+      },
+      "vendor": "Snowboard Vendor"
+    },
+    "gid://shopify/Product/10334110187816": {
+      "description": "Built for filmers and park laps. A true twin with a soft, buttery flex, pressable tips, and a base tuned for consistent speed into features. Rides switch exactly like it rides regular.",
+      "handle": "the-videographer-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110187816",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [],
+      "title": "The Videographer Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483199784": {
+          "available_for_sale": true,
+          "inventory_quantity": 50,
+          "price": "885.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483199784"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110220584": {
+      "description": "A limited shop-exclusive deck we keep off the main wall. Hand-numbered topsheet, mid flex, and a versatile directional twin shape that handles the whole mountain. Ask us directly about current availability.",
+      "handle": "the-hidden-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110220584",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Premium",
+        "Snow",
+        "Snowboard",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Hidden Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483527464": {
+          "available_for_sale": true,
+          "inventory_quantity": 50,
+          "price": "749.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483527464"
+        }
+      },
+      "vendor": "Snowboard Vendor"
+    },
+    "gid://shopify/Product/10334110286120": {
+      "description": "A do-everything daily driver stocked across all our warehouses for fast delivery. Medium flex, hybrid camber, and a wear-resistant extruded base make it a low-maintenance board for riders who log a lot of days.",
+      "handle": "the-multi-location-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110286120",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Premium",
+        "Snow",
+        "Snowboard",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Multi-location Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063483953448": {
+          "available_for_sale": true,
+          "inventory_quantity": 99,
+          "price": "729.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063483953448"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110318888": {
+      "description": "Shipped directly from our fulfillment partner, usually within one business day. The board itself is a stable all-mountain cruiser with a gentle rocker profile that keeps turn initiation easy for progressing riders.",
+      "handle": "the-3p-fulfilled-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110318888",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The 3p Fulfilled Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063484018984": {
+          "available_for_sale": true,
+          "inventory_quantity": 20,
+          "price": "2629.95",
+          "sku": "sku-hosted-1",
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063484018984"
+        }
+      },
+      "vendor": "aurora-outfitters-co"
+    },
+    "gid://shopify/Product/10334110351656": {
+      "description": "A versatile mid-wide shape for riders with larger boots who are tired of toe drag. Medium-stiff flex, hybrid camber, and a 26.0 cm waist width in the 158 cm size.",
+      "handle": "the-multi-managed-snowboard",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110351656",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Premium",
+        "Snow",
+        "Snowboard",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Multi-managed Snowboard",
+      "variants": {
+        "gid://shopify/ProductVariant/52063484051752": {
+          "available_for_sale": true,
+          "inventory_quantity": 100,
+          "price": "629.95",
+          "sku": "sku-managed-1",
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063484051752"
+        }
+      },
+      "vendor": "Multi-managed Vendor"
+    },
+    "gid://shopify/Product/10334110384424": {
+      "description": "The freeride entry in our Collection series. A stiffer directional shape with a floaty nose, carbon-backed tail, and a fast sintered base for riders who point it when the snow gets deep.",
+      "handle": "the-collection-snowboard-oxygen",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110384424",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Collection Snowboard: Oxygen",
+      "variants": {
+        "gid://shopify/ProductVariant/52063484117288": {
+          "available_for_sale": true,
+          "inventory_quantity": 50,
+          "price": "1025.00",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063484117288"
+        }
+      },
+      "vendor": "Hydrogen Vendor"
+    },
+    "gid://shopify/Product/10334110449960": {
+      "description": "The surf-inspired member of the Collection series. Loose, playful, and happiest in slush and spring laps, with a wide nose and a swallow-influenced tail that skims over soft snow.",
+      "handle": "the-collection-snowboard-liquid",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334110449960",
+      "product_type": "snowboard",
+      "status": "ACTIVE",
+      "tags": [
+        "Accessory",
+        "Sport",
+        "Winter"
+      ],
+      "title": "The Collection Snowboard: Liquid",
+      "variants": {
+        "gid://shopify/ProductVariant/52063484215592": {
+          "available_for_sale": true,
+          "inventory_quantity": 49,
+          "price": "749.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063484215592"
+        }
+      },
+      "vendor": "Hydrogen Vendor"
+    },
+    "gid://shopify/Product/10334135386408": {
+      "description": "A freestanding three-season tent that pitches in under ten minutes. The 20D ripstop fly carries a 3000 mm waterproof coating with fully taped seams, and two doors with matching vestibules mean nobody climbs over anybody at 2 am. Packed weight is 2.1 kg with aluminum poles, split-packable between two hikers.",
+      "handle": "summit-ridge-2-person-tent",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135386408",
+      "product_type": "Camping",
+      "status": "ACTIVE",
+      "tags": [
+        "backpacking",
+        "camping",
+        "tent"
+      ],
+      "title": "Summit Ridge 2-Person Tent",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528288552": {
+          "available_for_sale": true,
+          "inventory_quantity": 11,
+          "price": "289.99",
+          "sku": null,
+          "title": "Forest Green",
+          "variant_id": "gid://shopify/ProductVariant/52063528288552"
+        },
+        "gid://shopify/ProductVariant/52063528321320": {
+          "available_for_sale": true,
+          "inventory_quantity": 8,
+          "price": "289.99",
+          "sku": null,
+          "title": "Burnt Orange",
+          "variant_id": "gid://shopify/ProductVariant/52063528321320"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135419176": {
+      "description": "Our most versatile pack: big enough for an overnight, trim enough for a long day hike. A ventilated back panel keeps airflow moving, the hip belt carries zippered pockets for snacks and a phone, and a rain cover lives in a dedicated pocket in the lid. Hydration compatible, 1.4 kg.",
+      "handle": "cascade-40l-hiking-backpack",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135419176",
+      "product_type": "Packs",
+      "status": "ACTIVE",
+      "tags": [
+        "backpack",
+        "daypack",
+        "hiking"
+      ],
+      "title": "Cascade 40L Hiking Backpack",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528386856": {
+          "available_for_sale": true,
+          "inventory_quantity": 14,
+          "price": "149.95",
+          "sku": null,
+          "title": "S/M",
+          "variant_id": "gid://shopify/ProductVariant/52063528386856"
+        },
+        "gid://shopify/ProductVariant/52063528419624": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "149.95",
+          "sku": null,
+          "title": "M/L",
+          "variant_id": "gid://shopify/ProductVariant/52063528419624"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135484712": {
+      "description": "A 2.5-layer waterproof breathable shell rated 10,000 mm / 10,000 g, with fully taped seams and an adjustable storm hood. Pit zips dump heat on the climb, and the whole jacket packs into its own chest pocket. Machine wash cold and tumble low to revive the DWR.",
+      "handle": "stormline-rain-jacket",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135484712",
+      "product_type": "Apparel",
+      "status": "ACTIVE",
+      "tags": [
+        "jacket",
+        "rain",
+        "shell",
+        "waterproof"
+      ],
+      "title": "Stormline Rain Jacket",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528485160": {
+          "available_for_sale": true,
+          "inventory_quantity": 6,
+          "price": "179.99",
+          "sku": null,
+          "title": "S",
+          "variant_id": "gid://shopify/ProductVariant/52063528485160"
+        },
+        "gid://shopify/ProductVariant/52063528517928": {
+          "available_for_sale": true,
+          "inventory_quantity": 13,
+          "price": "179.99",
+          "sku": null,
+          "title": "M",
+          "variant_id": "gid://shopify/ProductVariant/52063528517928"
+        },
+        "gid://shopify/ProductVariant/52063528550696": {
+          "available_for_sale": true,
+          "inventory_quantity": 12,
+          "price": "179.99",
+          "sku": null,
+          "title": "L",
+          "variant_id": "gid://shopify/ProductVariant/52063528550696"
+        },
+        "gid://shopify/ProductVariant/52063528583464": {
+          "available_for_sale": true,
+          "inventory_quantity": 5,
+          "price": "179.99",
+          "sku": null,
+          "title": "XL",
+          "variant_id": "gid://shopify/ProductVariant/52063528583464"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135517480": {
+      "description": "A 180 gsm merino crew that regulates temperature on the move and resists odor for days of wear. Flatlock seams sit flush under pack straps. Machine wash cold, lay flat to dry, and it will outlast a drawer full of synthetics.",
+      "handle": "trailblazer-merino-base-layer",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135517480",
+      "product_type": "Apparel",
+      "status": "ACTIVE",
+      "tags": [
+        "base layer",
+        "merino"
+      ],
+      "title": "Trailblazer Merino Base Layer",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528616232": {
+          "available_for_sale": true,
+          "inventory_quantity": 8,
+          "price": "84.99",
+          "sku": null,
+          "title": "M",
+          "variant_id": "gid://shopify/ProductVariant/52063528616232"
+        },
+        "gid://shopify/ProductVariant/52063528649000": {
+          "available_for_sale": true,
+          "inventory_quantity": 9,
+          "price": "84.99",
+          "sku": null,
+          "title": "L",
+          "variant_id": "gid://shopify/ProductVariant/52063528649000"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135583016": {
+      "description": "Serious warmth for deep winter: 700-fill responsibly sourced down inside a DWR-treated shell, with an insulated hood, interior stash pockets, and a two-way front zip. Comfortable standing around camp to about -15 C when layered.",
+      "handle": "glacier-point-down-parka",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135583016",
+      "product_type": "Apparel",
+      "status": "ACTIVE",
+      "tags": [
+        "down",
+        "insulated",
+        "parka",
+        "winter"
+      ],
+      "title": "Glacier Point Down Parka",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528714536": {
+          "available_for_sale": true,
+          "inventory_quantity": 7,
+          "price": "329.99",
+          "sku": null,
+          "title": "M",
+          "variant_id": "gid://shopify/ProductVariant/52063528714536"
+        },
+        "gid://shopify/ProductVariant/52063528747304": {
+          "available_for_sale": true,
+          "inventory_quantity": 6,
+          "price": "329.99",
+          "sku": null,
+          "title": "L",
+          "variant_id": "gid://shopify/ProductVariant/52063528747304"
+        },
+        "gid://shopify/ProductVariant/52063528780072": {
+          "available_for_sale": true,
+          "inventory_quantity": 4,
+          "price": "329.99",
+          "sku": null,
+          "title": "XL",
+          "variant_id": "gid://shopify/ProductVariant/52063528780072"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135615784": {
+      "description": "Telescoping aluminum poles with reliable flick locks, natural cork grips, and extended foam chokes for steep sidehills. Carbide tips grip rock and ice, rubber feet are included for pavement. 245 g per pole, sold as a pair.",
+      "handle": "ridgeline-trekking-poles",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135615784",
+      "product_type": "Gear",
+      "status": "ACTIVE",
+      "tags": [
+        "hiking",
+        "poles",
+        "trekking"
+      ],
+      "title": "Ridgeline Trekking Poles",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528812840": {
+          "available_for_sale": true,
+          "inventory_quantity": 19,
+          "price": "89.95",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063528812840"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135681320": {
+      "description": "A 750-fill down mummy bag with a 15 F comfort limit at just 860 g. A full-length draft tube and snag-free zipper guard keep the warmth in, and it ships with both a compression sack for the trail and a loose storage sack for the closet.",
+      "handle": "ember-750-sleeping-bag",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135681320",
+      "product_type": "Camping",
+      "status": "ACTIVE",
+      "tags": [
+        "backpacking",
+        "down",
+        "sleeping bag"
+      ],
+      "title": "Ember 750 Sleeping Bag",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528878376": {
+          "available_for_sale": true,
+          "inventory_quantity": 7,
+          "price": "249.99",
+          "sku": null,
+          "title": "Regular",
+          "variant_id": "gid://shopify/ProductVariant/52063528878376"
+        },
+        "gid://shopify/ProductVariant/52063528911144": {
+          "available_for_sale": true,
+          "inventory_quantity": 6,
+          "price": "249.99",
+          "sku": null,
+          "title": "Long",
+          "variant_id": "gid://shopify/ProductVariant/52063528911144"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135714088": {
+      "description": "A 750 ml pot and 400 ml pan in pure titanium, 265 g for the set. The pot nests a 110 g fuel canister and a small stove, the lids double as plates, and the folding handles lock solid. Boils half a liter in under four minutes on a standard canister stove.",
+      "handle": "basecamp-titanium-cook-set",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135714088",
+      "product_type": "Camping",
+      "status": "ACTIVE",
+      "tags": [
+        "backpacking",
+        "cookware",
+        "titanium"
+      ],
+      "title": "Basecamp Titanium Cook Set",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528943912": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "119.99",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063528943912"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135746856": {
+      "description": "A 200-weight fleece made from recycled polyester with a deep quarter zip and a zippered chest pocket. Anti-pill finish keeps it looking new through seasons of wear, on trail or off.",
+      "handle": "northwind-fleece-pullover",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135746856",
+      "product_type": "Apparel",
+      "status": "ACTIVE",
+      "tags": [
+        "fleece",
+        "midlayer"
+      ],
+      "title": "Northwind Fleece Pullover",
+      "variants": {
+        "gid://shopify/ProductVariant/52063528976680": {
+          "available_for_sale": true,
+          "inventory_quantity": 8,
+          "price": "94.99",
+          "sku": null,
+          "title": "S",
+          "variant_id": "gid://shopify/ProductVariant/52063528976680"
+        },
+        "gid://shopify/ProductVariant/52063529009448": {
+          "available_for_sale": true,
+          "inventory_quantity": 11,
+          "price": "94.99",
+          "sku": null,
+          "title": "M",
+          "variant_id": "gid://shopify/ProductVariant/52063529009448"
+        },
+        "gid://shopify/ProductVariant/52063529042216": {
+          "available_for_sale": true,
+          "inventory_quantity": 10,
+          "price": "94.99",
+          "sku": null,
+          "title": "L",
+          "variant_id": "gid://shopify/ProductVariant/52063529042216"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135812392": {
+      "description": "UPF 50+ sun protection in a featherweight knit that dries almost as fast as you sweat. A fitted three-panel hood layers under helmets, and thumb loops keep the sleeves anchored over the backs of your hands on long exposed miles.",
+      "handle": "sierra-sun-hoody",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135812392",
+      "product_type": "Apparel",
+      "status": "ACTIVE",
+      "tags": [
+        "hiking",
+        "hoody",
+        "sun protection"
+      ],
+      "title": "Sierra Sun Hoody",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529107752": {
+          "available_for_sale": true,
+          "inventory_quantity": 12,
+          "price": "69.95",
+          "sku": null,
+          "title": "M",
+          "variant_id": "gid://shopify/ProductVariant/52063529107752"
+        },
+        "gid://shopify/ProductVariant/52063529140520": {
+          "available_for_sale": true,
+          "inventory_quantity": 9,
+          "price": "69.95",
+          "sku": null,
+          "title": "L",
+          "variant_id": "gid://shopify/ProductVariant/52063529140520"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135845160": {
+      "description": "Double-wall vacuum insulation keeps drinks cold for 24 hours or hot for 12. The powder-coated finish stays grippy with gloves on, and the base fits standard car cup holders. Hand wash the lid, everything else is dishwasher safe.",
+      "handle": "wander-insulated-bottle-32oz",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135845160",
+      "product_type": "Accessories",
+      "status": "ACTIVE",
+      "tags": [
+        "bottle",
+        "hydration",
+        "insulated"
+      ],
+      "title": "Wander Insulated Bottle 32oz",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529173288": {
+          "available_for_sale": true,
+          "inventory_quantity": 24,
+          "price": "39.95",
+          "sku": null,
+          "title": "Slate",
+          "variant_id": "gid://shopify/ProductVariant/52063529173288"
+        },
+        "gid://shopify/ProductVariant/52063529206056": {
+          "available_for_sale": true,
+          "inventory_quantity": 16,
+          "price": "39.95",
+          "sku": null,
+          "title": "Moss",
+          "variant_id": "gid://shopify/ProductVariant/52063529206056"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135910696": {
+      "description": "600 lumens on max, USB-C rechargeable, and IPX7 waterproof, so a storm or a dunk will not end your night. A dedicated red mode preserves night vision around camp. 68 g including the washable strap.",
+      "handle": "peakfinder-headlamp-600",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135910696",
+      "product_type": "Gear",
+      "status": "ACTIVE",
+      "tags": [
+        "headlamp",
+        "lighting"
+      ],
+      "title": "Peakfinder Headlamp 600",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529271592": {
+          "available_for_sale": true,
+          "inventory_quantity": 15,
+          "price": "59.99",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063529271592"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334135943464": {
+      "description": "Waterproof nubuck leather uppers over a Vibram outsole that bites on wet rock and loose scree. A gusseted tongue keeps grit out, and the midsole splits the difference between trail feel and all-day support. True to size with room for a midweight sock.",
+      "handle": "alpine-crossing-hiking-boots",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334135943464",
+      "product_type": "Footwear",
+      "status": "ACTIVE",
+      "tags": [
+        "boots",
+        "hiking",
+        "waterproof"
+      ],
+      "title": "Alpine Crossing Hiking Boots",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529304360": {
+          "available_for_sale": true,
+          "inventory_quantity": 6,
+          "price": "219.99",
+          "sku": null,
+          "title": "9",
+          "variant_id": "gid://shopify/ProductVariant/52063529304360"
+        },
+        "gid://shopify/ProductVariant/52063529337128": {
+          "available_for_sale": true,
+          "inventory_quantity": 7,
+          "price": "219.99",
+          "sku": null,
+          "title": "10",
+          "variant_id": "gid://shopify/ProductVariant/52063529337128"
+        },
+        "gid://shopify/ProductVariant/52063529369896": {
+          "available_for_sale": true,
+          "inventory_quantity": 5,
+          "price": "219.99",
+          "sku": null,
+          "title": "11",
+          "variant_id": "gid://shopify/ProductVariant/52063529369896"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334136009000": {
+      "description": "A packable chair that weighs 900 g and sets up in about a minute from a bag the size of a water bottle. The aluminum frame is rated to 120 kg, and the ripstop seat sheds sparks and spills alike.",
+      "handle": "drift-camp-chair",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334136009000",
+      "product_type": "Camping",
+      "status": "ACTIVE",
+      "tags": [
+        "camp furniture",
+        "chair"
+      ],
+      "title": "Drift Camp Chair",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529435432": {
+          "available_for_sale": true,
+          "inventory_quantity": 13,
+          "price": "74.99",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063529435432"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    },
+    "gid://shopify/Product/10334136074536": {
+      "description": "A cylindrical dual lens with anti-fog coating and full UV protection, sized to fit over most prescription glasses. Ships with a bonus low-light lens for storm days and a microfiber sleeve that doubles as a lens cloth.",
+      "handle": "meridian-ski-goggles",
+      "is_gift_card": false,
+      "product_id": "gid://shopify/Product/10334136074536",
+      "product_type": "Snow",
+      "status": "ACTIVE",
+      "tags": [
+        "goggles",
+        "ski",
+        "snowboard"
+      ],
+      "title": "Meridian Ski Goggles",
+      "variants": {
+        "gid://shopify/ProductVariant/52063529468200": {
+          "available_for_sale": true,
+          "inventory_quantity": 9,
+          "price": "129.99",
+          "sku": null,
+          "title": "Default Title",
+          "variant_id": "gid://shopify/ProductVariant/52063529468200"
+        }
+      },
+      "vendor": "Aurora Outfitters"
+    }
+  }
+}

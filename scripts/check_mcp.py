@@ -1,16 +1,20 @@
-"""Drives the MCP server over stdio exactly like a real host would. Live store, read-only.
+"""Drives the MCP server over stdio exactly like a real host would. Read-only.
 
 Run from the repo root: .venv/bin/python -m scripts.check_mcp
+STORE_BACKEND=sim runs it against the simulated store instead of the live one.
 """
 
 import asyncio
 import json
+import os
 from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-SERVER = StdioServerParameters(command=".venv/bin/python", args=["-m", "mcp_server.server"])
+SERVER = StdioServerParameters(
+    command=".venv/bin/python", args=["-m", "mcp_server.server"], env=os.environ.copy()
+)
 
 
 def show(label: str, result: Any) -> None:
