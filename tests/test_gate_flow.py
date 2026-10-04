@@ -130,6 +130,7 @@ def test_an_unclear_reply_asks_again_and_keeps_the_action_pending(db: SimDB) -> 
     history += [{"role": "assistant", "content": second["response"]}, {"role": "user", "content": "yes"}]
     third = turn(graph, history, carry(second))
     assert db.orders["#1002"].cancelled_at is not None
+    assert "is cancelled" in third["response"]
     assert client.count("confirm") == 1
 
 
