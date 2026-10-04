@@ -55,14 +55,19 @@ In the development store admin (`aurora-outfitters-co`):
 The script checks the app's scopes first, then keeps these fixtures topped up. Every order has a
 shipping address and carries the tags `v2-live-test` and `fixture-<key>`.
 
-| fixture | state | dates (relative to the run) | tests |
+| fixture | state | times (before the anchor) | tests |
 |---|---|---|---|
-| `return-out-of-window` | delivered | placed 50 days ago, delivered 45 days ago | return refused, outside the window |
-| `return-in-window` | delivered | placed 9 days ago, delivered 5 days ago | return accepted |
-| `return-final-sale` | delivered | placed 8 days ago, delivered 4 days ago | return refused, final-sale item |
-| `shipped-not-delivered` | shipped | placed 4 days ago | cancel and address change refused |
-| `cancel-eligible` | unfulfilled | placed 2 days ago | cancel accepted |
-| `address-eligible` | unfulfilled | placed 1 day ago | address change accepted |
+| `return-out-of-window` | delivered | placed 50 days, delivered 45 days | return refused, outside the window |
+| `return-in-window` | delivered | placed 9 days, delivered 5 days | return accepted |
+| `return-final-sale` | delivered | placed 8 days, delivered 4 days | return refused, final-sale item |
+| `shipped-not-delivered` | shipped | placed 4 days | cancel and address change refused |
+| `cancel-eligible` | unfulfilled | placed 1 hour | cancel accepted |
+| `address-eligible` | unfulfilled | placed 30 minutes | address change accepted |
+
+Every time is an offset from one anchor instant, by default the moment the script runs (the
+script prints it). Store policy allows cancellations and address changes only within 2 hours of
+an order being placed, so the two unfulfilled fixtures go stale about 2 hours after they are
+created; the script treats them as used up after 90 minutes.
 
 Delivered fixtures are marked delivered with a backdated `DELIVERED` fulfillment event. Shopify's
 docs do not say whether a backdated event sets the fulfillment's delivery date, so the script
@@ -75,11 +80,11 @@ cancelled, shipped, returned, or aged out of their window. Used-up orders stay i
 
 ## 4. Re-export the simulated store
 
-The simulated store must match the live one, with its frozen clock just after the reseed run so
-the in-window deliveries are still inside the window:
+The simulated store must match the live one, with its frozen clock set to the anchor the reseed
+script printed, so every fixture sits exactly where it was placed relative to "now":
 
 ```
-.venv/bin/python -m scripts.export_store_snapshot --frozen-now <reseed day + 1>T16:00:00Z
+.venv/bin/python -m scripts.export_store_snapshot --frozen-now <anchor>
 ```
 
 Then set `FROZEN_NOW` in `scripts/export_store_snapshot.py` to the same value, update

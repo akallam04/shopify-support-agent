@@ -217,37 +217,89 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 2: safe write actions
 
-- [ ] Policy engine in code, with eligibility rules taken from `data/policies`: return
-      window, final sale, gift cards, order state, identity match. Tools refuse with a
-      structured reason. The model cannot bypass it.
-- [ ] Four tools, built on the simulated store first: `cancel_order`,
-      `update_shipping_address`, `request_return`, `transfer_to_human`. The live backend gets
-      them behind a feature flag, development store only, using the write-test token.
-- [ ] Mutation gate as graph nodes before any write, following SABER, switchable by config
-      (`MUTATION_GATE=on|off`) so the Phase 4 ablation needs no refactor:
-  - [ ] deterministic policy check
-  - [ ] targeted reflection with only the relevant rules, the request, and the order facts
-  - [ ] explicit confirmation held in graph state, classified yes / no / unclear, where
-        unclear asks again and a change of mind cancels
-  - [ ] idempotent execution keyed per action
-  - [ ] audit log entry for every write
-- [ ] Writes require order number and email match, extending the current authorization.
-- [ ] Context cleaning for long conversations: summarize old turns, keep tool facts.
-- [ ] Unit tests for every policy rule and every gate path.
-- [ ] Build the missing scenarios on the development store with `scripts/reseed_test_orders.py`
-      (dry run first, then `--apply`, using the write-test token): delivered orders inside and
-      outside the 30-day window, orders with shipping addresses, and an order containing the
-      final-sale product (Meridian Ski Goggles, tagged `final-sale`). Orders are created with
-      `orderCreate`, which accepts a past order date, and delivered with a backdated delivery
-      event that the script reads back to verify. Then re-export the seed and re-run the contract
-      tests. `orderCancel` cannot be undone, so every live write test starts by topping up these
-      fixtures. Used-up orders are left in place, never deleted. Steps are in
-      `docs/live-write-testing.md`.
 - [x] Re-checked against 2026-10: `orderCancel(orderId, reason, restock, refundMethod, notifyCustomer,
       staffNote)` with the deprecated `refund` argument removed; `orderUpdate(input: OrderInput)`
       whose `shippingAddress` overwrites the existing one; `returnRequest` now identifies items by
       `fulfillmentLineItemId` with an optional `returnReasonDefinitionId`. The simulated store
       records fulfillment line item ids so it can model returns the same way.
+- [x] Policy engine in code (`mcp_server/policy.py`), with every customer-facing reason taken
+      from `data/policies`: the 2-hour window and not-yet-shipped rule for cancellations and
+      address changes, United States and Canada only, the 30-day return window from delivery,
+      final sale and gift cards, quantities already in a return, and the return fee and label
+      terms. It reads the time from the backend's clock, frozen in the simulated store.
+- [x] Four tools on the simulated store: `cancel_order`, `update_shipping_address`,
+      `request_return`, `transfer_to_human`, with `prepare` (validate, authorize, check policy,
+      summarize) and `execute` (check again, apply once per idempotency key, audit).
+- [x] Writes require the order number and the email on the order. A wrong email gets the same
+      not-found answer as a missing order.
+- [x] Mutation gate as graph nodes before any write, following SABER, switchable by config:
+  - [x] deterministic policy check
+  - [x] targeted reflection with only the relevant rule, the customer's messages, and the order facts
+  - [x] explicit confirmation held in graph state, classified confirm / decline / unclear / change,
+        where unclear asks again and a change of mind drops the pending action
+  - [x] idempotent execution keyed per action
+  - [x] audit log entry for every write, refusal, and replay
+- [x] Context cleaning for long conversations.
+- [x] Unit tests for every policy rule and every gate path: 165 offline tests, with mutation checks
+      showing the gate tests fail when the gate is broken.
+- [ ] Live backend write primitives (`orderCancel`, `orderUpdate`, `returnRequest`) behind
+      `WRITE_ACTIONS`, development store only, using the write-test token, calibrated against what
+      Shopify actually records after each write (for example the order's status fields after a
+      cancellation).
+- [ ] Build the missing scenarios on the development store with `scripts/reseed_test_orders.py`
+      (dry run first, then `--apply`, using the write-test token), re-export the seed with the
+      printed anchor as the frozen time, and re-run the contract tests. Steps are in
+      `docs/live-write-testing.md`.
+
+#### Phase 2 design
+
+- **The model proposes, the graph disposes.** When the order model emits a write tool call and
+  the gate is on, the graph holds it back as a candidate instead of executing it, as SABER's
+  mutation-gated verification does.
+- **Policy is always enforced, gate or no gate.** The tools check policy themselves, so turning
+  the gate off never allows a write that breaks store rules. The switches control only the SABER
+  safeguards: `MUTATION_GATE` (hold writes back at all), `GATE_REFLECTION`, and
+  `GATE_CONFIRMATION`. Each component has its own switch because SABER's Retail ablation was not
+  additive (66.9% without safeguards, 80.8% with reflection alone, 80.5% with verification
+  alone, 77.7% with both), so Phase 4 measures them separately here.
+- **Confirmations, refusals, and results are templates,** built from the prepared action and the
+  policy's reasons. They cost nothing, are grounded by construction, and hostile input cannot
+  steer their wording. Clear yes and no replies are matched by pattern; only ambiguous replies
+  reach the model.
+- **Idempotency** keys hash the action and its normalized arguments. A replay returns the first
+  result without writing again. Refusals are not cached, since a refused action can become
+  allowed later. Policy is checked again at execution time, in case time or state moved on after
+  the customer confirmed.
+- **Context cleaning is a deterministic digest:** recent messages stay verbatim, and older ones
+  fold into the order numbers and emails the customer gave, their earlier requests, and the
+  actions already completed. SABER summarizes blocks with an auxiliary model; support chats here
+  are short, so a model call per turn is not worth its cost yet.
+- **The public API stays read-only for now.** `WRITE_ACTIONS` is off by default, and the graph
+  refuses to start if the MCP client exposes write tools, since only the in-process executor can
+  run the gate. The simulation harness runs the graph in process and carries the pending action
+  between turns itself. The signed session token that will carry it over HTTP ships with the
+  public sandbox in Phase 5.
+- **Simplifications to record in the README:** cancellations in the simulated store do not
+  restock inventory, and the order's status fields after a cancellation are not modelled until
+  they can be calibrated against a live cancellation.
+
+#### Phase 2 findings
+
+- **Published policy sets a 2-hour window** for cancellations and address changes ("within 2 hours
+  of it being placed, provided it has not entered processing"), and shipping goes to the United
+  States and Canada only. The policy engine enforces exactly that, so the agent never acts against
+  what the policy documents tell customers. The reseed fixtures moved accordingly: every fixture
+  time is an offset from one anchor, which also becomes the simulated store's frozen time.
+- **A real-model smoke test found two agent bugs** (`scripts/smoke_write_flow.py`, three staged
+  conversations, about $0.02 a run). The model named a return item the way the customer did
+  ("rain jacket"), which an exact title match rejected, so a final-sale refusal came out as
+  "the order does not include that item". And on orders with no shipping address on file, a new
+  address had no recipient name, so reflection stopped to ask for one. Both were fixed in code,
+  with regression tests that fail without the fix: return items now match when every word the
+  customer used fits exactly one item on the order, and a new address takes the customer's name
+  when the order has none. After the fixes all three conversations reach the right outcome.
+- **The read-only agent is unchanged:** the 53-case suite passed 53/53 after the gate was added
+  (`evals/results/20261004-152330_v2-phase2-regression.json`).
 
 ### Phase 3: simulation harness
 
@@ -308,6 +360,8 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [ ] Structured JSON logs with conversation and trace ids, per-node timing, tokens and cost.
 - [ ] Public demo safety: sandbox writes per session, clear labelling, rate limits, a per
       session token cap, and a cap on total conversation size per request.
+- [ ] Signed session token carrying the pending action and the sandbox mutations over HTTP, and the
+      API switched to the in-process executor with a per-session sandbox.
 - [ ] Deploy as described under "Deployment and container images".
 - [ ] Cold start measured, cheapest fix applied, before and after reported.
 
