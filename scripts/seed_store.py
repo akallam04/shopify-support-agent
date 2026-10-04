@@ -86,7 +86,13 @@ mutation Fulfill($fulfillment: FulfillmentInput!) {
 
 ORDER_CANCEL_MUTATION = """
 mutation Cancel($orderId: ID!) {
-  orderCancel(orderId: $orderId, reason: CUSTOMER, refund: true, restock: true, notifyCustomer: false) {
+  orderCancel(
+    orderId: $orderId
+    reason: CUSTOMER
+    restock: true
+    notifyCustomer: false
+    refundMethod: {originalPaymentMethodsRefund: true}
+  ) {
     job { id }
     orderCancelUserErrors { field message }
   }

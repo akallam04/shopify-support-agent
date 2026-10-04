@@ -217,7 +217,6 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 2: safe write actions
 
-- [ ] Re-check `orderCancel`, `orderUpdate` and `returnRequest` against the 2026-10 docs.
 - [ ] Policy engine in code, with eligibility rules taken from `data/policies`: return
       window, final sale, gift cards, order state, identity match. Tools refuse with a
       structured reason. The model cannot bypass it.
@@ -238,9 +237,17 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [ ] Build the missing scenarios on the development store with `scripts/reseed_test_orders.py`
       (dry run first, then `--apply`, using the write-test token): delivered orders inside and
       outside the 30-day window, orders with shipping addresses, and an order containing the
-      final-sale product. Then re-export the seed and re-run the contract tests. `orderCancel`
-      cannot be undone, so every live write test starts by topping up these fixtures. Used-up
-      orders are left in place, never deleted.
+      final-sale product (Meridian Ski Goggles, tagged `final-sale`). Orders are created with
+      `orderCreate`, which accepts a past order date, and delivered with a backdated delivery
+      event that the script reads back to verify. Then re-export the seed and re-run the contract
+      tests. `orderCancel` cannot be undone, so every live write test starts by topping up these
+      fixtures. Used-up orders are left in place, never deleted. Steps are in
+      `docs/live-write-testing.md`.
+- [x] Re-checked against 2026-10: `orderCancel(orderId, reason, restock, refundMethod, notifyCustomer,
+      staffNote)` with the deprecated `refund` argument removed; `orderUpdate(input: OrderInput)`
+      whose `shippingAddress` overwrites the existing one; `returnRequest` now identifies items by
+      `fulfillmentLineItemId` with an optional `returnReasonDefinitionId`. The simulated store
+      records fulfillment line item ids so it can model returns the same way.
 
 ### Phase 3: simulation harness
 
