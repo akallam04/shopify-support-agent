@@ -163,3 +163,22 @@ def test_backends_without_write_support_reject_writes(db: SimDB) -> None:
     backend.supports_writes = False
     with pytest.raises(ToolInputError):
         execute(backend, "cancel_order", CANCEL_1002)
+
+
+def test_items_can_be_named_the_way_customers_say_them(db: SimDB) -> None:
+    db.products["p1"].tags.append("final-sale")
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "rain jacket", "quantity": 1}))
+    assert result["code"] == "final_sale"
+
+
+def test_a_partial_name_that_fits_two_items_is_ambiguous(db: SimDB) -> None:
+    order = db.orders["#1001"]
+    order.line_items.append(order.line_items[0].model_copy(update={"line_item_id": "l9", "title": "Northwind Fleece Jacket", "variant_title": "L"}))
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "jacket"}))
+    assert result["code"] == "ambiguous_item"
+
+
+def test_a_new_address_takes_the_customer_name_when_none_is_on_file(db: SimDB) -> None:
+    execute(store(db), "update_shipping_address", NEW_ADDRESS)
+    address = db.orders["#1002"].shipping_address
+    assert (address.first_name, address.last_name) == ("Maya", "Thompson")

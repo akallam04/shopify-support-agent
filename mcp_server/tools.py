@@ -17,7 +17,7 @@ from typing import Any
 from mcp_server import policy
 from mcp_server.backends.base import FoundOrder, StoreBackend, WritableStore
 from mcp_server.clock import format_instant
-from mcp_server.search import WORD_RE, title_score
+from mcp_server.search import WORD_RE, prefix_hit, title_score, words
 from mcp_server.simdb import Address, LineItem, Order, Product
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -236,6 +236,9 @@ def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, i
         except (TypeError, ValueError) as e:
             raise ToolInputError("item quantity must be a whole number") from e
         matches = [li for li in order.line_items if li.title.lower() == title]
+        if not matches:
+            wanted = words(title)
+            matches = [li for li in order.line_items if wanted and all(prefix_hit(w, words(li.title)) for w in wanted)]
         if variant:
             matches = [li for li in matches if (li.variant_title or "").lower() == variant]
         if not matches:
@@ -248,15 +251,20 @@ def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, i
     return resolved, policy.ALLOWED
 
 
-def _address_from(args: dict[str, Any], customer_order: Order) -> Address:
+def _address_from(args: dict[str, Any], found: FoundOrder) -> Address:
     def text(key: str) -> str | None:
         value = str(args.get(key) or "").strip()
         return value or None
 
-    existing = customer_order.shipping_address
+    existing = found.order.shipping_address
+    customer = found.customer
     return Address(
-        first_name=text("first_name") or (existing.first_name if existing else None),
-        last_name=text("last_name") or (existing.last_name if existing else None),
+        first_name=text("first_name")
+        or (existing.first_name if existing and existing.first_name else None)
+        or (customer.first_name if customer else None),
+        last_name=text("last_name")
+        or (existing.last_name if existing and existing.last_name else None)
+        or (customer.last_name if customer else None),
         address1=text("address1"),
         address2=text("address2"),
         city=text("city"),
@@ -291,7 +299,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             f"total {order.total} {order.currency}), with any amount paid going back to the original payment method"
         )
     elif action == "update_shipping_address":
-        address = _address_from(args, order)
+        address = _address_from(args, found)
         decision = policy.can_change_address(order, address, now)
         normalized = {"order_number": name, "email": email.lower(), "address": address.model_dump()}
         summary = (
