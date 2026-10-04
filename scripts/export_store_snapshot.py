@@ -18,7 +18,7 @@ from mcp_server.shopify_client import ShopifyClient
 from mcp_server.simdb import Customer, Order, Product, SimDB, SnapshotMeta, db_hash, save_db
 
 DEFAULT_OUT = "data/sim/seed.json"
-FROZEN_NOW = "2026-08-12T16:00:00Z"
+FROZEN_NOW = "2026-10-04T22:54:00Z"
 NOTES = [
     "Exported read-only from the development store.",
     "Order returns are not exported until the app holds the read_returns scope, so every order starts with none.",
