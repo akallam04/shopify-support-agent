@@ -3,6 +3,7 @@
 from typing import Any
 
 from mcp_server.backends.base import FoundOrder
+from mcp_server.clock import SystemClock
 from mcp_server.shopify_client import ShopifyClient
 from mcp_server.simdb import (
     Address,
@@ -88,6 +89,15 @@ PRODUCT_SEARCH_QUERY = (
     """
 query ProductSearch($query: String!, $limit: Int!) {
   products(first: $limit, query: $query, sortKey: ID) { nodes { ...ProductFields } }
+}
+"""
+    + PRODUCT_FRAGMENT
+)
+
+PRODUCTS_BY_ID_QUERY = (
+    """
+query ProductsById($ids: [ID!]!) {
+  nodes(ids: $ids) { ... on Product { ...ProductFields } }
 }
 """
     + PRODUCT_FRAGMENT
@@ -255,9 +265,11 @@ def map_order(node: dict[str, Any]) -> FoundOrder:
 
 class ShopifyAdminBackend:
     name = "shopify"
+    supports_writes = False
 
     def __init__(self, client: ShopifyClient) -> None:
         self._client = client
+        self.clock = SystemClock()
 
     def find_order(self, order_name: str) -> FoundOrder | None:
         data = self._client.graphql(ORDER_BY_NAME_QUERY, {"query": f"name:{order_name}"})
@@ -277,3 +289,9 @@ class ShopifyAdminBackend:
             PRODUCT_SEARCH_QUERY, {"query": f"status:active {text}", "limit": limit}
         )
         return [map_product(n) for n in data["products"]["nodes"]]
+
+    def products_by_id(self, product_ids: set[str]) -> dict[str, Product]:
+        if not product_ids:
+            return {}
+        data = self._client.graphql(PRODUCTS_BY_ID_QUERY, {"ids": sorted(product_ids)})
+        return {p.product_id: p for p in (map_product(n) for n in data["nodes"] if n)}

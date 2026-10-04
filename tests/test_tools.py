@@ -57,8 +57,8 @@ def test_order_status_view(sim: RecordingBackend) -> None:
         "financial_status": "PAID",
         "total": "219.94 USD",
         "items": [
-            {"title": "Stormline Rain Jacket", "quantity": 1},
-            {"title": "Wander Insulated Bottle", "quantity": 1},
+            {"title": "Stormline Rain Jacket", "variant": "M", "quantity": 1},
+            {"title": "Wander Insulated Bottle", "variant": None, "quantity": 1},
         ],
         "tracking": [{"number": "1Z999AA10123456784", "carrier": "UPS", "url": None}],
     }
