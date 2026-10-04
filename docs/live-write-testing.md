@@ -87,7 +87,9 @@ script printed, so every fixture sits exactly where it was placed relative to "n
 .venv/bin/python -m scripts.export_store_snapshot --frozen-now <anchor>
 ```
 
-Then set `FROZEN_NOW` in `scripts/export_store_snapshot.py` to the same value, update
+When `SHOPIFY_WRITE_TOKEN` is set, the exporter reads with it (reads only) so the snapshot includes
+order returns; the read-only token cannot see them, and without the write token every order is
+exported with no returns. Then set `FROZEN_NOW` in `scripts/export_store_snapshot.py` to the same value, update
 `SEED_HASH` in `tests/test_simdb.py`, and run both test suites:
 
 ```
@@ -95,7 +97,27 @@ Then set `FROZEN_NOW` in `scripts/export_store_snapshot.py` to the same value, u
 SHOPIFY_LIVE_TESTS=1 .venv/bin/pytest tests/test_contract_live.py
 ```
 
+## 5. Check live writes against the simulated store
+
+```
+.venv/bin/python -m scripts.live_write_check            # dry run: prepare each action on both stores
+.venv/bin/python -m scripts.live_write_check --apply    # execute, re-read the live orders, compare
+```
+
+The script runs nine cases through the same tool code on the live development store and on a
+copy of the simulated store whose clock is set to the real time: three writes (cancel, address
+change, return), five refusals (final sale, outside the return window, already shipped, outside
+the 2-hour window, wrong email), and a replayed cancel. It then re-reads the touched live orders
+and compares their cancellation, address, returns, and status fields with the simulated ones.
+Reports go to `evals/results/live-writes/`. `--only "<label text>"` runs a subset. Run it within 2
+hours of reseeding, while the cancel and address fixtures are still inside their window, then
+reseed again and re-export so the simulated store records what the writes did.
+
 ## If delivery dates cannot be backdated
+
+On 2026-10-04 Shopify kept every backdated delivery time to the second, so this did not happen. The
+check stays in the script.
+
 
 If the script stops because Shopify recorded the real time instead of the backdated one, only the
 out-of-window return is affected; every other scenario can be built. The options are:

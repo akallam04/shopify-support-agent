@@ -242,14 +242,15 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [x] Context cleaning for long conversations.
 - [x] Unit tests for every policy rule and every gate path: 165 offline tests, with mutation checks
       showing the gate tests fail when the gate is broken.
-- [ ] Live backend write primitives (`orderCancel`, `orderUpdate`, `returnRequest`) behind
-      `WRITE_ACTIONS`, development store only, using the write-test token, calibrated against what
-      Shopify actually records after each write (for example the order's status fields after a
-      cancellation).
-- [ ] Build the missing scenarios on the development store with `scripts/reseed_test_orders.py`
-      (dry run first, then `--apply`, using the write-test token), re-export the seed with the
-      printed anchor as the frozen time, and re-run the contract tests. Steps are in
-      `docs/live-write-testing.md`.
+- [x] Live backend write primitives (`orderCancel`, `orderUpdate`, `returnRequest`) behind
+      `WRITE_ACTIONS`, development store only, using the write-test token. The backend refuses to
+      build writes without that token or on anything but a development store, and a Shopify error
+      becomes a "nothing was changed" answer plus an audit entry.
+- [x] Live writes checked against the simulated store with `scripts/live_write_check.py`: all nine
+      cases agree after one fix (reports in `evals/results/live-writes/`).
+- [x] Built the missing scenarios on the development store (orders #1016 to #1023), re-exported the
+      seed with the printed anchor as the frozen time and with live returns included, and re-ran the
+      contract tests: 54/54. Steps are in `docs/live-write-testing.md`.
 
 #### Phase 2 design
 
@@ -279,9 +280,9 @@ The same outcome must always produce the same hash, whatever order the agent did
   run the gate. The simulation harness runs the graph in process and carries the pending action
   between turns itself. The signed session token that will carry it over HTTP ships with the
   public sandbox in Phase 5.
-- **Simplifications to record in the README:** cancellations in the simulated store do not
-  restock inventory, and the order's status fields after a cancellation are not modelled until
-  they can be calibrated against a live cancellation.
+- **Cancellations do not restock inventory,** live (`restock: false`) or simulated, so the two
+  stores stay comparable. The simulated cancellation records what Shopify records: a paid order
+  becomes `REFUNDED` and its fulfillment status `FULFILLMENT_NOT_REQUIRED`.
 
 #### Phase 2 findings
 
@@ -298,6 +299,19 @@ The same outcome must always produce the same hash, whatever order the agent did
   with regression tests that fail without the fix: return items now match when every word the
   customer used fits exactly one item on the order, and a new address takes the customer's name
   when the order has none. After the fixes all three conversations reach the right outcome.
+- **Shopify keeps backdated delivery events.** The reseed script creates the oldest delivery first
+  and reads it back; every delivery time matched the request to the second, so the out-of-window
+  return exists on the live store too.
+- **The live check found one bug, in the return call.** The 2026-10 schema lists the reason on a
+  return line as optional, but Shopify rejected the request with "Return reason can't be blank".
+  The old `returnReason` field is deprecated; the current `returnReasonDefinitionId` points into
+  Shopify's reason library, so the agent's nine reasons map to library handles (`too-small`,
+  `changed-my-mind`, and so on), looked up by handle at run time. The first run recorded the
+  failure; after the fix the live return matched the simulated one exactly.
+- **Calibration.** After a live cancellation Shopify showed `REFUNDED` and
+  `FULFILLMENT_NOT_REQUIRED`; the simulated cancellation now records the same.
+- **Shopify's query cost limit.** Exporting orders with their returns nested inside cost 1,416
+  points against a limit of 1,000 per query, so that export uses pages of 10 orders.
 - **The read-only agent is unchanged:** the 53-case suite passed 53/53 after the gate was added
   (`evals/results/20261004-152330_v2-phase2-regression.json`).
 
