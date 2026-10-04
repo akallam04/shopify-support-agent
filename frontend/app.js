@@ -243,7 +243,7 @@ function extractCitations(text) {
       ids.push(id);
       return "";
     })
-    .replace(/\s*[—–]\s*/g, " - ")
+    .replace(/\s*[\u2014\u2013]\s*/g, " - ")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/ ([.,!?])/g, "$1")
     .trim();
@@ -406,14 +406,22 @@ function setBusy(busy) {
   if (!busy) inputEl.focus();
 }
 
+const BUSY_MESSAGE =
+  "We are answering a lot of questions right now, so I could not get to that one. Please try again in a few seconds.";
+const OFFLINE_MESSAGE = "It looks like you are offline. Check your connection and try again.";
+const ERROR_MESSAGE = "Sorry, something went wrong on our side. Please try again in a moment.";
+
+class BusyError extends Error {}
+
 async function send(text) {
   addMessage("user", text);
+  await deliver(text);
+}
+
+async function deliver(text) {
   history.push({ role: "user", content: text });
   setBusy(true);
   showTyping();
-
-  // the backend scales to zero, so the first request after idle can cold start
-  // and return a transient 503, retry a couple of times before giving up
   try {
     const data = await postWithRetry();
     document.getElementById("typing")?.remove();
@@ -423,31 +431,66 @@ async function send(text) {
     renderActions();
   } catch (err) {
     document.getElementById("typing")?.remove();
-    addMessage(
-      "agent",
-      "Sorry, I could not reach the support service just now. Please try again in a moment.",
-    );
-    renderActions();
+    history.pop();
+    let message = ERROR_MESSAGE;
+    if (!navigator.onLine) message = OFFLINE_MESSAGE;
+    else if (err instanceof BusyError) message = BUSY_MESSAGE;
+    addMessage("agent", message);
+    messagesEl.lastElementChild?.classList.add("msg--failed");
+    renderRetry(text);
     console.error(err);
   } finally {
     setBusy(false);
   }
 }
 
-async function postWithRetry(attempts = 3, delayMs = 2500) {
+function renderRetry(text) {
+  document.getElementById("actions")?.remove();
+  const row = document.createElement("div");
+  row.className = "actions";
+  row.id = "actions";
+
+  const retry = document.createElement("button");
+  retry.className = "action";
+  retry.type = "button";
+  retry.innerHTML =
+    '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v4h-4" /></svg> Try again';
+  retry.addEventListener("click", () => {
+    row.remove();
+    messagesEl.querySelectorAll(".msg--failed").forEach((el) => el.remove());
+    deliver(text);
+  });
+
+  const fresh = document.createElement("button");
+  fresh.className = "action";
+  fresh.type = "button";
+  fresh.innerHTML =
+    '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg> New conversation';
+  fresh.addEventListener("click", resetChat);
+
+  row.append(retry, fresh);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function postWithRetry(attempts = 3, baseDelayMs = 2000) {
   for (let i = 0; i < attempts; i++) {
+    let res;
     try {
-      const res = await fetch(`${API_BASE}/chat`, {
+      res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history }),
       });
-      if (res.ok) return res.json();
-      if (res.status !== 503 || i === attempts - 1) throw new Error(`request failed (${res.status})`);
     } catch (err) {
-      if (i === attempts - 1) throw err;
+      res = null;
     }
-    await new Promise((r) => setTimeout(r, delayMs));
+    if (res && res.ok) return res.json();
+    const busy = !res || res.status === 429 || res.status === 503;
+    if (!busy) throw new Error(`request failed (${res.status})`);
+    if (i === attempts - 1) throw new BusyError("service busy");
+    const delay = baseDelayMs * 2 ** i + Math.random() * 500;
+    await new Promise((r) => setTimeout(r, delay));
   }
 }
 

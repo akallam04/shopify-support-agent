@@ -83,6 +83,27 @@ export LAMBDA_ROLE_NAME=aurora-support-lambda
 To ship a new build later: repeat step 2, then
 `aws lambda update-function-code --function-name aurora-support --image-uri $ECR:latest --region $AWS_REGION`.
 
+## Request limits
+
+The public API is rate limited so a flood of requests cannot run up model costs:
+
+```
+aws apigatewayv2 update-stage --api-id <api-id> --stage-name '$default' --region us-east-1 \
+  --default-route-settings 'ThrottlingBurstLimit=5,ThrottlingRateLimit=0.5,DetailedMetricsEnabled=false'
+```
+
+- **API Gateway throttling:** a burst of 5 requests, then 0.5 requests per second sustained.
+  AWS enforces HTTP API throttling on a best-effort basis, so it slows a flood rather than
+  cutting it off at an exact count.
+- **Lambda concurrency:** capped by the account limit of 10 concurrent executions. Reserved
+  concurrency cannot be set lower, because AWS requires at least 10 to stay unreserved.
+- **Request size:** each message is capped at 4,000 characters and the history at 20 messages.
+
+Throttled responses (API Gateway 429, Lambda 503) come back without CORS headers, so the
+browser sees them as network errors. The frontend therefore treats throttles, concurrency
+rejections, and network errors the same way: two retries with exponential backoff, then a
+"busy, please try again" message with a Try again button.
+
 ## Frontend deploy (Vercel)
 
 1. Put the API Gateway URL (no trailing slash) into `frontend/index.html`:
