@@ -41,7 +41,17 @@ def build_backend(settings: Settings) -> StoreBackend:
     client = ShopifyClient(
         settings.shopify_store_domain, settings.shopify_admin_token, settings.shopify_api_version
     )
-    return ShopifyAdminBackend(client)
+    if not settings.write_actions:
+        return ShopifyAdminBackend(client)
+    return ShopifyAdminBackend(client, live_write_client(settings, client))
+
+
+def live_write_client(settings: Settings, read_client: ShopifyClient) -> ShopifyClient:
+    if not settings.shopify_write_token:
+        raise SystemExit("live writes need SHOPIFY_WRITE_TOKEN, see docs/live-write-testing.md")
+    if not read_client.shop_info()["plan"]["partnerDevelopment"]:
+        raise SystemExit("refusing live writes: this is not a development store")
+    return ShopifyClient(settings.shopify_store_domain, settings.shopify_write_token, settings.shopify_api_version)
 
 
 def _store() -> StoreBackend:

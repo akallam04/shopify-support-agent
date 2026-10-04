@@ -7,6 +7,10 @@ from mcp_server.clock import Clock
 from mcp_server.simdb import Address, Customer, Order, Product
 
 
+class StoreWriteError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class FoundOrder:
     order: Order

@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mcp_server import policy
-from mcp_server.backends.base import FoundOrder, StoreBackend, WritableStore
+from mcp_server.backends.base import FoundOrder, StoreBackend, StoreWriteError, WritableStore
 from mcp_server.clock import format_instant
 from mcp_server.search import WORD_RE, prefix_hit, title_score, words
 from mcp_server.simdb import Address, LineItem, Order, Product
@@ -149,6 +149,10 @@ def check_inventory(backend: StoreBackend, product_query: str) -> dict[str, Any]
 WRITE_ACTIONS = ("cancel_order", "update_shipping_address", "request_return")
 HANDOFF_ACTION = "transfer_to_human"
 SUPPORT_HOURS = "Monday to Friday, 8 am to 5 pm Mountain Time, replying within 1 business day"
+STORE_ERROR_REASON = (
+    "The store could not complete that change just now, so nothing was changed. Please try again "
+    "in a few minutes, or email support@auroraoutfitters.com."
+)
 
 
 @dataclass(frozen=True)
@@ -340,6 +344,23 @@ def _audit(backend: WritableStore, action: str, prepared: Prepared, outcome: str
     )
 
 
+def _apply(store: WritableStore, action: str, prepared: Prepared) -> dict[str, Any]:
+    name = prepared.order_name
+    if action == "cancel_order":
+        store.cancel_order(name)
+        return {"message": f"Order {name} is cancelled. Any amount paid goes back to the original payment method."}
+    if action == "update_shipping_address":
+        address = Address(**prepared.args["address"])
+        store.update_shipping_address(name, address)
+        return {"message": f"The shipping address on order {name} is now {format_address(address)}."}
+    if action == "request_return":
+        lines = [(lid, qty) for lid, qty in prepared.args["items"]]
+        store.request_return(name, lines, prepared.args["reason"])
+        return {"message": f"A return is requested on order {name}.", **prepared.facts["return_terms"]}
+    store.record_handoff({"at": format_instant(store.clock.now()), **prepared.args})
+    return {"message": f"I have passed this to our support team, who work {SUPPORT_HOURS}."}
+
+
 def execute(backend: StoreBackend, action: str, args: dict[str, Any], key: str | None = None) -> dict[str, Any]:
     if not backend.supports_writes:
         raise ToolInputError("this store backend does not accept write actions")
@@ -354,21 +375,12 @@ def execute(backend: StoreBackend, action: str, args: dict[str, Any], key: str |
         return {"ok": False, "action": action, "code": prepared.code, "reason": prepared.reason}
 
     name = prepared.order_name
-    if action == "cancel_order":
-        store.cancel_order(name)
-        result = {"message": f"Order {name} is cancelled. Any amount paid goes back to the original payment method."}
-    elif action == "update_shipping_address":
-        address = Address(**prepared.args["address"])
-        store.update_shipping_address(name, address)
-        result = {"message": f"The shipping address on order {name} is now {format_address(address)}."}
-    elif action == "request_return":
-        lines = [(lid, qty) for lid, qty in prepared.args["items"]]
-        store.request_return(name, lines, prepared.args["reason"])
-        terms = prepared.facts["return_terms"]
-        result = {"message": f"A return is requested on order {name}.", **terms}
-    else:
-        store.record_handoff({"at": format_instant(store.clock.now()), **prepared.args})
-        result = {"message": f"I have passed this to our support team, who work {SUPPORT_HOURS}."}
+    try:
+        result = _apply(store, action, prepared)
+    except StoreWriteError as e:
+        _audit(store, action, prepared, "failed", key)
+        store.audit[-1]["detail"] = str(e)[:300]
+        return {"ok": False, "action": action, "code": "store_error", "reason": STORE_ERROR_REASON}
 
     outcome = {"ok": True, "action": action, "order_number": name, **result}
     store.executed[key] = outcome

@@ -1,10 +1,11 @@
 """Live backend over the Shopify Admin GraphQL API, mapping responses into the sim storage model."""
 
+import time
 from typing import Any
 
-from mcp_server.backends.base import FoundOrder
+from mcp_server.backends.base import FoundOrder, StoreWriteError
 from mcp_server.clock import SystemClock
-from mcp_server.shopify_client import ShopifyClient
+from mcp_server.shopify_client import ShopifyClient, ShopifyGraphQLError
 from mcp_server.simdb import (
     Address,
     Customer,
@@ -13,6 +14,8 @@ from mcp_server.simdb import (
     LineItem,
     Order,
     Product,
+    ReturnLine,
+    ReturnRequest,
     Tracking,
     Variant,
 )
@@ -93,6 +96,68 @@ query ProductSearch($query: String!, $limit: Int!) {
 """
     + PRODUCT_FRAGMENT
 )
+
+ORDER_WITH_RETURNS_QUERY = (
+    """
+query OrderWithReturns($query: String!) {
+  orders(first: 5, query: $query) {
+    nodes {
+      ...OrderFields
+      returns(first: 20) {
+        nodes {
+          status
+          returnLineItems(first: 50) {
+            nodes { quantity ... on ReturnLineItem { fulfillmentLineItem { lineItem { id } } } }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+    + ORDER_FRAGMENT
+)
+
+ORDER_CANCEL_MUTATION = """
+mutation Cancel($orderId: ID!, $note: String) {
+  orderCancel(
+    orderId: $orderId
+    reason: CUSTOMER
+    restock: false
+    notifyCustomer: false
+    refundMethod: {originalPaymentMethodsRefund: true}
+    staffNote: $note
+  ) {
+    job { id }
+    orderCancelUserErrors { field message code }
+  }
+}
+"""
+
+ORDER_CANCELLED_QUERY = """
+query Cancelled($id: ID!) { order(id: $id) { cancelledAt } }
+"""
+
+ORDER_UPDATE_MUTATION = """
+mutation UpdateAddress($input: OrderInput!) {
+  orderUpdate(input: $input) {
+    order { id }
+    userErrors { field message }
+  }
+}
+"""
+
+RETURN_REQUEST_MUTATION = """
+mutation RequestReturn($input: ReturnRequestInput!) {
+  returnRequest(input: $input) {
+    return { id status }
+    userErrors { field message code }
+  }
+}
+"""
+
+CANCEL_POLL_ATTEMPTS = 15
+INACTIVE_RETURN_STATUSES = frozenset({"DECLINED", "CANCELED"})
 
 PRODUCTS_BY_ID_QUERY = (
     """
@@ -263,19 +328,50 @@ def map_order(node: dict[str, Any]) -> FoundOrder:
     return FoundOrder(order=order, customer=customer)
 
 
+def map_returns(node: dict[str, Any]) -> list[ReturnRequest]:
+    requests = []
+    for r in node.get("returns", {}).get("nodes", []):
+        if r["status"] in INACTIVE_RETURN_STATUSES:
+            continue
+        lines = [
+            ReturnLine(line_item_id=li["fulfillmentLineItem"]["lineItem"]["id"], quantity=li["quantity"])
+            for li in r["returnLineItems"]["nodes"]
+            if li.get("fulfillmentLineItem")
+        ]
+        requests.append(ReturnRequest(status=r["status"], reason="unknown", line_items=lines))
+    return requests
+
+
+def _check_errors(payload: dict[str, Any], key: str, errors_field: str = "userErrors") -> dict[str, Any]:
+    errors = payload[key].get(errors_field) or []
+    if errors:
+        raise StoreWriteError("; ".join(e.get("message", "") for e in errors))
+    return payload[key]
+
+
 class ShopifyAdminBackend:
     name = "shopify"
-    supports_writes = False
 
-    def __init__(self, client: ShopifyClient) -> None:
+    def __init__(self, client: ShopifyClient, write_client: ShopifyClient | None = None) -> None:
         self._client = client
+        self._write = write_client
+        self.supports_writes = write_client is not None
         self.clock = SystemClock()
+        self.executed: dict[str, dict[str, Any]] = {}
+        self.audit: list[dict[str, Any]] = []
+        self.handoffs: list[dict[str, Any]] = []
 
     def find_order(self, order_name: str) -> FoundOrder | None:
-        data = self._client.graphql(ORDER_BY_NAME_QUERY, {"query": f"name:{order_name}"})
+        if self._write is not None:
+            data = self._write.graphql(ORDER_WITH_RETURNS_QUERY, {"query": f"name:{order_name}"})
+        else:
+            data = self._client.graphql(ORDER_BY_NAME_QUERY, {"query": f"name:{order_name}"})
         for node in data["orders"]["nodes"]:
             if node["name"] == order_name:
-                return map_order(node)
+                found = map_order(node)
+                if "returns" in node:
+                    found.order.returns = map_returns(node)
+                return found
         return None
 
     def orders_for_email(self, email: str, limit: int) -> list[Order]:
@@ -295,3 +391,73 @@ class ShopifyAdminBackend:
             return {}
         data = self._client.graphql(PRODUCTS_BY_ID_QUERY, {"ids": sorted(product_ids)})
         return {p.product_id: p for p in (map_product(n) for n in data["nodes"] if n)}
+
+    def _writer(self) -> ShopifyClient:
+        if self._write is None:
+            raise StoreWriteError("this backend was built without the write-test token")
+        return self._write
+
+    def _order_id(self, order_name: str) -> FoundOrder:
+        found = self.find_order(order_name)
+        if found is None:
+            raise StoreWriteError(f"{order_name} disappeared before the change could be made")
+        return found
+
+    def cancel_order(self, order_name: str) -> None:
+        writer = self._writer()
+        order_id = self._order_id(order_name).order.order_id
+        try:
+            payload = writer.graphql(
+                ORDER_CANCEL_MUTATION,
+                {"orderId": order_id, "note": "Cancelled by the support agent at the customer's request."},
+            )
+            _check_errors(payload, "orderCancel", "orderCancelUserErrors")
+            for _ in range(CANCEL_POLL_ATTEMPTS):
+                if writer.graphql(ORDER_CANCELLED_QUERY, {"id": order_id})["order"]["cancelledAt"]:
+                    return
+                time.sleep(1.0)
+        except ShopifyGraphQLError as e:
+            raise StoreWriteError(str(e)) from e
+        raise StoreWriteError(f"{order_name} cancellation is still processing")
+
+    def update_shipping_address(self, order_name: str, address: Address) -> None:
+        writer = self._writer()
+        order_id = self._order_id(order_name).order.order_id
+        shipping = {
+            "firstName": address.first_name,
+            "lastName": address.last_name,
+            "address1": address.address1,
+            "address2": address.address2,
+            "city": address.city,
+            "provinceCode": address.province_code,
+            "zip": address.zip,
+            "countryCode": address.country_code,
+        }
+        try:
+            payload = writer.graphql(
+                ORDER_UPDATE_MUTATION,
+                {"input": {"id": order_id, "shippingAddress": {k: v for k, v in shipping.items() if v}}},
+            )
+        except ShopifyGraphQLError as e:
+            raise StoreWriteError(str(e)) from e
+        _check_errors(payload, "orderUpdate")
+
+    def request_return(self, order_name: str, lines: list[tuple[str, int]], reason: str) -> None:
+        writer = self._writer()
+        order = self._order_id(order_name).order
+        by_line = {fl.line_item_id: fl.fulfillment_line_item_id for f in order.fulfillments for fl in f.line_items}
+        missing = [lid for lid, _ in lines if lid not in by_line]
+        if missing:
+            raise StoreWriteError(f"{order_name} has no fulfilled line for {missing}")
+        items = [
+            {"fulfillmentLineItemId": by_line[lid], "quantity": qty, "customerNote": f"Reason: {reason}"}
+            for lid, qty in lines
+        ]
+        try:
+            payload = writer.graphql(RETURN_REQUEST_MUTATION, {"input": {"orderId": order.order_id, "returnLineItems": items}})
+        except ShopifyGraphQLError as e:
+            raise StoreWriteError(str(e)) from e
+        _check_errors(payload, "returnRequest")
+
+    def record_handoff(self, record: dict[str, Any]) -> None:
+        self.handoffs.append(record)
