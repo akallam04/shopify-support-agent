@@ -19,6 +19,7 @@ from dotenv import dotenv_values
 
 FUNCTION = "aurora-support"
 REGION = "us-east-1"
+LOCAL_ONLY_KEYS = frozenset({"SHOPIFY_WRITE_TOKEN"})
 
 
 def aws(*args: str) -> subprocess.CompletedProcess[str]:
@@ -50,6 +51,17 @@ def requested_values(args: list[str], env: dict[str, str | None]) -> tuple[dict[
     return wanted, missing
 
 
+def refusals(wanted: dict[str, str], env: dict[str, str | None]) -> list[str]:
+    reasons = [f"{k} stays in the local .env and is never pushed" for k in wanted if k in LOCAL_ONLY_KEYS]
+    local_values = {env[k] for k in LOCAL_ONLY_KEYS if env.get(k)}
+    reasons += [
+        f"{k} holds the value of a local-only key, refusing to push it"
+        for k, v in wanted.items()
+        if k not in LOCAL_ONLY_KEYS and v in local_values
+    ]
+    return reasons
+
+
 def main(args: list[str]) -> int:
     if not args:
         print("name at least one key from .env to copy, values are never printed")
@@ -58,6 +70,10 @@ def main(args: list[str]) -> int:
     wanted, missing = requested_values(args, env)
     if missing:
         print(f"not set in .env: {', '.join(missing)}")
+        return 2
+    blocked = refusals(wanted, env)
+    if blocked:
+        print("\n".join(blocked))
         return 2
     keys = list(wanted)
 
