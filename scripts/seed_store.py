@@ -37,7 +37,7 @@ mutation CreateProduct($input: ProductSetInput!) {
 CUSTOMER_CREATE_MUTATION = """
 mutation CreateCustomer($input: CustomerInput!) {
   customerCreate(input: $input) {
-    customer { id email }
+    customer { id }
     userErrors { field message }
   }
 }
@@ -45,7 +45,7 @@ mutation CreateCustomer($input: CustomerInput!) {
 
 CUSTOMER_LOOKUP_QUERY = """
 query FindCustomer($query: String!) {
-  customers(first: 1, query: $query) { nodes { id email } }
+  customers(first: 1, query: $query) { nodes { id } }
 }
 """
 

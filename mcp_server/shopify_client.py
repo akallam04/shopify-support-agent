@@ -50,7 +50,7 @@ query Orders($cursor: String) {
       displayFinancialStatus
       displayFulfillmentStatus
       totalPriceSet { shopMoney { amount currencyCode } }
-      customer { displayName email }
+      customer { displayName defaultEmailAddress { emailAddress } }
     }
   }
 }
@@ -60,25 +60,28 @@ CUSTOMERS_QUERY = """
 query Customers($cursor: String) {
   customers(first: 100, after: $cursor) {
     pageInfo { hasNextPage endCursor }
-    nodes { id displayName email numberOfOrders }
+    nodes { id displayName defaultEmailAddress { emailAddress } numberOfOrders }
   }
 }
 """
 
 SHOP_QUERY = """
 {
-  shop { name myshopifyDomain currencyCode plan { displayName } }
+  shop { name myshopifyDomain currencyCode plan { publicDisplayName partnerDevelopment } }
 }
 """
 
 
 class ShopifyClient:
     def __init__(self, store_domain: str, token: str, api_version: str) -> None:
+        if not store_domain or not token:
+            raise ShopifyGraphQLError("SHOPIFY_STORE_DOMAIN and SHOPIFY_ADMIN_TOKEN must be set")
         self._url = f"https://{store_domain}/admin/api/{api_version}/graphql.json"
         self._http = httpx.Client(
             headers={"X-Shopify-Access-Token": token, "Content-Type": "application/json"},
             timeout=30.0,
         )
+        self.deprecations: set[str] = set()
 
     def close(self) -> None:
         self._http.close()
@@ -98,6 +101,9 @@ class ShopifyClient:
                     f"auth failed ({resp.status_code}), check SHOPIFY_ADMIN_TOKEN and app scopes"
                 )
             resp.raise_for_status()
+            reason = resp.headers.get("X-Shopify-API-Deprecated-Reason")
+            if reason:
+                self.deprecations.update(r.strip() for r in reason.split(","))
             payload = resp.json()
             errors = payload.get("errors")
             if not errors:
@@ -109,7 +115,7 @@ class ShopifyClient:
             raise ShopifyGraphQLError(str(errors))
         raise ShopifyGraphQLError("throttle retries exhausted")
 
-    def _paginate(self, query: str, root: str) -> Iterator[dict[str, Any]]:
+    def paginate(self, query: str, root: str) -> Iterator[dict[str, Any]]:
         cursor: str | None = None
         while True:
             data = self.graphql(query, {"cursor": cursor})
@@ -123,10 +129,10 @@ class ShopifyClient:
         return self.graphql(SHOP_QUERY)["shop"]
 
     def iterate_products(self) -> Iterator[dict[str, Any]]:
-        return self._paginate(PRODUCTS_QUERY, "products")
+        return self.paginate(PRODUCTS_QUERY, "products")
 
     def iterate_orders(self) -> Iterator[dict[str, Any]]:
-        return self._paginate(ORDERS_QUERY, "orders")
+        return self.paginate(ORDERS_QUERY, "orders")
 
     def iterate_customers(self) -> Iterator[dict[str, Any]]:
-        return self._paginate(CUSTOMERS_QUERY, "customers")
+        return self.paginate(CUSTOMERS_QUERY, "customers")

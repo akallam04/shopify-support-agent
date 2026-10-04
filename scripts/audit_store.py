@@ -30,7 +30,8 @@ def main() -> None:
         shop = client.shop_info()
         print(
             f"shop: {shop['name']} ({shop['myshopifyDomain']}), "
-            f"currency {shop['currencyCode']}, plan {shop['plan']['displayName']}"
+            f"currency {shop['currencyCode']}, plan {shop['plan']['publicDisplayName']}, "
+            f"development store {shop['plan']['partnerDevelopment']}"
         )
 
         products = fetch("products", client.iterate_products)
@@ -53,7 +54,10 @@ def main() -> None:
             fulfill = Counter(o["displayFulfillmentStatus"] for o in orders)
             financial = Counter(o["displayFinancialStatus"] for o in orders)
             with_email = sum(
-                1 for o in orders if o["email"] or (o["customer"] or {}).get("email")
+                1
+                for o in orders
+                if o["email"]
+                or ((o["customer"] or {}).get("defaultEmailAddress") or {}).get("emailAddress")
             )
             dates = sorted(o["createdAt"] for o in orders)
             print(f"{with_email} with a customer email")
