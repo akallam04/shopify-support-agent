@@ -1,0 +1,188 @@
+{
+  "ran_at": "2026-10-04T23:00:13.069800+00:00",
+  "applied": true,
+  "cases": [
+    {
+      "case": "cancel eligible",
+      "action": "cancel_order",
+      "expected": "ok",
+      "sim": "ok",
+      "live": "ok",
+      "match": true
+    },
+    {
+      "case": "address eligible",
+      "action": "update_shipping_address",
+      "expected": "ok",
+      "sim": "ok",
+      "live": "ok",
+      "match": true
+    },
+    {
+      "case": "return in window",
+      "action": "request_return",
+      "expected": "ok",
+      "sim": "ok",
+      "live": "store_error",
+      "match": false
+    },
+    {
+      "case": "return final sale",
+      "action": "request_return",
+      "expected": "final_sale",
+      "sim": "final_sale",
+      "live": "final_sale",
+      "match": true
+    },
+    {
+      "case": "return out of window",
+      "action": "request_return",
+      "expected": "return_window_passed",
+      "sim": "return_window_passed",
+      "live": "return_window_passed",
+      "match": true
+    },
+    {
+      "case": "cancel after shipping",
+      "action": "cancel_order",
+      "expected": "already_shipped",
+      "sim": "already_shipped",
+      "live": "already_shipped",
+      "match": true
+    },
+    {
+      "case": "cancel after the window",
+      "action": "cancel_order",
+      "expected": "change_window_passed",
+      "sim": "change_window_passed",
+      "live": "change_window_passed",
+      "match": true
+    },
+    {
+      "case": "cancel with a wrong email",
+      "action": "cancel_order",
+      "expected": "order_not_found",
+      "sim": "order_not_found",
+      "live": "order_not_found",
+      "match": true
+    },
+    {
+      "case": "replayed cancel",
+      "action": "cancel_order",
+      "expected": "duplicate",
+      "sim": "duplicate",
+      "live": "duplicate",
+      "match": true
+    }
+  ],
+  "state": {
+    "#1020": {
+      "live": {
+        "cancelled": true,
+        "financial_status": "REFUNDED",
+        "fulfillment_status": "FULFILLMENT_NOT_REQUIRED",
+        "shipping_address": {
+          "first_name": "Maya",
+          "last_name": "Thompson",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": []
+      },
+      "sim": {
+        "cancelled": true,
+        "financial_status": "PAID",
+        "fulfillment_status": "UNFULFILLED",
+        "shipping_address": {
+          "first_name": "Maya",
+          "last_name": "Thompson",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": []
+      }
+    },
+    "#1021": {
+      "live": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "UNFULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "9 Pine St",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": []
+      },
+      "sim": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "UNFULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "9 Pine St",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": []
+      }
+    },
+    "#1017": {
+      "live": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "FULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": []
+      },
+      "sim": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "FULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": [
+          [
+            "REQUESTED",
+            "gid://shopify/LineItem/50759108198696",
+            1
+          ]
+        ]
+      }
+    }
+  }
+}

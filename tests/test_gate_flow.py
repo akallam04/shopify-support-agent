@@ -19,6 +19,7 @@ from app.config import Settings
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import FrozenClock, parse_instant
 from mcp_server.simdb import SimDB, db_hash
+from tests.conftest import make_db
 
 PLACED_1002 = parse_instant("2026-07-07T00:26:36Z")
 MAYA = "maya.thompson@example.com"
@@ -182,8 +183,7 @@ def test_gate_off_executes_immediately_but_policy_still_holds(db: SimDB) -> None
     assert client.count("reflect") == 0
 
     late = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS), "I could not cancel it."]}
-    other = db.copy_fresh()
-    other.orders["#1002"].cancelled_at = None
+    other = make_db()
     _, _, _, _, refused = first_turn(other, late, after_placed=timedelta(days=2), mutation_gate=False)
     assert other.orders["#1002"].cancelled_at is None
     assert json.loads(refused["tool_results"][-1]["result"])["code"] == "change_window_passed"

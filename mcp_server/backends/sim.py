@@ -69,6 +69,9 @@ class SimStoreBackend:
         order = self.db.orders[order_name]
         order.cancelled_at = format_instant(self.clock.now())
         order.cancel_reason = "CUSTOMER"
+        order.fulfillment_status = "FULFILLMENT_NOT_REQUIRED"
+        if order.financial_status == "PAID":
+            order.financial_status = "REFUNDED"
 
     def update_shipping_address(self, order_name: str, address: Address) -> None:
         self.db.orders[order_name].shipping_address = address

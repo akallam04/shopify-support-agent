@@ -1,0 +1,62 @@
+{
+  "ran_at": "2026-10-04T23:01:51.788636+00:00",
+  "applied": true,
+  "cases": [
+    {
+      "case": "return in window",
+      "action": "request_return",
+      "expected": "ok",
+      "sim": "ok",
+      "live": "ok",
+      "match": true
+    }
+  ],
+  "state": {
+    "#1017": {
+      "live": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "FULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": [
+          [
+            "REQUESTED",
+            "gid://shopify/LineItem/50759108198696",
+            1
+          ]
+        ]
+      },
+      "sim": {
+        "cancelled": false,
+        "financial_status": "PAID",
+        "fulfillment_status": "FULFILLED",
+        "shipping_address": {
+          "first_name": "Jordan",
+          "last_name": "Lee",
+          "address1": "123 Trailhead Way",
+          "address2": null,
+          "city": "Boulder",
+          "province_code": "CO",
+          "zip": "80302",
+          "country_code": "US"
+        },
+        "returns": [
+          [
+            "REQUESTED",
+            "gid://shopify/LineItem/50759108198696",
+            1
+          ]
+        ]
+      }
+    }
+  }
+}

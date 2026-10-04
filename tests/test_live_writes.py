@@ -92,6 +92,7 @@ def delivered_node() -> dict[str, Any]:
 def test_returns_map_order_lines_to_fulfilled_lines_and_ignore_declined_returns() -> None:
     write = ScriptedGraphQL({
         "OrderWithReturns": [{"orders": {"nodes": [delivered_node()]}}],
+        "returnReasonDefinitions": [{"returnReasonDefinitions": {"nodes": [{"id": "gid://shopify/ReturnReasonDefinition/7", "handle": "too-small"}]}}],
         "returnRequest(": [{"returnRequest": {"return": {"id": "r", "status": "REQUESTED"}, "userErrors": []}}],
     })
     args = {"order_number": "#2002", "email": "maya.thompson@example.com", "reason": "size_too_small", "items": [{"title": "rain jacket"}]}
@@ -99,7 +100,12 @@ def test_returns_map_order_lines_to_fulfilled_lines_and_ignore_declined_returns(
     b.clock = FrozenClock(parse_instant("2026-10-04T22:54:00Z"))
     assert execute(b, "request_return", args)["ok"] is True
     item = next(v for q, v in write.calls if q == "returnRequest(")["input"]["returnLineItems"][0]
-    assert item == {"fulfillmentLineItemId": "gid://shopify/FulfillmentLineItem/1", "quantity": 1, "customerNote": "Reason: size_too_small"}
+    assert item == {
+        "fulfillmentLineItemId": "gid://shopify/FulfillmentLineItem/1",
+        "quantity": 1,
+        "returnReasonDefinitionId": "gid://shopify/ReturnReasonDefinition/7",
+        "customerNote": "Reason: size_too_small",
+    }
 
 
 def test_live_writes_need_the_write_token() -> None:

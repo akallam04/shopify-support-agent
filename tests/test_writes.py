@@ -30,6 +30,7 @@ def test_cancel_inside_the_window_is_applied_and_audited(db: SimDB) -> None:
     result = execute(backend, "cancel_order", CANCEL_1002)
     assert result["ok"] is True
     assert db.orders["#1002"].cancelled_at == "2026-07-07T01:26:36Z"
+    assert (db.orders["#1002"].financial_status, db.orders["#1002"].fulfillment_status) == ("REFUNDED", "FULFILLMENT_NOT_REQUIRED")
     assert [a["outcome"] for a in backend.audit] == ["executed"]
 
 

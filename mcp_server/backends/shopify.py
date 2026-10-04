@@ -156,6 +156,22 @@ mutation RequestReturn($input: ReturnRequestInput!) {
 }
 """
 
+RETURN_REASON_DEFINITIONS_QUERY = """
+{ returnReasonDefinitions(first: 50) { nodes { id handle } } }
+"""
+
+RETURN_REASON_HANDLES = {
+    "size_too_small": "too-small",
+    "size_too_large": "too-big",
+    "unwanted": "changed-my-mind",
+    "not_as_described": "item-not-as-described",
+    "wrong_item": "received-the-wrong-item",
+    "defective": "damaged-or-defective",
+    "style": "style",
+    "color": "color",
+    "other": "other-reason",
+}
+
 CANCEL_POLL_ATTEMPTS = 15
 INACTIVE_RETURN_STATUSES = frozenset({"DECLINED", "CANCELED"})
 
@@ -360,6 +376,7 @@ class ShopifyAdminBackend:
         self.executed: dict[str, dict[str, Any]] = {}
         self.audit: list[dict[str, Any]] = []
         self.handoffs: list[dict[str, Any]] = []
+        self._reason_ids: dict[str, str] = {}
 
     def find_order(self, order_name: str) -> FoundOrder | None:
         if self._write is not None:
@@ -449,8 +466,14 @@ class ShopifyAdminBackend:
         missing = [lid for lid, _ in lines if lid not in by_line]
         if missing:
             raise StoreWriteError(f"{order_name} has no fulfilled line for {missing}")
+        reason_id = self._reason_definition_id(reason)
         items = [
-            {"fulfillmentLineItemId": by_line[lid], "quantity": qty, "customerNote": f"Reason: {reason}"}
+            {
+                "fulfillmentLineItemId": by_line[lid],
+                "quantity": qty,
+                "returnReasonDefinitionId": reason_id,
+                "customerNote": f"Reason: {reason}",
+            }
             for lid, qty in lines
         ]
         try:
@@ -458,6 +481,18 @@ class ShopifyAdminBackend:
         except ShopifyGraphQLError as e:
             raise StoreWriteError(str(e)) from e
         _check_errors(payload, "returnRequest")
+
+    def _reason_definition_id(self, reason: str) -> str:
+        if not self._reason_ids:
+            try:
+                nodes = self._writer().graphql(RETURN_REASON_DEFINITIONS_QUERY)["returnReasonDefinitions"]["nodes"]
+            except ShopifyGraphQLError as e:
+                raise StoreWriteError(str(e)) from e
+            self._reason_ids = {n["handle"]: n["id"] for n in nodes}
+        handle = RETURN_REASON_HANDLES.get(reason, "other-reason")
+        if handle not in self._reason_ids:
+            raise StoreWriteError(f"the store has no return reason definition {handle}")
+        return self._reason_ids[handle]
 
     def record_handoff(self, record: dict[str, Any]) -> None:
         self.handoffs.append(record)
