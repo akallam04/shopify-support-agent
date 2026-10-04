@@ -70,12 +70,13 @@ Later-phase directories appear as their phase lands.
 
 ## Local setup
 
-Requires Python 3.11+.
+Requires Python 3.11+ and [gitleaks](https://github.com/gitleaks/gitleaks) on the PATH for the pre-commit hook.
 
 ```
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env                       # then fill in the values
+git config core.hooksPath .githooks        # gitleaks scans every commit for secrets
 .venv/bin/python -m app.rag.index          # build the vector index
 .venv/bin/uvicorn app.main:app --reload    # chat UI at http://127.0.0.1:8000
 .venv/bin/pytest
