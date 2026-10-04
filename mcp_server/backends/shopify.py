@@ -57,7 +57,7 @@ fragment OrderFields on Order {{
   fulfillments {{
     id status createdAt deliveredAt displayStatus
     trackingInfo {{ number company url }}
-    fulfillmentLineItems(first: {LINE_ITEM_PAGE}) {{ nodes {{ lineItem {{ id }} quantity }} }}
+    fulfillmentLineItems(first: {LINE_ITEM_PAGE}) {{ nodes {{ id lineItem {{ id }} quantity }} }}
   }}
 }}
 """
@@ -220,7 +220,11 @@ def map_order(node: dict[str, Any]) -> FoundOrder:
                 for t in f.get("trackingInfo") or []
             ],
             line_items=[
-                FulfilledLine(line_item_id=fl["lineItem"]["id"], quantity=fl["quantity"])
+                FulfilledLine(
+                    fulfillment_line_item_id=fl["id"],
+                    line_item_id=fl["lineItem"]["id"],
+                    quantity=fl["quantity"],
+                )
                 for fl in _nodes(
                     f["fulfillmentLineItems"], LINE_ITEM_PAGE, f"fulfilled lines of {node['name']}"
                 )

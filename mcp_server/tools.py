@@ -68,7 +68,7 @@ def _order_status_view(order: Order) -> dict[str, Any]:
     return {
         "found": True,
         "order_number": order.name,
-        "placed_at": order.created_at,
+        "placed_at": order.processed_at,
         "cancelled": order.cancelled_at is not None,
         "fulfillment_status": order.fulfillment_status,
         "financial_status": order.financial_status,
@@ -118,7 +118,7 @@ def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
         "orders": [
             {
                 "order_number": o.name,
-                "placed_at": o.created_at,
+                "placed_at": o.processed_at,
                 "fulfillment_status": o.fulfillment_status,
                 "financial_status": o.financial_status,
                 "total": f"{o.total} {o.currency}",

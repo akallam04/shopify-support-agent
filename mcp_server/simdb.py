@@ -74,6 +74,7 @@ class Tracking(Model):
 
 
 class FulfilledLine(Model):
+    fulfillment_line_item_id: str
     line_item_id: str
     quantity: int
 

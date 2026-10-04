@@ -181,7 +181,11 @@ def order_node(
                 "deliveredAt": delivered_at,
                 "displayStatus": "DELIVERED" if delivered_at else "FULFILLED",
                 "trackingInfo": [{"number": "1Z999AA10123456784", "company": "UPS", "url": None}],
-                "fulfillmentLineItems": {"nodes": [{"lineItem": {"id": "gid://shopify/LineItem/1"}, "quantity": 1}]},
+                "fulfillmentLineItems": {
+                    "nodes": [
+                        {"id": "gid://shopify/FulfillmentLineItem/1", "lineItem": {"id": "gid://shopify/LineItem/1"}, "quantity": 1}
+                    ]
+                },
             }
         ],
     }
@@ -228,6 +232,7 @@ def test_mapping_keeps_delivery_tracking_and_fulfilled_lines() -> None:
     assert fulfillment.delivered_at == "2026-07-10T18:00:00Z"
     assert fulfillment.tracking[0].company == "UPS"
     assert fulfillment.line_items[0].line_item_id == "gid://shopify/LineItem/1"
+    assert fulfillment.line_items[0].fulfillment_line_item_id == "gid://shopify/FulfillmentLineItem/1"
 
 
 def test_a_full_nested_page_fails_loudly_instead_of_truncating() -> None:

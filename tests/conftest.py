@@ -74,7 +74,10 @@ def make_db() -> SimDB:
                 status="SUCCESS",
                 created_at="2026-07-07T00:30:00Z",
                 tracking=[Tracking(number="1Z999AA10123456784", company="UPS")],
-                line_items=[FulfilledLine(line_item_id="l1", quantity=1), FulfilledLine(line_item_id="l2", quantity=1)],
+                line_items=[
+                    FulfilledLine(fulfillment_line_item_id="fl1", line_item_id="l1", quantity=1),
+                    FulfilledLine(fulfillment_line_item_id="fl2", line_item_id="l2", quantity=1),
+                ],
             )
         ],
     )

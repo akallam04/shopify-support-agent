@@ -123,10 +123,12 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318455592",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699348947240",
               "line_item_id": "gid://shopify/LineItem/18104312922408",
               "quantity": 1
             },
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699348980008",
               "line_item_id": "gid://shopify/LineItem/18104312955176",
               "quantity": 1
             }
@@ -254,10 +256,12 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318521128",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349143848",
               "line_item_id": "gid://shopify/LineItem/18104313184552",
               "quantity": 1
             },
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349176616",
               "line_item_id": "gid://shopify/LineItem/18104313217320",
               "quantity": 1
             }
@@ -321,6 +325,7 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318553896",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349209384",
               "line_item_id": "gid://shopify/LineItem/18104313315624",
               "quantity": 1
             }
@@ -374,10 +379,12 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318619432",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349307688",
               "line_item_id": "gid://shopify/LineItem/18104313479464",
               "quantity": 1
             },
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349340456",
               "line_item_id": "gid://shopify/LineItem/18104313512232",
               "quantity": 2
             }
@@ -473,6 +480,7 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318684968",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349405992",
               "line_item_id": "gid://shopify/LineItem/18104313676072",
               "quantity": 1
             }
@@ -526,10 +534,12 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318717736",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349438760",
               "line_item_id": "gid://shopify/LineItem/18104313708840",
               "quantity": 1
             },
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349471528",
               "line_item_id": "gid://shopify/LineItem/18104313741608",
               "quantity": 1
             }
@@ -593,6 +603,7 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318750504",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349504296",
               "line_item_id": "gid://shopify/LineItem/18104313774376",
               "quantity": 1
             }
@@ -688,6 +699,7 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318783272",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349537064",
               "line_item_id": "gid://shopify/LineItem/18104313970984",
               "quantity": 1
             }
@@ -815,10 +827,12 @@
           "fulfillment_id": "gid://shopify/Fulfillment/6477318816040",
           "line_items": [
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349569832",
               "line_item_id": "gid://shopify/LineItem/18104314429736",
               "quantity": 1
             },
             {
+              "fulfillment_line_item_id": "gid://shopify/FulfillmentLineItem/15699349602600",
               "line_item_id": "gid://shopify/LineItem/18104314462504",
               "quantity": 1
             }
