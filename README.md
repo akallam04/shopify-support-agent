@@ -83,6 +83,8 @@ cp .env.example .env                       # then fill in the values
 
 Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m evals.run_evals --label run` (eval suite), `python -m scripts.check_mcp` (drive the MCP server directly).
 
+Simulated store: `python -m scripts.export_store_snapshot` snapshots the development store to `data/sim/seed.json`, `STORE_BACKEND=sim` serves the tools from that snapshot instead of the live API, and `SHOPIFY_LIVE_TESTS=1 pytest tests/test_contract_live.py` checks that both backends return identical tool output.
+
 ## Roadmap
 
 - [x] Scaffold: package layout, pinned dependencies, health endpoint, smoke test
@@ -101,7 +103,7 @@ Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m ev
 Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
 
 - [x] Phase 0: audit, baseline re-confirmed at 53/53, write mutations and scopes verified, session state design
-- [ ] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing
+- [x] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing, 46/46 live contract checks, Shopify API 2026-10
 - [ ] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a confirmation gate
 - [ ] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k
 - [ ] Phase 4: baseline, gate on versus off ablation, fixes, model comparison, prompt caching

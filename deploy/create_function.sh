@@ -29,7 +29,7 @@ aws lambda create-function \
   --memory-size 1024 \
   --timeout 60 \
   --region "$REGION" \
-  --environment "Variables={SHOPIFY_STORE_DOMAIN=$SHOPIFY_STORE_DOMAIN,SHOPIFY_ADMIN_TOKEN=$SHOPIFY_ADMIN_TOKEN,SHOPIFY_API_VERSION=${SHOPIFY_API_VERSION:-2026-01},ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY,CORS_ORIGINS=*}" \
+  --environment "Variables={SHOPIFY_STORE_DOMAIN=$SHOPIFY_STORE_DOMAIN,SHOPIFY_ADMIN_TOKEN=$SHOPIFY_ADMIN_TOKEN,SHOPIFY_API_VERSION=${SHOPIFY_API_VERSION:-2026-10},ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY,CORS_ORIGINS=*}" \
   --query 'FunctionArn' --output text
 
 echo "created, it will be Active in a minute or two"
