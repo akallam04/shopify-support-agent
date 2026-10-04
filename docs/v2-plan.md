@@ -1,13 +1,12 @@
-# v2 plan: an agent that takes actions, measured by simulation
+# v2 design: an agent that takes actions, measured by simulation
 
 v1 is a read-only support agent with a 53-case single-turn eval suite. v2 adds safe write
 actions and a tau-bench-style simulation harness that measures them over multi-turn
 conversations with a simulated customer.
 
-This plan was written at the end of Phase 0 and records the decisions made there. Phases 1
-to 7 below are the task list.
+This document records the design decisions and the task list for each phase.
 
-## Baseline on the day v2 started
+## Baseline when v2 started
 
 Run `evals/results/20261004-025503_v2-phase0-baseline.json`, 53 cases, all live.
 
@@ -22,10 +21,9 @@ Run `evals/results/20261004-025503_v2-phase0-baseline.json`, 53 cases, all live.
 | p95 latency | 3.63s |
 | cost per 100 conversations | $0.18 |
 
-33 unit tests pass, ruff clean, 57 commits all authored by Arun Teja Reddy Kallam with no
-AI attribution anywhere in history.
+33 unit tests passed and ruff reported no issues.
 
-## Phase 0 findings that shape the design
+## Design decisions
 
 ### Grading is on end state, not on the path taken
 
@@ -36,7 +34,7 @@ path that reaches an equivalent end state scores full reward. The agent's tool c
 compared to the reference list only when `RewardType.ACTION` is in `reward_basis`, which
 the retail, airline, and telecom domains never do.
 
-Our grader copies this. Matching trajectories would punish correct-but-different solutions
+This grader copies that. Matching trajectories would punish correct-but-different solutions
 and would break comparability with published numbers. Reference actions are recorded per
 task, replayed to build the target state, and also reported as a diagnostic
 (`partial_action_reward`, split by read tools versus write tools) without gating the score.
@@ -44,33 +42,40 @@ task, replayed to build the target state, and also reported as a diagnostic
 Final reward is the product of the components listed in the task's `reward_basis`. Default
 basis is `[DB, COMMUNICATE]`.
 
-### Shopify write mutations, verified against the docs for API version 2026-01
+### Shopify write mutations
 
-Phase 0 checked these against 2026-01. The API moved to 2026-10 in Phase 1, so Phase 2
-re-checks each write mutation against 2026-10 before building on it.
+These were checked against the 2026-01 docs before the API moved to 2026-10 in Phase 1.
+Phase 2 re-checks each one against 2026-10 before building on it.
 
 | tool | mutation | scope | facts that matter |
 |---|---|---|---|
 | `cancel_order` | `orderCancel` | `write_orders` | Irreversible. Runs asynchronously and returns a `Job`. Fails if the order is already cancelled, has pending payment authorizations, has active returns, or has fulfillments that cannot be cancelled. `reason` and `restock` are required. |
 | `update_shipping_address` | `orderUpdate` | `write_orders` | The order must be unfulfilled. |
-| `request_return` | `returnRequest` | `write_returns` | Creates a return with status `REQUESTED` that the merchant must approve or decline. This is the right shape for a support agent: the agent asks, a human decides. |
+| `request_return` | `returnRequest` | `write_returns` | Creates a return with status `REQUESTED` that the merchant must approve or decline. This fits a support agent: the agent asks, a person decides. |
 | `transfer_to_human` | none | none | Local handoff record, no Shopify call. |
 
-The store is confirmed a development store (`plan.partnerDevelopment = true`,
-`aurora-outfitters-co.myshopify.com`). The app currently holds 10 scopes and every one of
-them is read-only, so no write is possible today even by accident.
+`orderCancel` being asynchronous means the tool cannot report the final state from the
+mutation response alone. It has to poll the job or re-read the order. The simulated store
+treats it as a synchronous write, a deliberate simplification that the README's limitations
+section will record.
 
-**Scopes to enable before Phase 2 can touch the live store (Arun does this, not Claude):**
-`write_orders`, `write_returns`, `read_returns`.
+### Two Shopify tokens
 
-Note that `orderCancel` being asynchronous means the tool cannot report the final state
-from the mutation response alone. It has to poll the job or re-read the order. The sim
-backend models this as a synchronous write, which is a deliberate simplification to record
-in the limitations section of the README.
+The store is a development store (`plan.partnerDevelopment = true`,
+`aurora-outfitters-co.myshopify.com`).
+
+- **Read token (`SHOPIFY_ADMIN_TOKEN`).** Held by the deployed Lambda. Every scope on this
+  app is read-only, so the public demo cannot write to the store even if the agent is
+  manipulated. Live writes stay off in the deployed demo.
+- **Write-test token (`SHOPIFY_WRITE_TOKEN`).** A second custom app used only for live write
+  testing and for reseeding test orders. It exists only in a developer's local `.env`.
+  `deploy/sync_lambda_env.py` refuses to push it to the Lambda, under its own name or under
+  any other name. Setup steps are in `docs/live-write-testing.md`.
+
+### API version
 
 The repo pinned API version 2026-01. Shopify supports each version for 12 months, so 2026-01
-could lose support around January 2027, in the middle of a job search. Phase 1 moved to
-2026-10 (see Phase 1 findings below).
+could lose support around January 2027. Phase 1 moved everything to 2026-10.
 
 ### Where session state lives
 
@@ -78,42 +83,53 @@ Lambda is stateless, and v2 needs two things to survive between HTTP requests: a
 confirmation ("I am about to cancel #1001, do you confirm?") and, for the public demo, a
 per-visitor sandbox copy of the store that write actions can safely mutate.
 
-**Decision (confirmed by Arun): a signed, client-held state token with an expiry. No new AWS
-infrastructure, no new cost.**
+**Decision: a signed, client-held state token with an expiry. No new AWS infrastructure and
+no new cost.**
 
-The reason this fits is that the API is already client-state-driven. The frontend sends the
-entire conversation history on every request and the backend holds nothing between calls.
-Adding one signed `session_state` field to that same round trip continues the existing
-design instead of introducing a second, contradictory one.
+This fits because the API is already client-state-driven. The frontend sends the entire
+conversation history on every request and the backend holds nothing between calls. Adding
+one signed `session_state` field to that round trip continues the existing design instead of
+introducing a second, contradictory one.
 
 The token carries the session id, an expiry, a nonce, the pending confirmation if there is
-one, and the ordered list of sandbox mutations applied so far. The sandbox is reconstructed
-deterministically as seed plus mutation list, so the token stays small (a handful of
-mutations, not a copy of the database). It is signed with HMAC-SHA256 using a new secret
-`SESSION_SIGNING_KEY`, and the server rejects anything that fails the signature or the
-expiry check. Tokens expire 30 minutes after they are issued.
+one, and the ordered list of sandbox mutations applied so far. The sandbox is rebuilt
+deterministically as seed plus mutation list, so the token stays small. It is signed with
+HMAC-SHA256 using `SESSION_SIGNING_KEY`, and the server rejects anything that fails the
+signature or expiry check. Tokens expire 30 minutes after they are issued. A confirmation only
+counts if it matches the hash of the exact pending action, so a stale or swapped token cannot
+confirm a different write.
 
 The token is signed, not encrypted, so anyone holding it can read it. It therefore carries
 only what that visitor already knows about their own session: their pending action and their
-own sandbox changes. It never holds server secrets, API tokens, or another customer's data. A confirmation only counts if it matches the hash of the exact pending action,
-so a stale or swapped token cannot confirm a different write.
+own sandbox changes. It never holds server secrets, API tokens, or another customer's data.
+Replaying a sandbox mutation is harmless because the sandbox belongs to that one visitor.
 
-Replay of a sandbox mutation is harmless because the sandbox belongs to that one visitor.
+**The one case this does not cover** is a replayed write against the live store, where an
+idempotency record has to live somewhere the client cannot forge. Live writes stay off in the
+deployed demo, and the simulation runs in process with no storage at all. If live writes are
+ever enabled in a deployed environment, the upgrade is one on-demand DynamoDB table (`pk`,
+TTL attribute) holding `idem#<key>` records. That is new infrastructure and new IAM, so it
+waits until something needs it.
 
-**The one case this does not cover** is a replayed write against the live dev store, where
-an idempotency record has to live somewhere the client cannot forge. Live writes are behind
-a feature flag that stays off in the deployed demo, and Phases 1 to 4 run the simulation
-in-process with no storage at all. So the upgrade path is written down and not built:
-if live writes are ever enabled in a deployed environment, add one DynamoDB table
-(`pk`, on-demand, TTL attribute) holding `idem#<key>` records. That stays inside the
-free tier at demo volume, but it is new infrastructure and new IAM, so it waits until
-something actually needs it.
+### Deployment and container images
+
+The Phase 1 code is not deployed yet. It ships once, when the public sandbox needs the
+simulated store live. At that point:
+
+- Images are tagged with the git SHA they were built from, and the Lambda is deployed by that
+  tag, so the image the function uses always keeps a tag.
+- An ECR lifecycle rule expires **untagged** images only. Tagged images, including the one the
+  Lambda runs, are never expired, because a deleted image makes the function fail the next
+  time Lambda reloads it.
+
+The live Lambda already calls API 2026-10. Only its `SHOPIFY_API_VERSION` variable changed,
+after a probe showed every query in the deployed code returns cleanly at 2026-10.
 
 ## Phases
 
 ### Phase 1: simulated store backend
 
-- [x] Read tau2's retail domain (data model, tools, policy, tasks) first and design the sim
+- [x] Read tau2's retail domain (data model, tools, policy, tasks) and design the simulated
       database and hashing from it.
 - [x] `StoreBackend` protocol with two implementations: `ShopifyAdminBackend` (live) and
       `SimStoreBackend` (in-memory JSON database, one fresh copy per conversation).
@@ -128,11 +144,11 @@ something actually needs it.
 - [x] `scripts/reseed_test_orders.py` for live write testing (see Phase 2).
 - [x] `deploy/sync_lambda_env.py` to rotate a token into the Lambda without printing it.
 
-### Determinism rules for the simulated store
+#### Determinism rules for the simulated store
 
 The same outcome must always produce the same hash, whatever order the agent did things in.
 
-1. **Write tools never generate ids.** This copies tau2 retail, where every write flips
+1. **Write tools never generate ids.** This follows tau2 retail, where every write changes
    fields on an existing record (`status`, `cancel_reason`, `return_items`, the address)
    instead of creating a new entity. A return request is recorded on its order, not as a new
    object with a fresh id.
@@ -145,61 +161,45 @@ The same outcome must always produce the same hash, whatever order the agent did
    notes) and side channels such as handoff summaries and the audit log stay outside it.
 5. **The committed seed's hash is pinned in a test**, so the seed can only change on purpose.
 
-### Phase 1 findings
+#### Phase 1 findings
 
-- **Data facts that shape Phase 2 and 3.** No fulfilled order has a delivery date, no order has
-  a shipping address, and no product is marked final sale. On the store as it stands, no order
-  is return-eligible and the address tool has nothing to change. Simulation tasks therefore set
-  up these states through per-task initial state (tau2's `initial_state`), and live testing uses
-  the reseed fixtures.
-- **Frozen time is 2026-08-12T16:00:00Z.** All 15 orders were created within 43 seconds on
-  2026-07-07, so the frozen time has to sit far enough after that for a delivery to be both
-  after the order and more than 30 days old. Deliveries on July 9 to 12 fall outside the window,
-  deliveries from July 14 fall inside it.
+- **Missing scenarios in the store data.** No fulfilled order has a delivery date, no order has
+  a shipping address, and no product is marked final sale. As the store stands, no order is
+  return-eligible and the address tool has nothing to change. These scenarios are built on the
+  store with the reseed script and then re-exported into the seed, so the simulated and live
+  stores stay identical (see Phase 2).
+- **Frozen time is 2026-08-12T16:00:00Z.** All 15 original orders were created within 43
+  seconds on 2026-07-07, so the frozen time sits far enough after that for a delivery to be
+  both after its order and more than 30 days old. This value is revisited when the new
+  scenarios are built, since new orders are created at the real current date.
 - **A v1 search bug, found by the contract tests.** Shopify's `products` connection sorts by
   `ID` unless asked otherwise, so `check_inventory` returned the three oldest matches, not the
   three most relevant. A query for "backpack" put a tent first because of its `backpacking` tag.
   Shopify's own `RELEVANCE` sort was no better: for "bottle" it ranked a camp chair (a match only
-  in its description) above the bottle. The fix splits the work. Both backends return up to 10
-  matches in explicit `ID` order, and shared tool code ranks products whose title matches the
-  query first, keeping store order on ties. The live agent gets better results and both backends
-  stay identical. Shopify also matches product descriptions, so the seed now stores them.
+  in its description) above the bottle. Both backends now return up to 10 matches in explicit
+  `ID` order, and shared tool code ranks products whose title matches the query first, keeping
+  store order on ties. Shopify also matches product descriptions, so the seed stores them.
 - **Deprecated fields removed.** Shopify flagged `Customer.email`, which the order lookup used to
   decide whether an email owns an order. It now reads `defaultEmailAddress.emailAddress`, checked
-  to match on all 15 orders first. `ShopPlan.displayName` was replaced too. The client now records
+  to match on all 15 orders first. `ShopPlan.displayName` was replaced too. The client records
   Shopify's deprecation header, and the exporter prints it.
 - **Exact order-name matching.** The live lookup used to take the first search hit for an order
   number. It now requires an exact name match, as the simulated store does.
-- **Deployment state.** The live Lambda now calls API 2026-10: only its
-  `SHOPIFY_API_VERSION` variable changed, through `deploy/sync_lambda_env.py`, after a probe
-  showed every query in the deployed v1 code returns cleanly at 2026-10. The live demo was
-  re-checked afterwards (order lookup, wrong email, live stock, policy, injection, CORS). The
-  Phase 1 code itself is not deployed yet. That needs Docker running and a decision on ECR,
-  which holds five images (four untagged leftovers from July) with no lifecycle policy, so
-  each push adds a little billed storage.
 - **`scripts/check_mcp.py` ignored `STORE_BACKEND`.** The MCP SDK starts servers with a minimal
   environment, so the script silently used the live store whatever was set. It now passes the
   environment through, and the server logs which backend it is using.
 
 ### Phase 2: safe write actions
 
-- [ ] Policy engine in code, with eligibility rules read from `data/policies`: return
+- [ ] Re-check `orderCancel`, `orderUpdate` and `returnRequest` against the 2026-10 docs.
+- [ ] Policy engine in code, with eligibility rules taken from `data/policies`: return
       window, final sale, gift cards, order state, identity match. Tools refuse with a
       structured reason. The model cannot bypass it.
-- [ ] Four tools on the sim backend first: `cancel_order`, `update_shipping_address`,
-      `request_return`, `transfer_to_human`. Live backend behind a feature flag, dev store
-      only.
-- [ ] Before any live write testing, run `scripts/reseed_test_orders.py` (dry run first, then
-      `--apply`). `orderCancel` cannot be undone, so each test run needs fresh orders. The script
-      keeps five tagged fixtures topped up: cancel-eligible, address-eligible,
-      shipped-not-delivered, return-in-window, return-out-of-window. Used-up orders are left in
-      place, never deleted. Besides `write_orders`, `write_returns` and `read_returns`, running it
-      needs `write_draft_orders`, `write_merchant_managed_fulfillment_orders` and
-      `write_fulfillments`.
-- [ ] If Shopify issues a new Admin API token when scopes change, update `.env`, then run
-      `deploy/sync_lambda_env.py SHOPIFY_ADMIN_TOKEN`. It never prints values.
-- [ ] Re-check `orderCancel`, `orderUpdate` and `returnRequest` against the 2026-10 docs.
-- [ ] Mutation gate as graph nodes before any write, following SABER:
+- [ ] Four tools, built on the simulated store first: `cancel_order`,
+      `update_shipping_address`, `request_return`, `transfer_to_human`. The live backend gets
+      them behind a feature flag, development store only, using the write-test token.
+- [ ] Mutation gate as graph nodes before any write, following SABER, switchable by config
+      (`MUTATION_GATE=on|off`) so the Phase 4 ablation needs no refactor:
   - [ ] deterministic policy check
   - [ ] targeted reflection with only the relevant rules, the request, and the order facts
   - [ ] explicit confirmation held in graph state, classified yes / no / unclear, where
@@ -209,6 +209,12 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [ ] Writes require order number and email match, extending the current authorization.
 - [ ] Context cleaning for long conversations: summarize old turns, keep tool facts.
 - [ ] Unit tests for every policy rule and every gate path.
+- [ ] Build the missing scenarios on the development store with `scripts/reseed_test_orders.py`
+      (dry run first, then `--apply`, using the write-test token): delivered orders inside and
+      outside the 30-day window, orders with shipping addresses, and an order containing the
+      final-sale product. Then re-export the seed and re-run the contract tests. `orderCancel`
+      cannot be undone, so every live write test starts by topping up these fixtures. Used-up
+      orders are left in place, never deleted.
 
 ### Phase 3: simulation harness
 
@@ -228,16 +234,22 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [ ] **No-write tasks need a second check.** When the right answer is no write (a refusal,
       an out-of-window return, an identity mismatch), the target state equals the starting
       state, so an agent that does nothing at all passes the database check. Every such task
-      must also carry `communicate_info` or a natural-language assertion that the agent
-      actually said the right thing. A validation step fails the task file if one is missing.
+      must also carry `communicate_info` or a natural-language assertion that the agent said
+      the right thing. A validation step fails the task file if one is missing.
 - [ ] Keep tau2's action diagnostics: report how many reference actions the agent matched,
-      split into read tools and write tools, without letting it gate the reward. It shows
+      split into read tools and write tools, without letting it gate the reward. This shows
       cases where the database check passed only because no write was attempted.
 - [ ] Metrics: pass^1 to pass^k (k=4), per category, write precision and recall, unsafe
       write count (target 0), cost per resolved conversation, p50 and p95 latency, turns.
 - [ ] Async runs with a concurrency limit and resume, results written to
       `evals/results/sim/<run-id>/` and never overwritten.
-- [ ] About 50 tasks covering the categories listed in the brief.
+- [ ] About 50 tasks covering: order status; cancellation, eligible and not; address change,
+      eligible and not; returns inside the window, outside it, and for a final-sale item;
+      product and policy questions; multi-intent requests; a wrong email or identity mismatch;
+      someone asking about another person's order; prompt injection mid-conversation;
+      frustrated, vague, or rambling customers; a customer who says no or changes their mind
+      at the confirmation step; handoff requests; and a customer with several orders where
+      the agent must ask which one.
 - [ ] Task validation: replay every reference trajectory through the policy engine, run a
       strong model once and review its failures for task bugs, fix or drop ambiguous tasks.
 - [ ] Failure taxonomy with labels and manual spot checks.
@@ -256,19 +268,20 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 5: production polish
 
-- [ ] GitHub Actions: lint and unit tests on push, a small simulation smoke run on manual
-      trigger or nightly, artifacts uploaded, badge in the README.
+- [ ] GitHub Actions: lint, unit tests and gitleaks on push, a small simulation smoke run on
+      manual trigger or nightly, artifacts uploaded, badge in the README.
 - [ ] Release manifest: hash of prompts, model ids, policy and knowledge snapshot, git SHA,
       stamped on every response, log line, and eval run.
 - [ ] Structured JSON logs with conversation and trace ids, per-node timing, tokens and cost.
-- [ ] Public demo safety: sandbox writes per session, clear labelling, rate limits, per
-      session token cap.
+- [ ] Public demo safety: sandbox writes per session, clear labelling, rate limits, a per
+      session token cap, and a cap on total conversation size per request.
+- [ ] Deploy as described under "Deployment and container images".
 - [ ] Cold start measured, cheapest fix applied, before and after reported.
 
 ### Phase 6: website upgrade
 
-- [ ] Audit the live site first: desktop and mobile screenshots, design critique,
-      accessibility review, issue list in the phase summary.
+- [ ] Audit the live site first: desktop and mobile screenshots, design critique, and an
+      accessibility review, with the issue list recorded in `docs/site-audit.md`.
 - [ ] Scenario chips, sandbox banner, confirmation card with working Confirm and Cancel,
       clear loading and retry states.
 - [ ] "Inside the agent" panel: graph path, tool calls, gate and policy decisions, verify
@@ -278,17 +291,16 @@ The same outcome must always produce the same hash, whatever order the agent did
       static JSON from the eval results.
 - [ ] Responsive, keyboard accessible, WCAG AA contrast, meta tags and an OG image.
 
-### Phase 7: documentation and resume
+### Phase 7: documentation
 
 - [ ] README rewrite led by what the agent does and the headline simulation numbers, with
       the updated architecture diagram, the eval method and its limitations, the before and
       after log, and a cost and latency table.
-- [ ] A short honest write-up in `docs/` suitable for a LinkedIn post.
-- [ ] Three resume bullets using only numbers from saved runs, plus the keyword list.
+- [ ] A short write-up in `docs/` covering what was built, what broke, and what the numbers
+      say.
 
-## Ground rules carried through every phase
+## Working principles
 
-- Commit and push to `main`, authored by Arun Teja Reddy Kallam, never any AI attribution.
 - Every number published anywhere comes from a run saved in the repo.
 - Agent fixes are reported separately from harness and task fixes.
 - Paid runs print a cost estimate first and honour a `--max-usd` cap. Iterate on small
