@@ -1,0 +1,15 @@
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Expire untagged images a day after push. Tagged images, including the one the function runs, are never touched.",
+      "selection": {
+        "tagStatus": "untagged",
+        "countType": "sinceImagePushed",
+        "countUnit": "days",
+        "countNumber": 1
+      },
+      "action": { "type": "expire" }
+    }
+  ]
+}

@@ -5,11 +5,14 @@ FROM public.ecr.aws/docker/library/python:3.11-slim
 # aws lambda web adapter, forwards lambda invokes to the http app on $PORT
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 
+ARG GIT_SHA=unknown
+
 # HOME under /opt so the embedding model bakes into a world-readable path, since
 # lambda only gives us /tmp as writable and may not run the container as root
 ENV HOME=/opt/apphome \
     PORT=8080 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    GIT_SHA=$GIT_SHA
 
 WORKDIR /app
 
