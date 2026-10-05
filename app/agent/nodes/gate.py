@@ -12,6 +12,7 @@ from app.agent.prompts import (
     CONFIRMATION_TEMPLATE,
     DECLINED_RESPONSE,
     GATE_INPUT_RESPONSE,
+    HANDOFF_FOLLOWUP,
     HANDOFF_RESPONSE,
     NOT_FOUND_HINT,
     POLICY_RULES,
@@ -33,11 +34,14 @@ YES_RE = re.compile(
 NO_RE = re.compile(r"^(no|nope|nah|don't|do not|stop|wait|hold on|not yet|never mind|nevermind)\b")
 
 
+FAST_DECLINE_MAX_WORDS = 4
+
+
 def classify_fast(text: str) -> str | None:
     normalized = " ".join(text.lower().split())
     if YES_RE.match(normalized):
         return "confirm"
-    if NO_RE.match(normalized):
+    if NO_RE.match(normalized) and len(normalized.split()) <= FAST_DECLINE_MAX_WORDS:
         return "decline"
     return None
 
@@ -203,6 +207,9 @@ def make_execute_node(tools: Any):
 
 def make_handoff_node(tools: Any):
     def handoff(state: AgentState) -> dict[str, Any]:
+        handed_off = any(m["role"] == "assistant" and m["content"] in (HANDOFF_RESPONSE, HANDOFF_FOLLOWUP) for m in state["messages"])
+        if handed_off:
+            return {"draft": HANDOFF_FOLLOWUP}
         update: dict[str, Any] = {"draft": HANDOFF_RESPONSE}
         if "transfer_to_human" in tools.write_tool_names:
             args = {

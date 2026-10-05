@@ -96,6 +96,12 @@ HANDOFF_RESPONSE = (
     "business day."
 )
 
+HANDOFF_FOLLOWUP = (
+    "I have already passed this to our support team, and they will reply by email within one "
+    "business day. I cannot connect you to a person in this chat, but I am happy to help with "
+    "anything else in the meantime."
+)
+
 SAFE_FALLBACK_RESPONSE = (
     "I want to be sure I give you accurate information, and I could not verify my "
     "answer just now. Please email support@auroraoutfitters.com with your question "

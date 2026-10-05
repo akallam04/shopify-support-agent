@@ -7,7 +7,9 @@ from typing import Any
 import pytest
 
 from app.agent.graph import build_graph
+from app.agent.nodes.gate import classify_fast
 from app.agent.prompts import (
+    HANDOFF_FOLLOWUP,
     ORDER_CONFIRM_RULE,
     ORDER_GATE_RULE,
     ROUTER_WRITE_RULE,
@@ -294,3 +296,24 @@ def test_the_router_sends_questions_about_changing_an_order_to_the_tools_only_wh
     turn(graph, [{"role": "user", "content": "Can I return the second sleeping bag?"}])
     route_system = " ".join(b["text"] for b in next(kw for kind, kw in client.calls if kind == "route")["system"])
     assert (ROUTER_WRITE_RULE.strip() in route_system) is writes
+
+
+@pytest.mark.parametrize(
+    ("text", "label"),
+    [("no", "decline"), ("No thanks", "decline"), ("no, don't cancel it", "decline"),
+     ("No, I don't want to cancel it anymore. Can you change the shipping address instead?", None),
+     ("yes please", "confirm")],
+)
+def test_only_short_replies_take_the_fast_path(text: str, label: str | None) -> None:
+    assert classify_fast(text) == label
+
+
+def test_asking_again_for_a_person_gets_a_follow_up_without_a_second_handoff(db: SimDB) -> None:
+    route = {"intent": "handoff", "search_query": "", "order_number": "", "email": ""}
+    graph, _, backend = make(db, {"route": [route, route]})
+    first = turn(graph, [{"role": "user", "content": "I want to talk to a real person."}])
+    history = [{"role": "user", "content": "I want to talk to a real person."}, {"role": "assistant", "content": first["response"]},
+               {"role": "user", "content": "No, connect me to a live agent now."}]
+    second = turn(graph, history)
+    assert first["response"] == HANDOFF_RESPONSE and second["response"] == HANDOFF_FOLLOWUP
+    assert len(backend.handoffs) == 1
