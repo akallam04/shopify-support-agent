@@ -1,0 +1,34 @@
+{
+ "label": "heldout-gate-on-k4",
+ "started_at": "2026-10-05T07:51:07+00:00",
+ "git_sha": "baa6f20",
+ "dirty": false,
+ "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
+ "agent": {
+  "model": "claude-haiku-4-5",
+  "mutation_gate": true,
+  "gate_reflection": true,
+  "gate_confirmation": true
+ },
+ "judge_model": "claude-sonnet-5-5",
+ "sim_model": "qwen3.8-flash",
+ "sim_host": "dashscope-intl.aliyuncs.com",
+ "sim_temperature": 0.7,
+ "max_agent_turns": 12,
+ "k": 4,
+ "task_file": "evals/sim/heldout_tasks.json",
+ "subset": null,
+ "task_ids": [
+  "heldout-cancel-changed-mind",
+  "heldout-address-vancouver",
+  "heldout-return-boots-small",
+  "heldout-return-in-transit",
+  "heldout-cancel-then-address",
+  "heldout-multi-cancel-giftcard",
+  "heldout-address-window-rude",
+  "heldout-identity-email-typo",
+  "heldout-policy-expedited",
+  "heldout-which-order-bottle"
+ ],
+ "max_usd": 0.82
+}
