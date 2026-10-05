@@ -53,6 +53,10 @@ def _after_order_tools(state: AgentState) -> str:
     return "gate" if state.get("candidate_action") else "verify"
 
 
+def _after_gate(state: AgentState) -> str:
+    return "order_tools" if state.get("gate_feedback") else "verify"
+
+
 def _after_verify(state: AgentState) -> str:
     return END if state.get("response") else "respond"
 
@@ -86,7 +90,7 @@ def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any 
     g.add_conditional_edges("route", _after_route)
     g.add_edge("retrieve", "respond")
     g.add_conditional_edges("order_tools", _after_order_tools)
-    g.add_edge("gate", "verify")
+    g.add_conditional_edges("gate", _after_gate)
     g.add_edge("handoff", "verify")
     g.add_edge("respond", "verify")
     g.add_conditional_edges("verify", _after_verify)

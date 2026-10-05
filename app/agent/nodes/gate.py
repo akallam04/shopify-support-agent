@@ -60,6 +60,17 @@ def result_message(result: dict[str, Any]) -> str:
     return f"That is already done. {text}" if result.get("duplicate") else text
 
 
+CORRECTABLE_CODES = frozenset({"invalid_input", "item_not_found", "no_items", "invalid_reason"})
+MAX_GATE_RETRIES = 1
+
+
+def _retry(state: AgentState, name: str, reason: str) -> dict[str, Any] | None:
+    retries = state.get("gate_retries", 0)
+    if retries >= MAX_GATE_RETRIES:
+        return None
+    return {"gate_feedback": f"{name} was not run: {reason}", "gate_retries": retries + 1}
+
+
 def _record(state: AgentState, result: dict[str, Any], name: str, args: dict[str, Any]) -> dict[str, Any]:
     return {
         "executed_actions": list(state.get("executed_actions", [])) + [result],
@@ -95,6 +106,9 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             prepared = tools.prepare(name, args)
         except ToolInputError as e:
             trace.append({"step": "policy", "action": name, "allowed": False, "code": "invalid_input", "detail": str(e)})
+            retry = _retry(state, name, str(e))
+            if retry is not None:
+                return {**retry, "candidate_action": None, "gate_trace": trace}
             return {"draft": GATE_INPUT_RESPONSE, "candidate_action": None, "gate_trace": trace}
 
         tool_results = list(state.get("tool_results", [])) + [
@@ -102,6 +116,9 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         ]
         trace.append({"step": "policy", "action": name, "allowed": prepared.allowed, "code": prepared.code})
         if not prepared.allowed:
+            retry = _retry(state, name, prepared.reason) if prepared.code in CORRECTABLE_CODES else None
+            if retry is not None:
+                return {**retry, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
             draft = result_message({"ok": False, "code": prepared.code, "reason": prepared.reason})
             return {"draft": draft, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
 

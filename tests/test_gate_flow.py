@@ -262,3 +262,23 @@ def test_long_conversations_send_a_digest_instead_of_old_turns(db: SimDB) -> Non
     assert len(route_call["messages"]) <= 4
     route_system = " ".join(b["text"] for b in route_call["system"])
     assert "#1002" in route_system and MAYA in route_system
+
+
+def test_a_correctable_input_mistake_goes_back_to_the_model_once(db: SimDB) -> None:
+    bad = {**CANCEL_ARGS, "reason": "because"}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", bad), ("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}
+    _, client, _, _, state = first_turn(db, script)
+    assert client.count("order_tools") == 2
+    retry_system = " ".join(b["text"] for b in [kw for kind, kw in client.calls if kind == "order_tools"][1]["system"])
+    assert "was not run" in retry_system
+    assert state["pending_action"]["action"] == "cancel_order"
+    assert db.orders["#1002"].cancelled_at is None
+
+
+def test_a_repeated_input_mistake_reaches_the_customer_after_one_retry(db: SimDB) -> None:
+    bad = {**CANCEL_ARGS, "reason": "because"}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", bad), ("cancel_order", bad)]}
+    _, client, _, _, state = first_turn(db, script)
+    assert client.count("order_tools") == 2
+    assert "reason must be one of" in state["response"]
+    assert not state.get("pending_action")

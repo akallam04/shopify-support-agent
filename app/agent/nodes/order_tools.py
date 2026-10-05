@@ -5,7 +5,13 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
-from app.agent.prompts import ORDER_CONFIRM_RULE, ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE
+from app.agent.prompts import (
+    GATE_FEEDBACK_TEMPLATE,
+    ORDER_CONFIRM_RULE,
+    ORDER_SYSTEM,
+    ORDER_WRITE_RULES,
+    SAFE_FALLBACK_RESPONSE,
+)
 from app.agent.models import call_options, system_blocks
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
@@ -25,7 +31,9 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
     base_system = order_system(tools, settings)
 
     async def order_tools(state: AgentState) -> dict[str, Any]:
-        system = system_blocks(base_system, state.get("context_digest"))
+        feedback = state.get("gate_feedback")
+        extra = GATE_FEEDBACK_TEMPLATE.format(feedback=feedback) if feedback else None
+        system = system_blocks(base_system, state.get("context_digest"), extra)
         messages: list[Any] = list(state["messages"])
         tool_results: list[dict[str, Any]] = list(state.get("tool_results", []))
         executed: list[dict[str, Any]] = list(state.get("executed_actions", []))
@@ -49,6 +57,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
             if gated is not None and settings.mutation_gate:
                 candidate = {"name": gated.name, "args": dict(gated.input) if isinstance(gated.input, dict) else {}}
                 return {
+                    "gate_feedback": None,
                     "candidate_action": candidate,
                     "tool_results": tool_results,
                     "executed_actions": executed,
@@ -71,6 +80,6 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
 
         if not draft:
             draft = SAFE_FALLBACK_RESPONSE
-        return {"draft": draft, "tool_results": tool_results, "executed_actions": executed, "usage": usage}
+        return {"draft": draft, "tool_results": tool_results, "executed_actions": executed, "usage": usage, "gate_feedback": None}
 
     return order_tools

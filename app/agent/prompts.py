@@ -107,6 +107,9 @@ You can also change orders with tools: cancel_order, update_shipping_address, an
 - Call at most one change tool per turn.
 - Use transfer_to_human only for things these tools cannot do, like warranty claims, damaged items, or exceptions to policy."""
 
+GATE_FEEDBACK_TEMPLATE = """Your last proposed change was not run: {feedback}
+Correct the call using the order details, or ask the customer for what is missing."""
+
 ORDER_CONFIRM_RULE = """
 - Before calling a change tool, tell the customer exactly what you will change and wait for a clear yes to that in their next message."""
 

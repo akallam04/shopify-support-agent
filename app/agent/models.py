@@ -9,10 +9,12 @@ THINKING_MIN_MAX_TOKENS = 4000
 DIGEST_HEADER = "Earlier in this conversation (summarized):"
 
 
-def system_blocks(stable: str, digest: str | None = None) -> list[dict[str, Any]]:
+def system_blocks(stable: str, digest: str | None = None, extra: str | None = None) -> list[dict[str, Any]]:
     blocks: list[dict[str, Any]] = [{"type": "text", "text": stable, "cache_control": {"type": "ephemeral"}}]
     if digest:
         blocks.append({"type": "text", "text": f"{DIGEST_HEADER}\n{digest}"})
+    if extra:
+        blocks.append({"type": "text", "text": extra})
     return blocks
 
 
