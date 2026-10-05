@@ -20,6 +20,7 @@ from anthropic import AsyncAnthropic
 
 from app.config import get_settings
 from app.model_errors import is_billing_error
+from app.release import release_manifest
 from app.rag.vectorstore import ChromaVectorStore
 from evals.sim.config import get_sim_settings
 from evals.sim.env import load_seed
@@ -241,6 +242,7 @@ async def main() -> None:
             "label": args.label,
             "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "git_sha": sha,
+            "release": release_manifest(agent.settings(get_settings())),
             "dirty": dirty,
             "seed_hash": db_hash(seed),
             "agent": asdict(agent),

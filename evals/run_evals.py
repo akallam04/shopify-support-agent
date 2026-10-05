@@ -21,6 +21,7 @@ from anthropic import AsyncAnthropic
 from app.agent.graph import build_graph
 from app.config import get_settings
 from app.costs import usage_cost
+from app.release import release_manifest
 from app.mcp_client import ShopifyTools
 from app.rag.vectorstore import ChromaVectorStore
 from evals.graders import (
@@ -255,6 +256,7 @@ async def main() -> None:
         "label": args.label,
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "git_commit": commit,
+        "release": release_manifest(settings),
         "models": {
             "router": settings.router_model,
             "answer": settings.answer_model,
