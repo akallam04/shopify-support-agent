@@ -174,7 +174,7 @@ def test_a_wrong_email_gets_the_not_found_answer(db: SimDB) -> None:
 def test_reflection_can_stop_a_mismatched_action(db: SimDB) -> None:
     question = "Just to check, did you want to cancel the whole order or only one item?"
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "reflect": [{"verdict": "ask", "issues": ["scope"], "question": question}]}
-    _, _, _, _, state = first_turn(db, script)
+    _, _, _, _, state = first_turn(db, script, gate_reflection=True)
     assert state["response"] == question
     assert not state.get("pending_action")
     assert db.orders["#1002"].cancelled_at is None
@@ -208,7 +208,7 @@ def test_the_prompt_asks_for_a_yes_only_when_the_gate_does_not(db: SimDB, flags:
 
 def test_confirmation_off_executes_after_reflection(db: SimDB) -> None:
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}
-    _, client, _, _, state = first_turn(db, script, gate_confirmation=False)
+    _, client, _, _, state = first_turn(db, script, gate_confirmation=False, gate_reflection=True)
     assert db.orders["#1002"].cancelled_at is not None
     assert client.count("reflect") == 1
     assert "is cancelled" in state["response"]
@@ -317,3 +317,14 @@ def test_asking_again_for_a_person_gets_a_follow_up_without_a_second_handoff(db:
     second = turn(graph, history)
     assert first["response"] == HANDOFF_RESPONSE and second["response"] == HANDOFF_FOLLOWUP
     assert len(backend.handoffs) == 1
+
+
+def test_reflection_is_off_by_default_and_the_switch_turns_it_on(db: SimDB) -> None:
+    assert Settings(_env_file=None).gate_reflection is False
+    def script() -> dict:
+        return {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}
+
+    _, client, _, _, state = first_turn(db, script())
+    assert client.count("reflect") == 0 and state["pending_action"]["action"] == "cancel_order"
+    _, switched, _, _, _ = first_turn(make_db(), script(), gate_reflection=True)
+    assert switched.count("reflect") == 1

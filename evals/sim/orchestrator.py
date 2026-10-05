@@ -54,7 +54,7 @@ def classify_agent_error(e: Exception) -> str:
 class AgentConfig:
     model: str
     mutation_gate: bool = True
-    gate_reflection: bool = True
+    gate_reflection: bool = False
     gate_confirmation: bool = True
 
     def settings(self, base: Settings) -> Settings:

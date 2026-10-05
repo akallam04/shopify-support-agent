@@ -58,7 +58,7 @@ Full per-case records for every run live in `evals/results/`.
 
 v2 lets the agent change orders: cancel, change the shipping address, request a return, and hand off. It is measured the way [tau-bench](https://github.com/sierra-research/tau2-bench) measures agents: a simulated customer (Qwen 3.8 Flash) plays a scripted scenario against the real agent (Claude Haiku 4.5) and a simulated copy of the store, and each conversation is graded on the store's end state, the facts the agent had to tell the customer, judged assertions (Claude Sonnet 5.5 as judge, with the tool outputs as ground truth), and whether every write had a clear yes. pass^k is the chance that all k tries of a task succeed.
 
-**The headline compares enforcing confirmation in code against asking for it in the prompt.** With the gate on, the graph holds every proposed change, checks it against policy, and shows the customer the exact change until they say yes. With the gate off, the same prompt tells the model to describe the change and wait for a yes, and nothing enforces it. Same agent code, same 50 tasks, 4 tries each, 200 conversations per arm.
+**The headline compares enforcing confirmation in code against asking for it in the prompt.** The headline ran the full gate: the graph holds every proposed change, checks it against policy, has a second model call compare it with what the customer asked for (reflection), and shows the customer the exact change until they say yes. With the gate off, the same prompt tells the model to describe the change and wait for a yes, and nothing enforces it. Same agent code, same 50 tasks, 4 tries each, 200 conversations per arm.
 
 "Resolved" counts a conversation as solved when the end state and required facts are right, whether or not the customer agreed to the change. "Resolved safely" also requires that every write had a clear yes and none was forbidden. This combined view was added after the partial headline was seen, and it is built only from the yes-check and forbidden-write checks that were already part of grading.
 
@@ -108,7 +108,17 @@ On the 32 tasks with a proposed change, 2 tries each, the full gate and gate off
 | Confirmation off | 57 of 64 | 39 of 64 | 20 | 4 |
 | Gate off | 58 of 64 | 40 of 64 | 20 | 4 |
 
-The confirmation step accounts for the safety. The reflection check, a model call that compares the proposed change with what the customer asked for, showed no measurable benefit here, unlike in the SABER paper's setting.
+The confirmation step accounts for the safety. The reflection check showed no measurable benefit on these tasks, so **reflection is now off by default**, with `GATE_REFLECTION=true` turning it back on. The cost it saves, measured from runs already made:
+
+| | Full gate | Reflection off |
+|---|---|---|
+| Reflection calls per conversation (headline, 200 conversations) | 0.57 | 0 |
+| Share of agent cost spent on reflection (headline) | 4.3% | 0 |
+| Latency of the turn that proposes a change, p50 / p95 (32 tasks) | 3.09s / 4.54s | 2.08s / 3.18s |
+| Agent cost per conversation (32 tasks) | $0.0164 | $0.0147 |
+| Turns per conversation (32 tasks) | 4.23 | 4.00 |
+
+The 32-task rows compare two separate runs on the same tasks, so they are observed differences, not a controlled timing of one call. In the headline run, reflection approved 84 proposed changes and stopped 30 to ask the customer a question, and those questions did not show up as better outcomes. The SABER paper found reflection helped in its retail setting. A likely reason it does not help here is that the policy engine already blocks ineligible changes before reflection runs, and the confirmation step shows the customer the exact change, which leaves reflection little to catch. The headline numbers above are for the full gate, as run.
 
 ### Haiku 4.5 or Sonnet 5.5
 

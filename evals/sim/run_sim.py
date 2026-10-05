@@ -184,7 +184,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--k", type=int, default=1)
     p.add_argument("--agent-model", default="claude-haiku-4-5")
     p.add_argument("--no-gate", action="store_true")
-    p.add_argument("--no-reflection", action="store_true")
+    p.add_argument("--reflection", action="store_true")
     p.add_argument("--no-confirmation", action="store_true")
     p.add_argument("--max-usd", type=float, required=True)
     p.add_argument("--est-per-conversation", type=float, default=None)
@@ -201,7 +201,7 @@ async def main() -> None:
     sim_settings = get_sim_settings()
     if not (sim_settings.sim_user_api_key and sim_settings.sim_user_base_url and sim_settings.sim_user_model):
         raise SystemExit("set SIM_USER_BASE_URL, SIM_USER_MODEL and SIM_USER_API_KEY in .env")
-    agent = AgentConfig(args.agent_model, not args.no_gate, not args.no_reflection, not args.no_confirmation)
+    agent = AgentConfig(args.agent_model, not args.no_gate, args.reflection, not args.no_confirmation)
     if args.subset:
         args.tasks = ",".join(json.loads(SUBSETS.read_text())[args.subset]["task_ids"])
     tasks = select_tasks(load_tasks(args.task_file), args.tasks, args.categories, args.limit)

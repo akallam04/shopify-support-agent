@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     store_backend: Literal["shopify", "sim"] = "shopify"
     write_actions: bool = False
     mutation_gate: bool = True
-    gate_reflection: bool = True
+    gate_reflection: bool = False
     gate_confirmation: bool = True
     context_keep_messages: int = 8
     sim_seed_path: str = "data/sim/seed.json"
