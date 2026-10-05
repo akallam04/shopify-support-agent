@@ -10,6 +10,7 @@ from app.agent.graph import build_graph
 from app.agent.prompts import (
     ORDER_CONFIRM_RULE,
     ORDER_GATE_RULE,
+    ROUTER_WRITE_RULE,
     CONFIRM_CLASSIFIER_SCHEMA,
     DECLINED_RESPONSE,
     HANDOFF_RESPONSE,
@@ -284,3 +285,12 @@ def test_a_repeated_input_mistake_reaches_the_customer_after_one_retry(db: SimDB
     assert client.count("order_tools") == 2
     assert "reason must be one of" in state["response"]
     assert not state.get("pending_action")
+
+
+@pytest.mark.parametrize("writes", [True, False])
+def test_the_router_sends_questions_about_changing_an_order_to_the_tools_only_when_it_can_act(db: SimDB, writes: bool) -> None:
+    script = {"route": [{"intent": "smalltalk", "search_query": "", "order_number": "", "email": ""}]}
+    graph, client, _ = make(db, script, writes=writes)
+    turn(graph, [{"role": "user", "content": "Can I return the second sleeping bag?"}])
+    route_system = " ".join(b["text"] for b in next(kw for kind, kw in client.calls if kind == "route")["system"])
+    assert (ROUTER_WRITE_RULE.strip() in route_system) is writes

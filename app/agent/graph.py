@@ -74,7 +74,7 @@ def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any 
     g.add_node("context", make_context_node(settings.context_keep_messages))
     g.add_node("confirm", make_confirm_node(client, settings.router_model))
     g.add_node("execute", make_execute_node(tools))
-    g.add_node("route", make_route_node(client, settings.router_model))
+    g.add_node("route", make_route_node(client, settings.router_model, bool(tools.write_tool_names)))
     g.add_node("retrieve", make_retrieve_node(store))
     g.add_node("order_tools", make_order_tools_node(client, settings.answer_model, tools, settings))
     g.add_node("gate", make_gate_node(client, settings.router_model, tools, settings))

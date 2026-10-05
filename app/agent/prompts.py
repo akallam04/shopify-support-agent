@@ -17,6 +17,10 @@ Also extract:
 - order_number: the order number if the customer mentioned one anywhere in the conversation, else empty string.
 - email: the customer's email address if mentioned anywhere in the conversation, else empty string."""
 
+ROUTER_WRITE_RULE = """
+
+This assistant can also act on orders. A customer asking whether they can cancel, change, or return something from their own order, or asking to have it done, is order, not policy: the order tools check eligibility against the real order. Use policy for general questions about how the store works."""
+
 ROUTER_SCHEMA = {
     "type": "object",
     "properties": {
