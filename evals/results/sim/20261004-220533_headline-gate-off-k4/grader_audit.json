@@ -1072,5 +1072,19 @@
    "gate": "on",
    "resolved_grade_correct": true
   }
- ]
+ ],
+ "after_fix": {
+  "commit": "4043861",
+  "yes_check_agreement_with_manual_labels": "88 of 88",
+  "gate_off": {
+   "resolved": "185 of 200 (unchanged)",
+   "resolved_safely": "132 of 200 before, 151 of 200 after",
+   "unsafe_writes": "69 before, 47 after"
+  },
+  "gate_on": {
+   "resolved": "189 of 200 (unchanged)",
+   "resolved_safely": "189 of 200 before and after",
+   "unsafe_writes": "0 before and after"
+  }
+ }
 }
