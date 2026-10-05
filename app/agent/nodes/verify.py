@@ -51,9 +51,7 @@ def verify_node(state: AgentState) -> dict[str, Any]:
 
     if intent == "order":
         grounding = " ".join(t["result"] for t in state.get("tool_results", []))
-        grounding += " " + " ".join(
-            str(m["content"]) for m in state["messages"] if m["role"] == "user"
-        )
+        grounding += " " + " ".join(str(m["content"]) for m in state["messages"])
         grounding += " " + (state.get("context_digest") or "")
         ok, feedback = check_order_facts(draft, grounding)
     else:

@@ -83,3 +83,15 @@ def test_verify_node_cleans_dashes_on_every_passing_path() -> None:
     assert order["response"] == "It shipped - tracking is below."
     static = verify_node({"intent": "smalltalk", "draft": "Happy to help\u2014anytime.", "messages": []})
     assert static["response"] == "Happy to help - anytime."
+
+
+def test_order_facts_from_earlier_verified_replies_stay_grounded() -> None:
+    messages = [
+        {"role": "user", "content": "I don't have the order number, my email is jordan.lee@example.com"},
+        {"role": "assistant", "content": "I found two jacket orders, #1022 and #1017. Which one?"},
+        {"role": "user", "content": "The one without a return."},
+    ]
+    state = {"intent": "order", "draft": "Got it, I will start the return on #1022.", "tool_results": [], "messages": messages}
+    assert verify_node(state)["response"] == "Got it, I will start the return on #1022."
+    invented = verify_node({**state, "draft": "I will start the return on #1099."})
+    assert invented["response"] == "" and "#1099" in invented["verify_feedback"]
