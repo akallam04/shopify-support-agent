@@ -13,6 +13,16 @@ TRACKING_LIKE_RE = re.compile(r"\b(?=[A-Z0-9]*\d)[A-Z0-9]{8,}\b")
 
 UNCHECKED_INTENTS = {"injection", "out_of_scope", "handoff", "smalltalk"}
 
+LINE_START_DASH_RE = re.compile(r"(?m)^[ \t]*[\u2013\u2014][ \t]*")
+RANGE_DASH_RE = re.compile(r"(?<=\d)[ \t]*[\u2013\u2014][ \t]*(?=\d)")
+DASH_RE = re.compile(r"[ \t]*[\u2013\u2014][ \t]*")
+
+
+def plain_dashes(text: str) -> str:
+    text = LINE_START_DASH_RE.sub("- ", text)
+    text = RANGE_DASH_RE.sub("-", text)
+    return DASH_RE.sub(" - ", text).strip()
+
 
 def check_citations(draft: str, allowed_ids: set[str]) -> tuple[bool, str | None]:
     unknown = sorted(set(CITATION_RE.findall(draft)) - allowed_ids)
@@ -37,7 +47,7 @@ def verify_node(state: AgentState) -> dict[str, Any]:
     intent = state.get("intent", "")
 
     if state.get("hard_injection") or intent in UNCHECKED_INTENTS:
-        return {"response": draft, "verify_feedback": None}
+        return {"response": plain_dashes(draft), "verify_feedback": None}
 
     if intent == "order":
         grounding = " ".join(t["result"] for t in state.get("tool_results", []))
@@ -56,7 +66,7 @@ def verify_node(state: AgentState) -> dict[str, Any]:
         ok, feedback = check_citations(draft, allowed)
 
     if ok:
-        return {"response": draft, "verify_feedback": None}
+        return {"response": plain_dashes(draft), "verify_feedback": None}
     if state.get("retry_count", 0) >= 1:
         return {"response": SAFE_FALLBACK_RESPONSE, "verify_feedback": None}
     return {

@@ -1,6 +1,7 @@
 """Unit tests for the grounding gate."""
 
 from app.agent.nodes.verify import (
+    plain_dashes,
     check_citations,
     check_order_facts,
     verify_node,
@@ -68,3 +69,17 @@ def test_verify_node_skips_static_paths() -> None:
         {"intent": "handoff", "draft": "connecting you", "messages": [], "retry_count": 0}
     )
     assert result["response"] == "connecting you"
+
+
+def test_em_and_en_dashes_are_replaced_in_replies() -> None:
+    assert plain_dashes("It is in stock\u2014we have 12.") == "It is in stock - we have 12."
+    assert plain_dashes("Arrives in 3\u20136 business days, or 5 \u2013 7 for Canada.") == "Arrives in 3-6 business days, or 5-7 for Canada."
+    assert plain_dashes("Options:\n\u2014 Standard\n\u2014 Expedited") == "Options:\n- Standard\n- Expedited"
+    assert plain_dashes("No dashes here - already plain.") == "No dashes here - already plain."
+
+
+def test_verify_node_cleans_dashes_on_every_passing_path() -> None:
+    order = verify_node({"intent": "order", "draft": "It shipped\u2014tracking is below.", "tool_results": [], "messages": []})
+    assert order["response"] == "It shipped - tracking is below."
+    static = verify_node({"intent": "smalltalk", "draft": "Happy to help\u2014anytime.", "messages": []})
+    assert static["response"] == "Happy to help - anytime."
