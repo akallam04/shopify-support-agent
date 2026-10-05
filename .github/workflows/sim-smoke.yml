@@ -1,0 +1,46 @@
+name: Simulation smoke run
+
+on:
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: Comma-separated task ids
+        default: cancel-eligible,return-in-window,status-in-transit
+      max_usd:
+        description: Spend cap in USD
+        default: "0.10"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      SIM_USER_API_KEY: ${{ secrets.SIM_USER_API_KEY }}
+      SIM_USER_BASE_URL: ${{ secrets.SIM_USER_BASE_URL }}
+      SIM_USER_MODEL: ${{ secrets.SIM_USER_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Build the knowledge index
+        run: python -m app.rag.index
+      - name: Run the simulation
+        env:
+          TASKS: ${{ inputs.tasks }}
+          MAX_USD: ${{ inputs.max_usd }}
+        run: >
+          python -m evals.sim.run_sim --label ci-smoke
+          --tasks "$TASKS" --k 1
+          --max-usd "$MAX_USD" --est-per-conversation 0.02
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sim-smoke-results
+          path: evals/results/sim/*_ci-smoke/
