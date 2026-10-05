@@ -11,7 +11,6 @@ Run from the repo root: .venv/bin/python -m scripts.reseed_test_orders [--apply]
 
 import argparse
 import json
-import re
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -20,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import get_settings
-from mcp_server.clock import SystemClock, parse_instant
+from mcp_server.clock import SystemClock, parse_ago, parse_instant
 from mcp_server.shopify_client import ShopifyClient
 from scripts.seed_store import check, pick_location
 
@@ -29,7 +28,6 @@ SUITE_TAG = "v2-live-test"
 RETURN_WINDOW_DAYS = 30
 CHANGE_WINDOW = timedelta(hours=2)
 FRESHNESS_MARGIN = timedelta(minutes=30)
-DURATION_RE = re.compile(r"^(\d+)([dhm])$")
 ORDER_CREATE_PACING_S = 13
 DELIVERY_TOLERANCE = timedelta(minutes=5)
 REQUIRED_WRITE_SCOPES = frozenset(
@@ -114,14 +112,6 @@ class Line:
 
 def iso(moment: datetime) -> str:
     return moment.astimezone(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def parse_ago(value: str) -> timedelta:
-    match = DURATION_RE.match(value)
-    if not match:
-        raise ValueError(f"durations look like 45d, 2h or 30m, got {value!r}")
-    amount, unit = int(match.group(1)), match.group(2)
-    return {"d": timedelta(days=amount), "h": timedelta(hours=amount), "m": timedelta(minutes=amount)}[unit]
 
 
 def fixture_tag(key: str) -> str:

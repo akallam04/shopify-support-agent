@@ -1,7 +1,8 @@
 """Clocks: the real one for live traffic, a frozen one so simulations never go stale."""
 
+import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 
@@ -31,3 +32,14 @@ def parse_instant(value: str) -> datetime:
     if parsed.tzinfo is None:
         raise ValueError(f"timestamp must carry a timezone: {value}")
     return parsed.astimezone(UTC)
+
+
+DURATION_RE = re.compile(r"^(\d+)([dhm])$")
+
+
+def parse_ago(value: str) -> timedelta:
+    match = DURATION_RE.match(value)
+    if not match:
+        raise ValueError(f"durations look like 45d, 2h or 30m, got {value!r}")
+    amount, unit = int(match.group(1)), match.group(2)
+    return {"d": timedelta(days=amount), "h": timedelta(hours=amount), "m": timedelta(minutes=amount)}[unit]

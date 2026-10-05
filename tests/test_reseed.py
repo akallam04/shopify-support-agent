@@ -105,7 +105,7 @@ def test_the_most_backdated_delivery_is_created_first_as_the_probe() -> None:
 
 
 def test_durations_parse_and_reject_bad_input() -> None:
-    from scripts.reseed_test_orders import parse_ago
+    from mcp_server.clock import parse_ago
 
     assert parse_ago("45d") == timedelta(days=45)
     assert parse_ago("2h") == timedelta(hours=2)
