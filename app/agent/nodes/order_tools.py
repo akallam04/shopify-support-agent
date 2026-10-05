@@ -8,6 +8,7 @@ from anthropic import AsyncAnthropic
 from app.agent.prompts import (
     GATE_FEEDBACK_TEMPLATE,
     ORDER_CONFIRM_RULE,
+    ORDER_GATE_RULE,
     ORDER_SYSTEM,
     ORDER_WRITE_RULES,
     SAFE_FALLBACK_RESPONSE,
@@ -24,7 +25,7 @@ def order_system(tools: Any, settings: Settings) -> str:
     if not tools.write_tool_names:
         return ORDER_SYSTEM
     gate_confirms = settings.mutation_gate and settings.gate_confirmation
-    return ORDER_SYSTEM + ORDER_WRITE_RULES + ("" if gate_confirms else ORDER_CONFIRM_RULE)
+    return ORDER_SYSTEM + ORDER_WRITE_RULES + (ORDER_GATE_RULE if gate_confirms else ORDER_CONFIRM_RULE)
 
 
 def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settings: Settings):

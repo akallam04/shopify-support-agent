@@ -9,6 +9,7 @@ import pytest
 from app.agent.graph import build_graph
 from app.agent.prompts import (
     ORDER_CONFIRM_RULE,
+    ORDER_GATE_RULE,
     CONFIRM_CLASSIFIER_SCHEMA,
     DECLINED_RESPONSE,
     HANDOFF_RESPONSE,
@@ -199,6 +200,7 @@ def test_the_prompt_asks_for_a_yes_only_when_the_gate_does_not(db: SimDB, flags:
     _, client, _, _, _ = first_turn(db, script, **flags)
     system = " ".join(b["text"] for b in next(kw["system"] for kind, kw in client.calls if kind == "order_tools"))
     assert (ORDER_CONFIRM_RULE in system) is prompt_confirms
+    assert (ORDER_GATE_RULE in system) is not prompt_confirms
 
 
 def test_confirmation_off_executes_after_reflection(db: SimDB) -> None:
