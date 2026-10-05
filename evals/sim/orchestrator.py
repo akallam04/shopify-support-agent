@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import anthropic
 import httpx
@@ -10,6 +10,7 @@ import httpx
 from app.agent.graph import build_graph
 from app.agent.tool_executor import InProcessTools
 from app.config import Settings
+from evals.run_evals import usage_cost
 from evals.sim.config import SimSettings
 from evals.sim.env import build_db
 from evals.sim.schema import Task
@@ -19,9 +20,15 @@ from mcp_server.simdb import SimDB
 
 STOP_REASONS = {STOP: "user_stop", TRANSFER: "transfer", OUT_OF_SCOPE: "out_of_scope"}
 INFRA_ERRORS = (anthropic.APIConnectionError, anthropic.InternalServerError, anthropic.RateLimitError, anthropic.OverloadedError)
-UNRECORDED = frozenset({"simulator_quota", "billing_error"})
+UNRECORDED = frozenset({"simulator_quota", "billing_error", "budget_stop"})
 RETRYABLE = frozenset({"simulator_error"})
 FAILED = frozenset({"agent_error", "infra_error"})
+
+
+class Meter(Protocol):
+    def charge(self, usd: float) -> None: ...
+
+    def exhausted(self) -> bool: ...
 
 
 def classify_agent_error(e: Exception) -> str:
@@ -76,6 +83,7 @@ async def run_conversation(
     http: httpx.AsyncClient,
     sim_settings: SimSettings,
     tokens: SimTokens | None = None,
+    meter: Meter | None = None,
 ) -> Conversation:
     backend = SimStoreBackend(build_db(seed, task.initial_state))
     tools = InProcessTools(backend, include_writes=True)
@@ -93,6 +101,9 @@ async def run_conversation(
     carry: dict[str, Any] = {"pending_action": None, "executed_actions": []}
     started = time.perf_counter()
     for _ in range(sim_settings.max_agent_turns):
+        if meter is not None and meter.exhausted():
+            conv.stop_reason = "budget_stop"
+            break
         try:
             user = await sim.next_message(http, conv.transcript)
         except SimulatorQuotaError as e:
@@ -113,6 +124,8 @@ async def run_conversation(
         except Exception as e:
             conv.stop_reason, conv.error = classify_agent_error(e), f"{type(e).__name__}: {e}"[:500]
             break
+        if meter is not None:
+            meter.charge(usage_cost(state.get("usage", [])))
         reply = state.get("response") or ""
         conv.transcript.append({"role": "assistant", "content": reply})
         carry = {"pending_action": state.get("pending_action"), "executed_actions": state.get("executed_actions", [])}

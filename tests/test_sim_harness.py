@@ -13,6 +13,7 @@ from evals.sim.config import SimSettings
 from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, grade
 from evals.sim.make_regression_task import regression_task
+from evals.sim.run_sim import Budget
 from evals.sim.metrics import pass_hat_k, summarize
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
@@ -79,10 +80,10 @@ def scripted_customer(monkeypatch: pytest.MonkeyPatch, turns: list[UserTurn | Ex
     monkeypatch.setattr(UserSimulator, "next_message", next_message)
 
 
-def converse(seed, task: Task, client: FakeAnthropic, agent: AgentConfig | None = None):
+def converse(seed, task: Task, client: FakeAnthropic, agent: AgentConfig | None = None, meter: Any = None):
     async def go():
         async with httpx.AsyncClient() as http:
-            return await run_conversation(task, 0, seed, agent or AgentConfig("claude-haiku-4-5"), Settings(_env_file=None, anthropic_api_key="test"), object(), client, http, sim_settings())
+            return await run_conversation(task, 0, seed, agent or AgentConfig("claude-haiku-4-5"), Settings(_env_file=None, anthropic_api_key="test"), object(), client, http, sim_settings(), meter=meter)
 
     return asyncio.run(go())
 
@@ -275,3 +276,24 @@ def test_a_failing_conversation_becomes_a_scripted_regression_task(seed, tasks) 
     assert "1. Cancel my base layer order." in script and "2. The size L one from today." in script
     assert new.evaluation_criteria == tasks["which-order-base-layer"].evaluation_criteria
     assert check_task(new, seed, "") == []
+
+
+def test_the_spend_cap_stops_conversations_already_in_flight(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [UserTurn("Where is #1001? Email " + MAYA, None), UserTurn("And the bottle?", None), UserTurn("", STOP)])
+    route = {"intent": "order", "search_query": "", "order_number": "#1001", "email": MAYA}
+    client = FakeAnthropic({"route": [route, route], "order_tools": ["It shipped.", "It shipped too."]})
+    budget = Budget(max_usd=0.0003, per_conversation=0.01)
+    conv = converse(seed, tasks["status-shipped-tracking"], client, meter=budget)
+    assert conv.stop_reason == "budget_stop" and conv.stop_reason in orchestrator.UNRECORDED
+    assert len(conv.turns) == 1
+    assert budget.spent > budget.max_usd and budget.stopped == "budget"
+    assert not budget.can_start()
+
+
+def test_new_conversations_are_admitted_on_the_measured_cost_when_it_is_higher() -> None:
+    budget = Budget(max_usd=0.10, per_conversation=0.01)
+    budget.completed, budget.completed_usd, budget.spent = 1, 0.05, 0.05
+    assert budget.expected_per_conversation() == 0.05
+    assert budget.can_start()
+    budget.in_flight = 1
+    assert not budget.can_start()

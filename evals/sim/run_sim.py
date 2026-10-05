@@ -22,7 +22,6 @@ from app.config import get_settings
 from app.rag.vectorstore import ChromaVectorStore
 from evals.sim.config import get_sim_settings
 from evals.sim.env import load_seed
-from evals.run_evals import usage_cost
 from evals.sim.grader import JudgeError, grade
 from evals.sim.metrics import summarize
 from evals.sim.orchestrator import INFRA_ERRORS, RETRYABLE, UNRECORDED, AgentConfig, Conversation, run_conversation
@@ -35,8 +34,8 @@ TASK_FILE = Path("evals/sim/tasks.json")
 EST_USD_PER_CONVERSATION = {
     ("claude-haiku-4-5", True): 0.0126,
     ("claude-haiku-4-5", False): 0.0150,
-    ("claude-sonnet-5-5", True): 0.031,
-    ("claude-sonnet-5-5", False): 0.035,
+    ("claude-sonnet-5-5", True): 0.055,
+    ("claude-sonnet-5-5", False): 0.060,
 }
 EST_JUDGE_USD_PER_CONVERSATION = 0.0015
 APPROVAL_THRESHOLD_USD = 1.0
@@ -48,12 +47,26 @@ class Budget:
     per_conversation: float
     spent: float = 0.0
     in_flight: int = 0
+    completed: int = 0
+    completed_usd: float = 0.0
     stopped: str | None = None
     sim_tokens: int = 0
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
+    def charge(self, usd: float) -> None:
+        self.spent += usd
+
+    def exhausted(self) -> bool:
+        if self.spent >= self.max_usd:
+            self.stopped = self.stopped or "budget"
+        return self.spent >= self.max_usd
+
+    def expected_per_conversation(self) -> float:
+        observed = self.completed_usd / self.completed if self.completed else 0.0
+        return max(self.per_conversation, observed)
+
     def can_start(self) -> bool:
-        return self.stopped is None and self.spent + (self.in_flight + 1) * self.per_conversation <= self.max_usd
+        return self.stopped is None and self.spent + (self.in_flight + 1) * self.expected_per_conversation() <= self.max_usd
 
 
 def git_sha() -> tuple[str, bool]:
@@ -111,35 +124,25 @@ def load_done(path: Path) -> set[tuple[str, int]]:
     return done
 
 
-def partial_cost(conv: Conversation) -> float:
-    return usage_cost([u for t in conv.turns for u in t["usage"]])
-
-
 async def attempt(task: Task, trial: int, ctx: dict[str, Any], budget: Budget) -> dict[str, Any] | None:
     for n in range(2):
         tokens = SimTokens()
-        conv = await run_conversation(task, trial, ctx["seed"], ctx["agent"], ctx["settings"], ctx["store"], ctx["client"], ctx["http"], ctx["sim_settings"], tokens)
-        async with budget.lock:
-            budget.sim_tokens += tokens.total
+        conv = await run_conversation(task, trial, ctx["seed"], ctx["agent"], ctx["settings"], ctx["store"], ctx["client"], ctx["http"], ctx["sim_settings"], tokens, budget)
+        budget.sim_tokens += tokens.total
         if conv.stop_reason in UNRECORDED:
-            async with budget.lock:
-                budget.spent += partial_cost(conv)
-                budget.stopped = conv.stop_reason
+            budget.stopped = budget.stopped or conv.stop_reason
             return None
         if conv.stop_reason in RETRYABLE:
-            async with budget.lock:
-                budget.spent += partial_cost(conv)
             if n == 0:
                 continue
             return record(conv, None, conv.error or conv.stop_reason)
         try:
             graded = await grade(conv, ctx["seed"], ctx["client"], ctx["sim_settings"].sim_judge_model)
         except (*INFRA_ERRORS, JudgeError) as e:
-            async with budget.lock:
-                budget.spent += partial_cost(conv)
             return record(conv, None, f"grading failed: {type(e).__name__}: {e}"[:300])
-        async with budget.lock:
-            budget.spent += graded["agent_cost_usd"] + graded["judge_cost_usd"]
+        budget.charge(graded["judge_cost_usd"])
+        budget.completed += 1
+        budget.completed_usd += graded["agent_cost_usd"] + graded["judge_cost_usd"]
         return record(conv, graded, None)
     return None
 
@@ -271,6 +274,10 @@ async def main() -> None:
     print(json.dumps({k: summary[k] for k in ("stopped", "conversations", "excluded", "pass_hat_k", "writes", "cost", "simulator_tokens")}, indent=1))
     if budget.stopped == "simulator_quota":
         print("stopped: the simulator's quota ran out. Conversations cut off by it are not recorded.")
+    if budget.stopped == "budget":
+        print(f"stopped: spend reached the ${args.max_usd:.2f} cap. Conversations cut off by it are not recorded.")
+    if budget.completed and budget.completed_usd / budget.completed > budget.per_conversation * 1.3:
+        print(f"note: measured ${budget.completed_usd / budget.completed:.4f} per conversation, above the ${budget.per_conversation:.4f} estimate")
     if budget.stopped == "billing_error":
         print("stopped: the Anthropic credit balance ran out. Conversations cut off by it are not recorded.")
     print(f"results in {run_dir}")
