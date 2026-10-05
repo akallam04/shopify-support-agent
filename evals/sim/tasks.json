@@ -467,7 +467,7 @@
     "NL_ASSERTION"
    ],
    "nl_assertions": [
-    "The assistant tells the customer the store ships only to the United States and Canada."
+    "The assistant tells the customer the order cannot be sent to the United Kingdom address because only United States and Canada addresses are allowed."
    ],
    "forbidden_actions": [
     {

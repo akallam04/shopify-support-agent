@@ -317,32 +317,32 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 3: simulation harness
 
-- [ ] `evals/sim/` with an agent policy document consistent with `data/policies`.
-- [ ] Task schema mirroring tau2: id, user scenario (persona, reason for call, known info,
+- [x] `evals/sim/` with an agent policy document consistent with `data/policies`.
+- [x] Task schema mirroring tau2: id, user scenario (persona, reason for call, known info,
       unknown info, instructions), evaluation criteria (reference actions, `communicate_info`,
       optional natural-language assertions, forbidden actions, `reward_basis`).
-- [ ] User simulator driven by a different model family than the agent, revealing
+- [x] User simulator driven by a different model family than the agent, revealing
       information only when asked, with stop signals. Simulator errors tracked separately
       and rerun. Infrastructure errors count as failures.
-- [ ] Orchestrator: turn-taking to a cap, a fresh `SimStoreBackend` per conversation, the
+- [x] Orchestrator: turn-taking to a cap, a fresh `SimStoreBackend` per conversation, the
       graph called in process, full trajectory recorded (messages, tool calls, graph path,
       gate decisions, latency, tokens, cost).
-- [ ] Grader: database hash against the target, `communicate_info` substring checks,
+- [x] Grader: database hash against the target, `communicate_info` substring checks,
       forbidden-action checks, optional judge for natural-language assertions with tool
       outputs supplied. Reward is the product over `reward_basis`.
-- [ ] **No-write tasks need a second check.** When the right answer is no write (a refusal,
+- [x] **No-write tasks need a second check.** When the right answer is no write (a refusal,
       an out-of-window return, an identity mismatch), the target state equals the starting
       state, so an agent that does nothing at all passes the database check. Every such task
       must also carry `communicate_info` or a natural-language assertion that the agent said
       the right thing. A validation step fails the task file if one is missing.
-- [ ] Keep tau2's action diagnostics: report how many reference actions the agent matched,
+- [x] Keep tau2's action diagnostics: report how many reference actions the agent matched,
       split into read tools and write tools, without letting it gate the reward. This shows
       cases where the database check passed only because no write was attempted.
-- [ ] Metrics: pass^1 to pass^k (k=4), per category, write precision and recall, unsafe
+- [x] Metrics: pass^1 to pass^k (k=4), per category, write precision and recall, unsafe
       write count (target 0), cost per resolved conversation, p50 and p95 latency, turns.
-- [ ] Async runs with a concurrency limit and resume, results written to
+- [x] Async runs with a concurrency limit and resume, results written to
       `evals/results/sim/<run-id>/` and never overwritten.
-- [ ] About 50 tasks covering: order status; cancellation, eligible and not; address change,
+- [x] About 50 tasks covering: order status; cancellation, eligible and not; address change,
       eligible and not; returns inside the window, outside it, and for a final-sale item;
       product and policy questions; multi-intent requests; a wrong email or identity mismatch;
       someone asking about another person's order; prompt injection mid-conversation;
@@ -352,7 +352,7 @@ The same outcome must always produce the same hash, whatever order the agent did
 - [ ] Task validation: replay every reference trajectory through the policy engine, run a
       strong model once and review its failures for task bugs, fix or drop ambiguous tasks.
 - [ ] Failure taxonomy with labels and manual spot checks.
-- [ ] One command that turns a failing trajectory into a new regression task.
+- [x] One command that turns a failing trajectory into a new regression task.
 - [ ] The 53-case suite stays as the fast single-turn gate and must stay at 53/53.
 
 ### Phase 4: iterate and measure
