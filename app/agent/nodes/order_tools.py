@@ -5,7 +5,7 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
-from app.agent.prompts import ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE, with_digest
+from app.agent.prompts import ORDER_CONFIRM_RULE, ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE, with_digest
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -13,8 +13,15 @@ from app.config import Settings
 MAX_TOOL_ROUNDS = 3
 
 
+def order_system(tools: Any, settings: Settings) -> str:
+    if not tools.write_tool_names:
+        return ORDER_SYSTEM
+    gate_confirms = settings.mutation_gate and settings.gate_confirmation
+    return ORDER_SYSTEM + ORDER_WRITE_RULES + ("" if gate_confirms else ORDER_CONFIRM_RULE)
+
+
 def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settings: Settings):
-    base_system = ORDER_SYSTEM + (ORDER_WRITE_RULES if tools.write_tool_names else "")
+    base_system = order_system(tools, settings)
 
     async def order_tools(state: AgentState) -> dict[str, Any]:
         system = with_digest(base_system, state.get("context_digest"))

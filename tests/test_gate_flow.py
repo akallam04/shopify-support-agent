@@ -8,6 +8,7 @@ import pytest
 
 from app.agent.graph import build_graph
 from app.agent.prompts import (
+    ORDER_CONFIRM_RULE,
     CONFIRM_CLASSIFIER_SCHEMA,
     DECLINED_RESPONSE,
     HANDOFF_RESPONSE,
@@ -187,6 +188,17 @@ def test_gate_off_executes_immediately_but_policy_still_holds(db: SimDB) -> None
     _, _, _, _, refused = first_turn(other, late, after_placed=timedelta(days=2), mutation_gate=False)
     assert other.orders["#1002"].cancelled_at is None
     assert json.loads(refused["tool_results"][-1]["result"])["code"] == "change_window_passed"
+
+
+@pytest.mark.parametrize(
+    ("flags", "prompt_confirms"),
+    [({}, False), ({"mutation_gate": False}, True), ({"gate_confirmation": False}, True)],
+)
+def test_the_prompt_asks_for_a_yes_only_when_the_gate_does_not(db: SimDB, flags: dict, prompt_confirms: bool) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": ["Which order did you mean?"]}
+    _, client, _, _, _ = first_turn(db, script, **flags)
+    system = next(kw["system"] for kind, kw in client.calls if kind == "order_tools")
+    assert (ORDER_CONFIRM_RULE in system) is prompt_confirms
 
 
 def test_confirmation_off_executes_after_reflection(db: SimDB) -> None:

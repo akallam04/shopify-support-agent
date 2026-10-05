@@ -107,6 +107,9 @@ You can also change orders with tools: cancel_order, update_shipping_address, an
 - Call at most one change tool per turn.
 - Use transfer_to_human only for things these tools cannot do, like warranty claims, damaged items, or exceptions to policy."""
 
+ORDER_CONFIRM_RULE = """
+- Before calling a change tool, tell the customer exactly what you will change and wait for a clear yes to that in their next message."""
+
 POLICY_RULES = {
     "cancel_order": "Orders can be cancelled only within 2 hours of being placed and before they ship. The customer must give a reason.",
     "update_shipping_address": "A shipping address can be changed only within 2 hours of the order being placed and before it ships. The store ships only to the United States and Canada.",
