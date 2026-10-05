@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Mutation gate idempotency keys: 24 hex characters of a SHA-256 over the action and its arguments, recorded in simulation runs"
+regexTarget = "match"
+regexes = ['''^key": "[0-9a-f]{24}"$''']
