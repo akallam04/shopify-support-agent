@@ -1,0 +1,127 @@
+{
+ "regraded_at": "20261004-220431",
+ "task_file": "evals/sim/tasks.json",
+ "tasks": [
+  "address-canada",
+  "address-eligible",
+  "address-missing-zip",
+  "cancel-eligible",
+  "cancel-pending-payment",
+  "cancel-two-items",
+  "confirm-correct-zip",
+  "confirm-question-then-yes",
+  "difficult-angry-cancel",
+  "difficult-wrong-number-first",
+  "multi-address-and-status",
+  "multi-return-and-refund-time",
+  "multi-status-and-cancel",
+  "return-in-window",
+  "return-mixed-final-sale",
+  "return-partial-quantity",
+  "return-wrong-item",
+  "which-order-base-layer",
+  "which-order-second-jacket"
+ ],
+ "judge_usd": 0.007,
+ "changes": [],
+ "before": {
+  "conversations": 7,
+  "excluded": 0,
+  "tasks": 4,
+  "resolved": 5,
+  "pass_hat_k": {
+   "pass^1": 0.75,
+   "pass^2": 0.6666666666666666
+  },
+  "by_category": {
+   "return": {
+    "n": 6,
+    "resolved": 4,
+    "pass^1": 0.6666666666666666
+   },
+   "which_order": {
+    "n": 1,
+    "resolved": 1,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 3,
+   "reference": 5,
+   "correct": 3,
+   "precision": 1.0,
+   "recall": 0.6,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.1374,
+   "judge_usd": 0.0129,
+   "agent_per_conversation_usd": 0.01963,
+   "agent_per_resolved_usd": 0.02748
+  },
+  "latency": {
+   "turn_p50_s": 2.417,
+   "turn_p95_s": 5.315
+  },
+  "turns_per_conversation": 4.142857142857143,
+  "simulator_tokens": {
+   "total": 22012,
+   "per_conversation": 3144.5714285714284
+  }
+ },
+ "after": {
+  "conversations": 7,
+  "excluded": 0,
+  "tasks": 4,
+  "resolved": 5,
+  "pass_hat_k": {
+   "pass^1": 0.75,
+   "pass^2": 0.6666666666666666
+  },
+  "by_category": {
+   "return": {
+    "n": 6,
+    "resolved": 4,
+    "pass^1": 0.6666666666666666
+   },
+   "which_order": {
+    "n": 1,
+    "resolved": 1,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 3,
+   "reference": 5,
+   "correct": 0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.1374,
+   "judge_usd": 0.0135,
+   "agent_per_conversation_usd": 0.01963,
+   "agent_per_resolved_usd": 0.02748
+  },
+  "latency": {
+   "turn_p50_s": 2.417,
+   "turn_p95_s": 5.315
+  },
+  "turns_per_conversation": 4.142857142857143,
+  "simulator_tokens": {
+   "total": 22012,
+   "per_conversation": 3144.5714285714284
+  }
+ }
+}

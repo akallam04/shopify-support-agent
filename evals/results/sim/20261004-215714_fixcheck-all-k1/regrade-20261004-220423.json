@@ -1,0 +1,235 @@
+{
+ "regraded_at": "20261004-220423",
+ "task_file": "evals/sim/tasks.json",
+ "tasks": [
+  "address-canada",
+  "address-eligible",
+  "address-missing-zip",
+  "cancel-eligible",
+  "cancel-pending-payment",
+  "cancel-two-items",
+  "confirm-correct-zip",
+  "confirm-question-then-yes",
+  "difficult-angry-cancel",
+  "difficult-wrong-number-first",
+  "multi-address-and-status",
+  "multi-return-and-refund-time",
+  "multi-status-and-cancel",
+  "return-in-window",
+  "return-mixed-final-sale",
+  "return-partial-quantity",
+  "return-wrong-item",
+  "which-order-base-layer",
+  "which-order-second-jacket"
+ ],
+ "judge_usd": 0.0451,
+ "changes": [],
+ "before": {
+  "conversations": 50,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 50,
+  "pass_hat_k": {
+   "pass^1": 1.0
+  },
+  "by_category": {
+   "address_change": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 6,
+    "resolved": 6,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "product_policy": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "return": {
+    "n": 7,
+    "resolved": 7,
+    "pass^1": 1.0
+   },
+   "which_order": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 19,
+   "reference": 19,
+   "correct": 19,
+   "precision": 1.0,
+   "recall": 1.0,
+   "unconfirmed": 1,
+   "forbidden": 0,
+   "unsafe": 1
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.6008,
+   "judge_usd": 0.1003,
+   "agent_per_conversation_usd": 0.01202,
+   "agent_per_resolved_usd": 0.01202
+  },
+  "latency": {
+   "turn_p50_s": 1.96,
+   "turn_p95_s": 3.88
+  },
+  "turns_per_conversation": 3.36,
+  "simulator_tokens": {
+   "total": 126930,
+   "per_conversation": 2538.6
+  }
+ },
+ "after": {
+  "conversations": 50,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 50,
+  "pass_hat_k": {
+   "pass^1": 1.0
+  },
+  "by_category": {
+   "address_change": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 6,
+    "resolved": 6,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "product_policy": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "return": {
+    "n": 7,
+    "resolved": 7,
+    "pass^1": 1.0
+   },
+   "which_order": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 19,
+   "reference": 19,
+   "correct": 0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.6008,
+   "judge_usd": 0.0995,
+   "agent_per_conversation_usd": 0.01202,
+   "agent_per_resolved_usd": 0.01202
+  },
+  "latency": {
+   "turn_p50_s": 1.96,
+   "turn_p95_s": 3.88
+  },
+  "turns_per_conversation": 3.36,
+  "simulator_tokens": {
+   "total": 126930,
+   "per_conversation": 2538.6
+  }
+ }
+}
