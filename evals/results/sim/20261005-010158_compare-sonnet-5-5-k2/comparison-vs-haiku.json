@@ -1,0 +1,245 @@
+{
+ "a": "evals/results/sim/20261004-220530_headline-gate-on-k4/regraded-20261005-010507.jsonl",
+ "b": "evals/results/sim/20261005-010158_compare-sonnet-5-5-k2/regraded-20261005-010714.jsonl",
+ "subset": "model_comparison",
+ "k": 2,
+ "summary_a": {
+  "conversations": 40,
+  "excluded": 0,
+  "tasks": 20,
+  "resolved": 36,
+  "resolved_safely": 36,
+  "pass_hat_k": {
+   "pass^1": 0.9,
+   "pass^2": 0.8
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.9,
+   "pass^2": 0.8
+  },
+  "by_category": {
+   "address_change": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 1,
+    "pass^1": 0.5
+   },
+   "product_policy": {
+    "n": 4,
+    "resolved": 3,
+    "pass^1": 0.75
+   },
+   "return": {
+    "n": 6,
+    "resolved": 5,
+    "pass^1": 0.8333333333333334
+   },
+   "which_order": {
+    "n": 2,
+    "resolved": 1,
+    "pass^1": 0.5
+   }
+  },
+  "writes": {
+   "executed": 18,
+   "reference": 18,
+   "correct": 18,
+   "precision": 1.0,
+   "recall": 1.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.5535,
+   "judge_usd": 0.1187,
+   "agent_per_conversation_usd": 0.01384,
+   "agent_per_resolved_usd": 0.01538
+  },
+  "latency": {
+   "turn_p50_s": 1.781,
+   "turn_p95_s": 4.38
+  },
+  "turns_per_conversation": 4.05,
+  "simulator_tokens": {
+   "total": 123377,
+   "per_conversation": 3084.425
+  }
+ },
+ "unsafe_conversations_a": 0,
+ "summary_b": {
+  "conversations": 40,
+  "excluded": 0,
+  "tasks": 20,
+  "resolved": 39,
+  "resolved_safely": 39,
+  "pass_hat_k": {
+   "pass^1": 0.975,
+   "pass^2": 0.95
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.975,
+   "pass^2": 0.95
+  },
+  "by_category": {
+   "address_change": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 1,
+    "pass^1": 0.5
+   },
+   "identity": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "product_policy": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "return": {
+    "n": 6,
+    "resolved": 6,
+    "pass^1": 1.0
+   },
+   "which_order": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 18,
+   "reference": 18,
+   "correct": 18,
+   "precision": 1.0,
+   "recall": 1.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.5655,
+   "judge_usd": 0.0816,
+   "agent_per_conversation_usd": 0.01414,
+   "agent_per_resolved_usd": 0.0145
+  },
+  "latency": {
+   "turn_p50_s": 3.582,
+   "turn_p95_s": 6.755
+  },
+  "turns_per_conversation": 3.45,
+  "simulator_tokens": {
+   "total": 104202,
+   "per_conversation": 2605.05
+  }
+ },
+ "unsafe_conversations_b": 0,
+ "pass1_difference_b_minus_a": {
+  "mean": 0.075,
+  "ci95": [
+   -0.025,
+   0.175
+  ],
+  "tasks": 20
+ },
+ "safe_pass1_difference_b_minus_a": {
+  "mean": 0.075,
+  "ci95": [
+   -0.025,
+   0.175
+  ],
+  "tasks": 20
+ },
+ "table": "| | Haiku 4.5: resolved | Haiku 4.5: resolved safely | Sonnet 5.5: resolved | Sonnet 5.5: resolved safely |\n|---|---|---|---|---|\n| Conversations | 36 of 40 | 36 of 40 | 39 of 40 | 39 of 40 |\n| pass^1 | 0.900 | 0.900 | 0.975 | 0.975 |\n| pass^2 | 0.800 | 0.800 | 0.950 | 0.950 |\n\n| | Haiku 4.5 | Sonnet 5.5 |\n|---|---|---|\n| Writes without a clear yes | 0 | 0 |\n| Forbidden writes | 0 | 0 |\n| Conversations with an unsafe write | 0 | 0 |\n| Writes made | 18 | 18 |\n| Write precision | 1.000 | 1.000 |\n| Write recall | 1.000 | 1.000 |\n| Agent cost per resolved conversation | $0.0154 | $0.0145 |\n| Turn latency p50 / p95 | 1.78s / 4.38s | 3.58s / 6.75s |\n| Agent turns per conversation | 4.05 | 3.45 |\n\npass^1 difference on resolved (Sonnet 5.5 minus Haiku 4.5) over 20 tasks: +0.075, 95% paired bootstrap interval [-0.025, +0.175]\n\npass^1 difference on resolved safely (Sonnet 5.5 minus Haiku 4.5) over 20 tasks: +0.075, 95% paired bootstrap interval [-0.025, +0.175]"
+}
