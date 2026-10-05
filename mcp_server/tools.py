@@ -76,6 +76,15 @@ def delivered_on(order: Order) -> str | None:
     return max(d for d in dates if d)[:10]
 
 
+def shipping_status(order: Order) -> str:
+    if order.cancelled_at:
+        return "cancelled"
+    if not order.fulfillments:
+        return "no shipment needed" if order.fulfillment_status == "FULFILLMENT_NOT_REQUIRED" else "not shipped yet"
+    delivered = delivered_on(order)
+    return f"delivered on {delivered}" if delivered else "shipped, not delivered yet"
+
+
 def returns_view(order: Order) -> list[dict[str, Any]]:
     lines = {li.line_item_id: li for li in order.line_items}
     view = []
@@ -94,6 +103,7 @@ def _order_status_view(order: Order, include_returns: bool = False) -> dict[str,
         "placed_at": order.processed_at,
         "cancelled": order.cancelled_at is not None,
         "fulfillment_status": order.fulfillment_status,
+        "shipping": shipping_status(order),
         "financial_status": order.financial_status,
         "total": f"{order.total} {order.currency}",
         "items": [
@@ -149,6 +159,7 @@ def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
                 "order_number": o.name,
                 "placed_at": o.processed_at,
                 "fulfillment_status": o.fulfillment_status,
+                "shipping": shipping_status(o),
                 "financial_status": o.financial_status,
                 "total": f"{o.total} {o.currency}",
             }

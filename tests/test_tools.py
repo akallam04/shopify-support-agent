@@ -55,6 +55,7 @@ def test_order_status_view(sim: RecordingBackend) -> None:
         "placed_at": "2026-07-07T00:26:32Z",
         "cancelled": False,
         "fulfillment_status": "FULFILLED",
+        "shipping": "shipped, not delivered yet",
         "financial_status": "PAID",
         "total": "219.94 USD",
         "items": [
@@ -263,3 +264,19 @@ def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_the
         reads_returns = False
 
     assert "returns" not in get_order_status(ReadOnly(SimStoreBackend(seed)), "#1017", "jordan.lee@example.com")
+
+
+@pytest.mark.parametrize(
+    ("order", "email", "expected"),
+    [
+        ("#1016", "maya.thompson@example.com", "delivered on 2026-08-20"),
+        ("#1019", "maya.thompson@example.com", "shipped, not delivered yet"),
+        ("#1023", "maya.thompson@example.com", "not shipped yet"),
+        ("#1020", "maya.thompson@example.com", "cancelled"),
+    ],
+)
+def test_shipping_status_never_calls_a_fulfilled_order_delivered(order: str, email: str, expected: str) -> None:
+    backend = SimStoreBackend(load_db("data/sim/seed.json"))
+    assert get_order_status(backend, order, email)["shipping"] == expected
+    listed = {o["order_number"]: o["shipping"] for o in list_customer_orders(backend, email)["orders"]}
+    assert listed[order] == expected
