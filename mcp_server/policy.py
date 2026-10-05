@@ -137,7 +137,15 @@ def can_return(
                 f"{line.title} was delivered on {delivered.strftime('%B %-d, %Y')}, more than 30 days ago, "
                 "so it is outside our 30-day return window.",
             )
-        if quantity < 1 or quantity + already_requested(order, line) > line.quantity:
+        requested_before = already_requested(order, line)
+        if quantity >= 1 and requested_before and quantity + requested_before > line.quantity:
+            left = line.quantity - requested_before
+            remaining = "nothing left to return" if left <= 0 else f"only {left} more can be returned"
+            return refuse(
+                "quantity_exceeds",
+                f"A return was already requested for {line.title} on order {order.name}, so {remaining}.",
+            )
+        if quantity < 1 or quantity + requested_before > line.quantity:
             return refuse(
                 "quantity_exceeds",
                 f"Order {order.name} has {line.quantity - already_requested(order, line)} of {line.title} "

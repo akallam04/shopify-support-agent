@@ -154,3 +154,15 @@ def test_return_terms_follow_the_policy() -> None:
     assert "7.50 USD" in return_terms("size_too_small", "US")["fee"]
     assert "own cost" in return_terms("unwanted", "CA")["label"]
     assert "prepaid" in return_terms("unwanted", "US")["label"]
+
+
+def test_a_second_return_of_the_same_item_says_a_return_already_exists(db: SimDB) -> None:
+    db = delivered_1001(db)
+    db.orders["#1001"].returns = [
+        ReturnRequest(status="REQUESTED", reason="unwanted", line_items=[ReturnLine(line_item_id="l1", quantity=1)])
+    ]
+    now = parse_instant(DELIVERED) + timedelta(days=1)
+    decision = can_return(db.orders["#1001"], lines(db, (0, 1)), db.products, "unwanted", now)
+    assert decision.code == "quantity_exceeds"
+    assert "A return was already requested for Stormline Rain Jacket" in decision.reason
+    assert "nothing left to return" in decision.reason
