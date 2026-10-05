@@ -32,6 +32,7 @@ const dataTableEl = document.getElementById("dataTable");
 
 // full conversation, sent to the agent every turn since the api is stateless
 let history = [];
+let sessionState = null;
 let opened = false;
 
 const SUGGESTIONS = [
@@ -141,7 +142,7 @@ function renderStore() {
   const scope = activeFilter === "all" ? "" : ` in ${activeFilter}`;
   gearNoteEl.textContent = q
     ? `${items.length} result${items.length === 1 ? "" : "s"} for "${activeQuery}"${scope}`
-    : `${items.length} products${scope}, live inventory from the store`;
+    : `${items.length} products${scope}, from the store catalog`;
 }
 
 function setFilter(next) {
@@ -386,6 +387,7 @@ function renderActions() {
 
 function resetChat() {
   history = [];
+  sessionState = null;
   messagesEl.innerHTML = "";
   renderWelcome();
   inputEl.focus();
@@ -410,8 +412,17 @@ const BUSY_MESSAGE =
   "We are answering a lot of questions right now, so I could not get to that one. Please try again in a few seconds.";
 const OFFLINE_MESSAGE = "It looks like you are offline. Check your connection and try again.";
 const ERROR_MESSAGE = "Sorry, something went wrong on our side. Please try again in a moment.";
+const RESET_NOTE = "This chat was idle for more than 30 minutes, so the demo store was reset to its starting state.";
+const FINAL_ERRORS = new Set(["model_unavailable", "session_limit", "conversation_too_long"]);
 
 class BusyError extends Error {}
+
+class FinalError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+}
 
 async function send(text) {
   addMessage("user", text);
@@ -425,6 +436,8 @@ async function deliver(text) {
   try {
     const data = await postWithRetry();
     document.getElementById("typing")?.remove();
+    sessionState = data.session_state ?? null;
+    if (data.session_reset) addMessage("agent", RESET_NOTE);
     addMessage("agent", data.response, { intent: data.intent, latency_s: data.latency_s });
     history.push({ role: "assistant", content: data.response });
     ping();
@@ -434,6 +447,7 @@ async function deliver(text) {
     history.pop();
     let message = ERROR_MESSAGE;
     if (!navigator.onLine) message = OFFLINE_MESSAGE;
+    else if (err instanceof FinalError) message = err.message;
     else if (err instanceof BusyError) message = BUSY_MESSAGE;
     addMessage("agent", message);
     messagesEl.lastElementChild?.classList.add("msg--failed");
@@ -480,12 +494,14 @@ async function postWithRetry(attempts = 3, baseDelayMs = 2000) {
       res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, session_state: sessionState }),
       });
     } catch (err) {
       res = null;
     }
     if (res && res.ok) return res.json();
+    const problem = res ? await res.json().catch(() => null) : null;
+    if (problem && FINAL_ERRORS.has(problem.error)) throw new FinalError(problem.error, problem.message);
     const busy = !res || res.status === 429 || res.status === 503;
     if (!busy) throw new Error(`request failed (${res.status})`);
     if (i === attempts - 1) throw new BusyError("service busy");
