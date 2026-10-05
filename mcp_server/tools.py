@@ -248,6 +248,13 @@ def _authorized_order(backend: StoreBackend, action: str, args: dict[str, Any]) 
     return found, name, email
 
 
+VARIANT_FILLER = frozenset({"size", "color", "colour"})
+
+
+def variant_key(text: str) -> str:
+    return " ".join(w for w in text.lower().split() if w not in VARIANT_FILLER)
+
+
 def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, int]], policy.Decision]:
     if not isinstance(raw_items, list) or not raw_items:
         return [], policy.ALLOWED
@@ -266,7 +273,7 @@ def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, i
             wanted = words(title)
             matches = [li for li in order.line_items if wanted and all(prefix_hit(w, words(li.title)) for w in wanted)]
         if variant:
-            matches = [li for li in matches if (li.variant_title or "").lower() == variant]
+            matches = [li for li in matches if variant_key(li.variant_title or "") == variant_key(variant)]
         if not matches:
             on_order = "; ".join(_items_text([(li, li.quantity)]) for li in order.line_items)
             return [], policy.refuse("item_not_found", f"Order {order.name} does not include that item. It has: {on_order}.")

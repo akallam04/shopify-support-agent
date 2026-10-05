@@ -183,3 +183,15 @@ def test_a_new_address_takes_the_customer_name_when_none_is_on_file(db: SimDB) -
     execute(store(db), "update_shipping_address", NEW_ADDRESS)
     address = db.orders["#1002"].shipping_address
     assert (address.first_name, address.last_name) == ("Maya", "Thompson")
+
+
+@pytest.mark.parametrize("variant", ["M", "m", "size M", "Size m"])
+def test_variants_match_the_way_customers_write_them(db: SimDB, variant: str) -> None:
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "Stormline Rain Jacket", "variant": variant, "quantity": 1}))
+    assert result["ok"] is True
+
+
+def test_a_variant_not_on_the_order_is_not_found(db: SimDB) -> None:
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "Stormline Rain Jacket", "variant": "size L"}))
+    assert result["code"] == "item_not_found"
+    assert "Stormline Rain Jacket (M)" in result["reason"]
