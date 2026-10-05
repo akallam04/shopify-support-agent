@@ -19,6 +19,7 @@ def _store_order(product: Product) -> tuple[int, str]:
 class SimStoreBackend:
     name = "sim"
     supports_writes = True
+    reads_returns = True
 
     def __init__(self, db: SimDB, clock: Clock | None = None) -> None:
         self.db = db

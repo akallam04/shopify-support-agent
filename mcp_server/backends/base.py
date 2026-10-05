@@ -21,6 +21,7 @@ class StoreBackend(Protocol):
     name: str
     clock: Clock
     supports_writes: bool
+    reads_returns: bool
 
     def find_order(self, order_name: str) -> FoundOrder | None: ...
 

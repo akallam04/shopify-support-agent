@@ -391,6 +391,7 @@ class ShopifyAdminBackend:
         self._client = client
         self._write = write_client
         self.supports_writes = write_client is not None
+        self.reads_returns = write_client is not None
         self.clock = SystemClock()
         self.executed: dict[str, dict[str, Any]] = {}
         self.audit: list[dict[str, Any]] = []

@@ -7,6 +7,7 @@ from app.config import get_settings
 from mcp_server import tools
 from mcp_server.backends.shopify import ShopifyAdminBackend
 from mcp_server.backends.sim import SimStoreBackend
+from mcp_server.server import live_write_client
 from mcp_server.shopify_client import ShopifyClient
 from mcp_server.simdb import load_db
 
@@ -51,6 +52,18 @@ def live() -> Iterator[ShopifyAdminBackend]:
 
 
 @pytest.fixture(scope="module")
+def live_with_returns() -> Iterator[ShopifyAdminBackend]:
+    s = get_settings()
+    if not s.shopify_write_token:
+        pytest.skip("reading returns needs SHOPIFY_WRITE_TOKEN")
+    client = ShopifyClient(s.shopify_store_domain, s.shopify_admin_token, s.shopify_api_version)
+    write = live_write_client(s, client)
+    yield ShopifyAdminBackend(client, write)
+    write.close()
+    client.close()
+
+
+@pytest.fixture(scope="module")
 def sim() -> SimStoreBackend:
     return SimStoreBackend(SEED.copy_fresh())
 
@@ -60,12 +73,22 @@ def _owner_email(name: str) -> str:
     return order.email or SEED.customers[order.customer_id].email
 
 
+def _without_returns(view: dict) -> dict:
+    return {k: v for k, v in view.items() if k != "returns"}
+
+
 @pytest.mark.parametrize("name", sorted(SEED.orders))
 def test_order_status_matches(live: ShopifyAdminBackend, sim: SimStoreBackend, name: str) -> None:
     email = _owner_email(name)
-    assert tools.get_order_status(live, name, email) == tools.get_order_status(sim, name, email)
+    assert tools.get_order_status(live, name, email) == _without_returns(tools.get_order_status(sim, name, email))
     assert tools.get_order_status(live, name, STRANGER) == tools.ORDER_NOT_FOUND
     assert tools.get_order_status(sim, name, STRANGER) == tools.ORDER_NOT_FOUND
+
+
+@pytest.mark.parametrize("name", sorted(SEED.orders))
+def test_order_status_with_returns_matches(live_with_returns: ShopifyAdminBackend, sim: SimStoreBackend, name: str) -> None:
+    email = _owner_email(name)
+    assert tools.get_order_status(live_with_returns, name, email) == tools.get_order_status(sim, name, email)
 
 
 def test_missing_order_matches(live: ShopifyAdminBackend, sim: SimStoreBackend) -> None:

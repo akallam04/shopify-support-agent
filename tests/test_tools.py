@@ -5,7 +5,7 @@ import pytest
 from mcp_server.backends.base import FoundOrder
 from mcp_server.backends.shopify import ShopifyAdminBackend, TruncatedConnectionError, map_order, map_product
 from mcp_server.backends.sim import SimStoreBackend
-from mcp_server.simdb import Order, Product, SimDB
+from mcp_server.simdb import Order, Product, SimDB, load_db
 from mcp_server.tools import (
     ORDER_NOT_FOUND,
     ToolInputError,
@@ -17,6 +17,7 @@ from mcp_server.tools import (
 
 class RecordingBackend:
     name = "recording"
+    reads_returns = True
 
     def __init__(self, inner: SimStoreBackend) -> None:
         self.inner = inner
@@ -61,6 +62,8 @@ def test_order_status_view(sim: RecordingBackend) -> None:
             {"title": "Wander Insulated Bottle", "variant": None, "quantity": 1},
         ],
         "tracking": [{"number": "1Z999AA10123456784", "carrier": "UPS", "url": None}],
+        "delivered_on": None,
+        "returns": [],
     }
 
 
@@ -246,3 +249,17 @@ def test_a_full_nested_page_fails_loudly_instead_of_truncating() -> None:
     }
     with pytest.raises(TruncatedConnectionError):
         map_product(node)
+
+
+def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_them() -> None:
+    seed = load_db("data/sim/seed.json")
+    view = get_order_status(SimStoreBackend(seed), "#1017", "jordan.lee@example.com")
+    assert view["delivered_on"] == "2026-09-29"
+    assert view["returns"] == [{"title": "Stormline Rain Jacket", "variant": "L", "quantity": 1, "status": "REQUESTED"}]
+    in_transit = get_order_status(SimStoreBackend(seed), "#1019", "maya.thompson@example.com")
+    assert in_transit["delivered_on"] is None and in_transit["returns"] == []
+
+    class ReadOnly(RecordingBackend):
+        reads_returns = False
+
+    assert "returns" not in get_order_status(ReadOnly(SimStoreBackend(seed)), "#1017", "jordan.lee@example.com")

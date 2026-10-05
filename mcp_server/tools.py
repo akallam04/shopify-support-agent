@@ -69,8 +69,26 @@ def owns_order(found: FoundOrder, email: str) -> bool:
     return email.lower() in on_file
 
 
-def _order_status_view(order: Order) -> dict[str, Any]:
-    return {
+def delivered_on(order: Order) -> str | None:
+    dates = [f.delivered_at for f in order.fulfillments]
+    if not dates or not all(dates):
+        return None
+    return max(d for d in dates if d)[:10]
+
+
+def returns_view(order: Order) -> list[dict[str, Any]]:
+    lines = {li.line_item_id: li for li in order.line_items}
+    view = []
+    for r in order.returns:
+        for rl in r.line_items:
+            li = lines.get(rl.line_item_id)
+            if li is not None:
+                view.append({"title": li.title, "variant": li.variant_title, "quantity": rl.quantity, "status": r.status})
+    return view
+
+
+def _order_status_view(order: Order, include_returns: bool = False) -> dict[str, Any]:
+    view = {
         "found": True,
         "order_number": order.name,
         "placed_at": order.processed_at,
@@ -86,7 +104,11 @@ def _order_status_view(order: Order) -> dict[str, Any]:
             for f in order.fulfillments
             for t in f.tracking
         ],
+        "delivered_on": delivered_on(order),
     }
+    if include_returns:
+        view["returns"] = returns_view(order)
+    return view
 
 
 def _product_view(product: Product) -> dict[str, Any]:
@@ -111,7 +133,7 @@ def get_order_status(backend: StoreBackend, order_number: str, email: str) -> di
     found = backend.find_order(name)
     if found is None or not owns_order(found, email):
         return dict(ORDER_NOT_FOUND)
-    return _order_status_view(found.order)
+    return _order_status_view(found.order, backend.reads_returns)
 
 
 def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
