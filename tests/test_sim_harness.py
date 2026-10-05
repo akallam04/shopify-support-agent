@@ -12,6 +12,7 @@ from evals.sim import orchestrator, user_sim
 from evals.sim.config import SimSettings
 from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, grade
+from evals.sim.make_regression_task import regression_task
 from evals.sim.metrics import pass_hat_k, summarize
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
@@ -246,3 +247,31 @@ def test_summaries_count_unsafe_writes_and_skip_excluded_runs() -> None:
     assert s["writes"]["unsafe"] == 1
     assert s["simulator_tokens"]["total"] == 2300
     assert s["cost"]["agent_per_resolved_usd"] == 0.02
+
+
+def test_infra_errors_after_retries_count_as_failures(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [UserTurn("Where is #1001? Email " + MAYA, None)])
+
+    class Down(FakeAnthropic):
+        async def create(self, **kwargs: Any) -> SimpleNamespace:
+            request = httpx.Request("POST", "https://api.anthropic.test")
+            raise __import__("anthropic").InternalServerError("down", response=httpx.Response(500, request=request), body=None)
+
+    conv = converse(seed, tasks["status-shipped-tracking"], Down({}))
+    assert conv.stop_reason == "infra_error"
+    assert conv.stop_reason not in orchestrator.RETRYABLE
+    assert asyncio.run(grade(conv, seed, Down({}), "claude-sonnet-5-5"))["reward"] == 0.0
+
+
+def test_a_failing_conversation_becomes_a_scripted_regression_task(seed, tasks) -> None:
+    record = {"trial": 1, "transcript": [
+        {"role": "user", "content": "Cancel my base layer order."},
+        {"role": "assistant", "content": "Which order?"},
+        {"role": "user", "content": "The size L one from today."},
+    ]}
+    new = regression_task(tasks["which-order-base-layer"], record, "20261004-210000")
+    assert new.id == "which-order-base-layer--20261004-210000-t1"
+    script = new.user_scenario.instructions.task_instructions
+    assert "1. Cancel my base layer order." in script and "2. The size L one from today." in script
+    assert new.evaluation_criteria == tasks["which-order-base-layer"].evaluation_criteria
+    assert check_task(new, seed, "") == []

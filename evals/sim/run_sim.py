@@ -31,6 +31,7 @@ from evals.sim.user_sim import SimTokens
 from mcp_server.simdb import db_hash
 
 RESULTS_DIR = Path("evals/results/sim")
+TASK_FILE = Path("evals/sim/tasks.json")
 EST_USD_PER_CONVERSATION = {
     ("claude-haiku-4-5", True): 0.0126,
     ("claude-haiku-4-5", False): 0.0150,
@@ -167,6 +168,7 @@ async def run_one(task: Task, trial: int, ctx: dict[str, Any], budget: Budget, o
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--label", required=True)
+    p.add_argument("--task-file", default=str(TASK_FILE))
     p.add_argument("--tasks", default="")
     p.add_argument("--categories", default="")
     p.add_argument("--limit", type=int, default=0)
@@ -191,7 +193,7 @@ async def main() -> None:
     if not (sim_settings.sim_user_api_key and sim_settings.sim_user_base_url and sim_settings.sim_user_model):
         raise SystemExit("set SIM_USER_BASE_URL, SIM_USER_MODEL and SIM_USER_API_KEY in .env")
     agent = AgentConfig(args.agent_model, not args.no_gate, not args.no_reflection, not args.no_confirmation)
-    tasks = select_tasks(load_tasks(), args.tasks, args.categories, args.limit)
+    tasks = select_tasks(load_tasks(args.task_file), args.tasks, args.categories, args.limit)
     seed = load_seed()
     sha, dirty = git_sha()
 
@@ -200,7 +202,7 @@ async def main() -> None:
         config = json.loads((run_dir / "config.json").read_text())
         if config["sim_model"] != sim_settings.sim_user_model or config["agent"] != asdict(agent):
             raise SystemExit("resume must keep the same simulator model and agent settings")
-        tasks = select_tasks(load_tasks(), ",".join(config["task_ids"]), "", 0)
+        tasks = select_tasks(load_tasks(config.get("task_file", TASK_FILE)), ",".join(config["task_ids"]), "", 0)
         args.k = config["k"]
     else:
         run_dir = RESULTS_DIR / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{args.label}"
@@ -233,6 +235,7 @@ async def main() -> None:
             "sim_temperature": sim_settings.sim_user_temperature,
             "max_agent_turns": sim_settings.max_agent_turns,
             "k": args.k,
+            "task_file": args.task_file,
             "task_ids": [t.id for t in tasks],
             "max_usd": args.max_usd,
         }
