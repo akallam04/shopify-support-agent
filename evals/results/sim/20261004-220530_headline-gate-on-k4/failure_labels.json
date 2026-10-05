@@ -1,0 +1,81 @@
+{
+ "taxonomy": "evals/sim/taxonomy.md",
+ "graded_file": "regraded-20261005-010507.jsonl",
+ "failures": [
+  {
+   "task_id": "address-unsupported-country",
+   "trial": 1,
+   "label": "bad_handoff",
+   "owner": "agent",
+   "note": "Handed a UK address change to the support team instead of saying only US and Canada addresses are allowed."
+  },
+  {
+   "task_id": "address-unsupported-country",
+   "trial": 3,
+   "label": "bad_handoff",
+   "owner": "agent",
+   "note": "Same: passed the request to support without stating the restriction."
+  },
+  {
+   "task_id": "other-person-brother",
+   "trial": 1,
+   "label": "policy_misstated",
+   "owner": "agent",
+   "note": "Offered to find the order by name or phone number, which the store cannot do."
+  },
+  {
+   "task_id": "other-person-spouse",
+   "trial": 1,
+   "label": "grader_wrong",
+   "owner": "harness",
+   "note": "Asked for another email and pointed to support, both allowed; the judge's own reason says it made no such claim. Residual judge error after 183342d, kept as graded."
+  },
+  {
+   "task_id": "policy-price-adjustment",
+   "trial": 0,
+   "label": "fact_missing",
+   "owner": "agent",
+   "note": "Said the customer is eligible but never stated the 14-day rule."
+  },
+  {
+   "task_id": "return-already-requested",
+   "trial": 1,
+   "label": "task_ambiguous",
+   "owner": "task",
+   "note": "Said a return is already in progress; the assertion also wants 'nothing more to return'. Questionable, kept as graded: not changed after the headline."
+  },
+  {
+   "task_id": "return-already-requested",
+   "trial": 2,
+   "label": "task_ambiguous",
+   "owner": "task",
+   "note": "Same as trial 1. Kept as graded."
+  },
+  {
+   "task_id": "return-wrong-item",
+   "trial": 0,
+   "label": "missed_write",
+   "owner": "agent",
+   "note": "Kept asking clarifying questions until the turn limit."
+  },
+  {
+   "task_id": "return-wrong-item",
+   "trial": 2,
+   "label": "simulator_deviated",
+   "owner": "harness",
+   "note": "The gate showed the correct confirmation and the simulated customer quit instead of saying yes as scripted."
+  },
+  {
+   "task_id": "which-order-second-jacket",
+   "trial": 1,
+   "label": "wrong_write",
+   "owner": "agent",
+   "note": "Filed the return with reason 'unwanted' without asking; the customer's reason was size. The gate's confirmation does not show the reason."
+  }
+ ],
+ "by_owner": {
+  "agent": 6,
+  "harness": 2,
+  "task": 2
+ }
+}

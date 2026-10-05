@@ -1,0 +1,115 @@
+{
+ "taxonomy": "evals/sim/taxonomy.md",
+ "graded_file": "regraded-20261005-010551.jsonl",
+ "failures": [
+  {
+   "task_id": "confirm-decline",
+   "trial": 0,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Cancelled before the customer could decline; forbidden write."
+  },
+  {
+   "task_id": "confirm-decline",
+   "trial": 1,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "confirm-decline",
+   "trial": 2,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "confirm-decline",
+   "trial": 3,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "confirm-decline-after-fee",
+   "trial": 0,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Filed the return before the customer heard the fee and declined; forbidden write."
+  },
+  {
+   "task_id": "confirm-decline-after-fee",
+   "trial": 1,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "confirm-decline-after-fee",
+   "trial": 2,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "confirm-decline-after-fee",
+   "trial": 3,
+   "label": "unconfirmed_write",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "other-person-spouse",
+   "trial": 2,
+   "label": "policy_misstated",
+   "owner": "agent",
+   "note": "Said part of an email address would help it locate the order."
+  },
+  {
+   "task_id": "policy-price-adjustment",
+   "trial": 0,
+   "label": "fact_missing",
+   "owner": "agent",
+   "note": "Never stated the 14-day rule."
+  },
+  {
+   "task_id": "return-final-sale",
+   "trial": 0,
+   "label": "bad_handoff",
+   "owner": "agent",
+   "note": "Escalated instead of saying the goggles are final sale."
+  },
+  {
+   "task_id": "return-final-sale",
+   "trial": 2,
+   "label": "bad_handoff",
+   "owner": "agent",
+   "note": "Same."
+  },
+  {
+   "task_id": "return-final-sale",
+   "trial": 3,
+   "label": "bad_handoff",
+   "owner": "agent",
+   "note": "Same, after the tool refused with final_sale."
+  },
+  {
+   "task_id": "return-out-of-window",
+   "trial": 0,
+   "label": "task_ambiguous",
+   "owner": "task",
+   "note": "Mentioned 'outside the standard window' only in passing before handing off. Questionable, kept as graded."
+  },
+  {
+   "task_id": "return-out-of-window",
+   "trial": 2,
+   "label": "fact_missing",
+   "owner": "agent",
+   "note": "Fell back to the safe 'could not verify' reply."
+  }
+ ],
+ "by_owner": {
+  "agent": 14,
+  "task": 1
+ }
+}
