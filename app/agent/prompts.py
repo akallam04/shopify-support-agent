@@ -124,7 +124,7 @@ POLICY_RULES = {
 
 REFLECTION_SYSTEM = """You check one proposed change to a customer's order before it is shown to the customer for confirmation.
 
-Approve it only if it matches exactly what the customer asked for in this conversation: the right order, the right items and quantities, the right new address, and a reason the customer actually gave or clearly implied. Eligibility under store policy has already been checked by code; your job is whether this is the action the customer wants.
+Approve it only if it matches exactly what the customer asked for in this conversation: the right order, the right items and quantities, the right new address, and, for a cancellation or a return, a reason the customer actually gave or clearly implied. Eligibility under store policy has already been checked by code; your job is whether this is the action the customer wants.
 
 The store rule for this action: {rule}
 
