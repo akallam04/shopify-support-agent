@@ -1,0 +1,182 @@
+{
+ "config": {
+  "label": "baseline-gate-on-k2",
+  "started_at": "2026-10-05T04:42:47+00:00",
+  "git_sha": "fdf4b31",
+  "dirty": false,
+  "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
+  "agent": {
+   "model": "claude-haiku-4-5",
+   "mutation_gate": true,
+   "gate_reflection": true,
+   "gate_confirmation": true
+  },
+  "judge_model": "claude-sonnet-5-5",
+  "sim_model": "qwen3.8-flash",
+  "sim_host": "dashscope-intl.aliyuncs.com",
+  "sim_temperature": 0.7,
+  "max_agent_turns": 12,
+  "k": 2,
+  "task_file": "evals/sim/tasks.json",
+  "task_ids": [
+   "status-shipped-tracking",
+   "status-in-transit",
+   "status-unfulfilled",
+   "status-pending-payment",
+   "cancel-eligible",
+   "cancel-shipped-refused",
+   "cancel-window-passed",
+   "cancel-already-cancelled",
+   "cancel-pending-payment",
+   "cancel-two-items",
+   "address-eligible",
+   "address-canada",
+   "address-unsupported-country",
+   "address-shipped-refused",
+   "address-missing-zip",
+   "return-in-window",
+   "return-final-sale",
+   "return-out-of-window",
+   "return-already-requested",
+   "return-partial-quantity",
+   "return-wrong-item",
+   "return-mixed-final-sale",
+   "policy-return-fee",
+   "policy-canada-shipping",
+   "policy-price-adjustment",
+   "product-stock-price",
+   "policy-warranty",
+   "multi-status-and-cancel",
+   "multi-return-and-refund-time",
+   "multi-address-and-status",
+   "identity-wrong-email",
+   "identity-cancel-mismatch",
+   "identity-no-email",
+   "other-person-spouse",
+   "other-person-brother",
+   "injection-fake-override",
+   "injection-prompt-leak",
+   "injection-discount-code",
+   "difficult-angry-cancel",
+   "difficult-demand-exception",
+   "difficult-wrong-number-first",
+   "confirm-decline",
+   "confirm-correct-zip",
+   "confirm-question-then-yes",
+   "confirm-decline-after-fee",
+   "handoff-warranty",
+   "handoff-explicit-human",
+   "which-order-status-no-number",
+   "which-order-base-layer",
+   "which-order-second-jacket"
+  ],
+  "max_usd": 2.05
+ },
+ "stopped": null,
+ "elapsed_s": 376.3,
+ "spent_this_session_usd": 1.4791,
+ "simulator_tokens_this_session": 257643,
+ "conversations": 100,
+ "excluded": 0,
+ "tasks": 50,
+ "resolved": 89,
+ "pass_hat_k": {
+  "pass^1": 0.89,
+  "pass^2": 0.86
+ },
+ "by_category": {
+  "address_change": {
+   "n": 10,
+   "resolved": 10,
+   "pass^1": 1.0
+  },
+  "cancel": {
+   "n": 12,
+   "resolved": 12,
+   "pass^1": 1.0
+  },
+  "confirmation": {
+   "n": 8,
+   "resolved": 8,
+   "pass^1": 1.0
+  },
+  "difficult_customer": {
+   "n": 6,
+   "resolved": 6,
+   "pass^1": 1.0
+  },
+  "handoff": {
+   "n": 4,
+   "resolved": 4,
+   "pass^1": 1.0
+  },
+  "identity": {
+   "n": 6,
+   "resolved": 5,
+   "pass^1": 0.8333333333333334
+  },
+  "injection": {
+   "n": 6,
+   "resolved": 6,
+   "pass^1": 1.0
+  },
+  "multi_intent": {
+   "n": 6,
+   "resolved": 6,
+   "pass^1": 1.0
+  },
+  "order_status": {
+   "n": 8,
+   "resolved": 8,
+   "pass^1": 1.0
+  },
+  "other_person": {
+   "n": 4,
+   "resolved": 0,
+   "pass^1": 0.0
+  },
+  "product_policy": {
+   "n": 10,
+   "resolved": 10,
+   "pass^1": 1.0
+  },
+  "return": {
+   "n": 14,
+   "resolved": 9,
+   "pass^1": 0.6428571428571429
+  },
+  "which_order": {
+   "n": 6,
+   "resolved": 5,
+   "pass^1": 0.8333333333333334
+  }
+ },
+ "writes": {
+  "executed": 34,
+  "reference": 38,
+  "correct": 34,
+  "precision": 1.0,
+  "recall": 0.8947368421052632,
+  "unconfirmed": 0,
+  "forbidden": 0,
+  "unsafe": 0
+ },
+ "agent_errors": 0,
+ "infra_errors": 0,
+ "simulator_errors": 0,
+ "cost": {
+  "agent_usd": 1.2797,
+  "judge_usd": 0.1994,
+  "agent_per_conversation_usd": 0.0128,
+  "agent_per_resolved_usd": 0.01438
+ },
+ "latency": {
+  "turn_p50_s": 2.053,
+  "turn_p95_s": 4.041
+ },
+ "turns_per_conversation": 3.5,
+ "simulator_tokens": {
+  "total": 257643,
+  "per_conversation": 2576.43
+ }
+}
