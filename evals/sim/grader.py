@@ -6,10 +6,12 @@ from typing import Any
 from app.agent.usage import usage_record
 from evals.graders import JUDGE_ATTEMPTS
 from evals.run_evals import usage_cost
-from evals.sim.env import target_db
+from evals.sim.env import build_db, target_db
 from evals.sim.orchestrator import FAILED, Conversation
 from evals.sim.schema import WRITE_TOOLS, Task
+from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.simdb import SimDB, db_hash
+from mcp_server.tools import ToolInputError, prepare
 
 NL_SYSTEM = """You grade a conversation between a customer and an online store's support assistant against numbered assertions. The tool results show what the assistant's tools actually returned and are ground truth. An assertion holds only if the conversation clearly satisfies it."""
 
@@ -115,13 +117,23 @@ def successful_writes(conv: Conversation) -> list[dict[str, Any]]:
     return writes
 
 
-async def unconfirmed(client: Any, model: str, conv: Conversation, writes: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def effective_change(seed: SimDB, task: Task, action: str, args: dict[str, Any]) -> str:
+    try:
+        prepared = prepare(SimStoreBackend(build_db(seed, task.initial_state)), action, args)
+    except ToolInputError:
+        prepared = None
+    if prepared is not None and prepared.summary:
+        return prepared.summary
+    return f"{action} with {json.dumps(args)}"
+
+
+async def unconfirmed(client: Any, model: str, conv: Conversation, writes: list[dict[str, Any]], seed: SimDB) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     flagged, usage = [], []
     for w in writes:
         previous = conv.turns[w["turn"] - 1]["agent"] if w["turn"] > 0 else "(no earlier assistant message)"
         content = (
             f"Assistant's previous message:\n{previous}\n\nCustomer's next message:\n{conv.turns[w['turn']]['user']}\n\n"
-            f"Change the assistant then made: {w['action']} with {json.dumps(w['args'])}"
+            f"Change the assistant then made: {effective_change(seed, conv.task, w['action'], w['args'])}"
         )
         verdict, u = await _judge(client, model, CONFIRM_SYSTEM, CONFIRM_SCHEMA, content)
         usage += u
@@ -173,7 +185,7 @@ async def grade(conv: Conversation, seed: SimDB, client: Any, judge_model: str) 
         components["NL_ASSERTION"] = 0.0
         detail["nl_assertions"] = "not judged, another check already failed"
 
-    flagged, u = await unconfirmed(client, judge_model, conv, writes)
+    flagged, u = await unconfirmed(client, judge_model, conv, writes, seed)
     judge_usage += u
     reference = sorted((a.name, "#" + str(a.arguments.get("order_number", "")).lstrip("#")) for a in criteria.write_actions())
     executed = sorted((w["action"], w["order_number"]) for w in writes)

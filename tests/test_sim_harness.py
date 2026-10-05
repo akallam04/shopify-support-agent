@@ -11,7 +11,7 @@ from app.config import Settings
 from evals.sim import orchestrator, user_sim
 from evals.sim.config import SimSettings
 from evals.sim.env import TaskError, build_db, load_seed, target_db
-from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, grade
+from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, effective_change, grade
 from evals.sim.make_regression_task import regression_task
 from evals.sim.regrade import rebuild
 from evals.sim.run_sim import Budget, record
@@ -314,3 +314,11 @@ def test_a_saved_conversation_rebuilds_to_the_same_end_state(monkeypatch, seed, 
     rebuilt = rebuild(saved, tasks["cancel-eligible"], seed)
     assert db_hash(rebuilt.backend.db) == db_hash(conv.backend.db)
     assert rebuilt.transcript == conv.transcript
+
+
+def test_the_yes_check_judges_the_change_in_store_terms_not_raw_arguments(seed, tasks) -> None:
+    args = {"order_number": "#1009", "email": "ethan.brooks@example.com", "items": [{"title": "Sierra Sun Hoody", "variant": "L", "quantity": 1}], "reason": "wrong_item"}
+    summary = effective_change(seed, tasks["return-wrong-item"], "request_return", args)
+    assert "1 x Sierra Sun Hoody (M)" in summary and "No return shipping fee" in summary
+    refused = effective_change(seed, tasks["cancel-shipped-refused"], "cancel_order", {"order_number": "#1001", "email": MAYA, "reason": "changed_mind"})
+    assert refused.startswith("cancel_order with")
