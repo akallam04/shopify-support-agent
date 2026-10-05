@@ -10,7 +10,7 @@ import httpx
 from app.agent.graph import build_graph
 from app.agent.tool_executor import InProcessTools
 from app.config import Settings
-from evals.run_evals import usage_cost
+from app.costs import usage_cost
 from evals.sim.config import SimSettings
 from evals.sim.env import build_db
 from evals.sim.schema import Task

@@ -18,7 +18,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.config import get_settings
-from evals.run_evals import usage_cost
+from app.costs import usage_cost
 from evals.sim.config import get_sim_settings
 from evals.sim.env import build_db, load_seed
 from evals.sim.grader import grade, successful_writes, unconfirmed

@@ -1,6 +1,6 @@
 import pytest
 
-from evals.run_evals import usage_cost
+from app.costs import usage_cost
 
 
 def test_input_output_and_cache_tokens_are_priced() -> None:

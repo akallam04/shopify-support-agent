@@ -17,7 +17,7 @@ from typing import Any
 from app.agent.graph import build_graph
 from app.agent.tool_executor import InProcessTools
 from app.config import get_settings
-from evals.run_evals import usage_cost
+from app.costs import usage_cost
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import FrozenClock, format_instant, parse_instant
 from mcp_server.simdb import SimDB, db_hash, load_db

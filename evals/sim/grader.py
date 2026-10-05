@@ -4,8 +4,8 @@ import json
 from typing import Any
 
 from app.agent.usage import usage_record
+from app.costs import usage_cost
 from evals.graders import JUDGE_ATTEMPTS
-from evals.run_evals import usage_cost
 from evals.sim.env import build_db, target_db
 from evals.sim.orchestrator import FAILED, Conversation
 from evals.sim.schema import WRITE_TOOLS, Task
