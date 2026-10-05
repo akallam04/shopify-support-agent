@@ -213,8 +213,6 @@ async def main() -> None:
         config = json.loads((run_dir / "config.json").read_text())
         if config["sim_model"] != sim_settings.sim_user_model or config["agent"] != asdict(agent):
             raise SystemExit("resume must keep the same simulator model and agent settings")
-        config.setdefault("resumed", []).append({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_sha": sha, "dirty": dirty})
-        (run_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
         tasks = select_tasks(load_tasks(config.get("task_file", TASK_FILE)), ",".join(config["task_ids"]), "", 0)
         args.k = config["k"]
     else:
@@ -234,7 +232,10 @@ async def main() -> None:
         raise SystemExit("--max-usd is far above the estimate; keep the cap near 1.3x the estimate")
 
     run_dir.mkdir(parents=True, exist_ok=True)
-    if not args.resume:
+    if args.resume:
+        config.setdefault("resumed", []).append({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_sha": sha, "dirty": dirty})
+        (run_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
+    else:
         config = {
             "label": args.label,
             "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
