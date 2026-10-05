@@ -98,6 +98,12 @@ def test_the_shipped_tasks_pass_validation(seed, tasks) -> None:
     assert len(tasks) == 50
 
 
+def test_the_held_out_tasks_pass_validation_and_stay_separate(seed, tasks) -> None:
+    held = load_tasks("evals/sim/heldout_tasks.json")
+    assert validate(held, seed) == {}
+    assert len(held) == 10 and not ({t.id for t in held} & set(tasks))
+
+
 def test_validation_catches_broken_tasks(seed, tasks) -> None:
     idle = tasks["cancel-shipped-refused"].model_copy(deep=True)
     idle.evaluation_criteria.reward_basis = ["DB"]

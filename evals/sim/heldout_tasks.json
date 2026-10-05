@@ -1,0 +1,410 @@
+[
+ {
+  "id": "heldout-cancel-changed-mind",
+  "category": "cancel",
+  "description": "Order placed 70 minutes ago, unshipped: cancel after confirmation.",
+  "user_scenario": {
+   "persona": "Priya Patel, apologetic.",
+   "instructions": {
+    "reason_for_call": "You changed your mind about order #1011 and want to cancel it.",
+    "known_info": "Your order number is #1011 and your email is priya.patel@example.com. You simply changed your mind.",
+    "unknown_info": "",
+    "task_instructions": "Ask to cancel the order. If asked why, say you changed your mind. When the assistant describes the change and asks you to confirm, say yes."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1011",
+      "email": "priya.patel@example.com"
+     }
+    },
+    {
+     "name": "cancel_order",
+     "arguments": {
+      "order_number": "#1011",
+      "email": "priya.patel@example.com",
+      "reason": "changed_mind"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB"
+   ]
+  },
+  "initial_state": {
+   "place": {
+    "#1011": "70m"
+   }
+  }
+ },
+ {
+  "id": "heldout-address-vancouver",
+  "category": "address_change",
+  "description": "Order placed 45 minutes ago: change to a Canadian address.",
+  "user_scenario": {
+   "persona": "Liam OConnor, relocating for work.",
+   "instructions": {
+    "reason_for_call": "You want order #1013 shipped to your new apartment in Vancouver.",
+    "known_info": "Your order number is #1013 and your email is liam.oconnor@example.com. The new address is 250 Main St, Vancouver, BC V6A 2S9, Canada.",
+    "unknown_info": "",
+    "task_instructions": "Ask to change the shipping address. Give the new address when asked. When the assistant describes the change and asks you to confirm, say yes."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1013",
+      "email": "liam.oconnor@example.com"
+     }
+    },
+    {
+     "name": "update_shipping_address",
+     "arguments": {
+      "order_number": "#1013",
+      "email": "liam.oconnor@example.com",
+      "address1": "250 Main St",
+      "city": "Vancouver",
+      "province_code": "BC",
+      "zip": "V6A 2S9",
+      "country_code": "CA"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB"
+   ]
+  },
+  "initial_state": {
+   "place": {
+    "#1013": "45m"
+   }
+  }
+ },
+ {
+  "id": "heldout-return-boots-small",
+  "category": "return",
+  "description": "Boots delivered 8 days ago are too small: return with the 7.50 USD fee.",
+  "user_scenario": {
+   "persona": "Ethan Brooks, wants to sort it out quickly.",
+   "instructions": {
+    "reason_for_call": "The hiking boots from order #1009 are too small and you want to return them.",
+    "known_info": "Your order number is #1009 and your email is ethan.brooks@example.com. The boots are size 10 and too small. You want to keep the hoody.",
+    "unknown_info": "",
+    "task_instructions": "Ask to return the boots only. Say they are too small if asked for a reason. When the assistant describes the change and asks you to confirm, say yes."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1009",
+      "email": "ethan.brooks@example.com"
+     }
+    },
+    {
+     "name": "request_return",
+     "arguments": {
+      "order_number": "#1009",
+      "email": "ethan.brooks@example.com",
+      "items": [
+       {
+        "title": "Alpine Crossing Hiking Boots",
+        "variant": "10",
+        "quantity": 1
+       }
+      ],
+      "reason": "size_too_small"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB",
+    "COMMUNICATE"
+   ],
+   "communicate_info": [
+    "7.50"
+   ]
+  },
+  "initial_state": {
+   "deliver": {
+    "#1009": "8d"
+   }
+  }
+ },
+ {
+  "id": "heldout-return-in-transit",
+  "category": "return",
+  "description": "Return requested for an order still in transit: refused until it arrives.",
+  "user_scenario": {
+   "persona": "Maya Thompson, changed her mind before delivery.",
+   "instructions": {
+    "reason_for_call": "You no longer want the backpack from order #1019 and want to return it.",
+    "known_info": "Your order number is #1019 and your email is maya.thompson@example.com. You changed your mind.",
+    "unknown_info": "",
+    "task_instructions": "Ask to return the backpack. If told it cannot be returned yet, accept it and end the chat."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1019",
+      "email": "maya.thompson@example.com"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB",
+    "NL_ASSERTION"
+   ],
+   "nl_assertions": [
+    "The assistant tells the customer the backpack cannot be returned yet because it has not been delivered."
+   ],
+   "forbidden_actions": [
+    {
+     "name": "request_return",
+     "order_number": "#1019"
+    }
+   ]
+  }
+ },
+ {
+  "id": "heldout-cancel-then-address",
+  "category": "confirmation",
+  "description": "Customer asks to cancel, then at confirmation asks for an address change instead.",
+  "user_scenario": {
+   "persona": "Maya Thompson, rethinking her plans mid-chat.",
+   "instructions": {
+    "reason_for_call": "You were going to cancel order #1002, but you would rather have it sent somewhere else.",
+    "known_info": "Your order number is #1002 and your email is maya.thompson@example.com. The address you want instead is 31 Elm St, Golden, CO 80401, United States.",
+    "unknown_info": "",
+    "task_instructions": "First ask to cancel the order. If asked for a reason, say you changed your mind. When the assistant asks you to confirm the cancellation, say no, and ask to change the shipping address instead. Give the new address when asked. When asked to confirm the address change, say yes."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1002",
+      "email": "maya.thompson@example.com"
+     }
+    },
+    {
+     "name": "update_shipping_address",
+     "arguments": {
+      "order_number": "#1002",
+      "email": "maya.thompson@example.com",
+      "address1": "31 Elm St",
+      "city": "Golden",
+      "province_code": "CO",
+      "zip": "80401",
+      "country_code": "US"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB"
+   ],
+   "forbidden_actions": [
+    {
+     "name": "cancel_order",
+     "order_number": "#1002"
+    }
+   ]
+  },
+  "initial_state": {
+   "place": {
+    "#1002": "1h"
+   }
+  }
+ },
+ {
+  "id": "heldout-multi-cancel-giftcard",
+  "category": "multi_intent",
+  "description": "Cancel a recent order and ask whether gift cards expire.",
+  "user_scenario": {
+   "persona": "Grace Kim, practical.",
+   "instructions": {
+    "reason_for_call": "You want to cancel snowboard order #1014 because you found it cheaper, and you want to know if gift cards expire.",
+    "known_info": "Your order number is #1014 and your email is grace.kim@example.com. You found a better price elsewhere.",
+    "unknown_info": "",
+    "task_instructions": "First ask to cancel the order. When the assistant describes the change and asks you to confirm, say yes. Then ask whether gift cards expire, and end the chat once answered."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1014",
+      "email": "grace.kim@example.com"
+     }
+    },
+    {
+     "name": "cancel_order",
+     "arguments": {
+      "order_number": "#1014",
+      "email": "grace.kim@example.com",
+      "reason": "found_better_price"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB",
+    "COMMUNICATE"
+   ],
+   "communicate_info": [
+    [
+     "never expire",
+     "do not expire",
+     "don't expire",
+     "no expiration"
+    ]
+   ]
+  },
+  "initial_state": {
+   "place": {
+    "#1014": "30m"
+   }
+  }
+ },
+ {
+  "id": "heldout-address-window-rude",
+  "category": "difficult_customer",
+  "description": "Rude customer asks to change the address on an old order: refused, window passed.",
+  "user_scenario": {
+   "persona": "Priya Patel, short-tempered today, writes in a curt tone.",
+   "instructions": {
+    "reason_for_call": "You want order #1011 sent to your sister's place instead.",
+    "known_info": "Your order number is #1011 and your email is priya.patel@example.com. The new address is 19 Lake Ave, Fort Collins, CO 80521, United States.",
+    "unknown_info": "",
+    "task_instructions": "Be curt and impatient. Ask to change the address. If told it cannot be changed, complain once, then end the chat."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1011",
+      "email": "priya.patel@example.com"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB",
+    "NL_ASSERTION"
+   ],
+   "nl_assertions": [
+    "The assistant tells the customer the address can no longer be changed because more than 2 hours have passed since the order was placed."
+   ],
+   "forbidden_actions": [
+    {
+     "name": "update_shipping_address",
+     "order_number": "#1011"
+    }
+   ]
+  }
+ },
+ {
+  "id": "heldout-identity-email-typo",
+  "category": "identity",
+  "description": "Customer mistypes the email, then corrects it: details only after the match.",
+  "user_scenario": {
+   "persona": "Liam OConnor, typing fast.",
+   "instructions": {
+    "reason_for_call": "You want the tracking number for your parka order #1012.",
+    "known_info": "Your order number is #1012. Your email is liam.oconnor@example.com.",
+    "unknown_info": "",
+    "task_instructions": "The first time you give your email, type it as liam.oconner@example.com by mistake. If told no match was found, give the correct email. End the chat once you have the tracking number."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "get_order_status",
+     "arguments": {
+      "order_number": "#1012",
+      "email": "liam.oconnor@example.com"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB",
+    "COMMUNICATE",
+    "NL_ASSERTION"
+   ],
+   "communicate_info": [
+    "9400111899223197428513"
+   ],
+   "nl_assertions": [
+    "The assistant does not share any details of order #1012 until the customer gives the email that matches the order."
+   ]
+  }
+ },
+ {
+  "id": "heldout-policy-expedited",
+  "category": "product_policy",
+  "description": "Policy question: expedited shipping cost and speed.",
+  "user_scenario": {
+   "persona": "A shopper in a hurry.",
+   "instructions": {
+    "reason_for_call": "You need gear by the weekend and want to know about expedited shipping.",
+    "known_info": "You live in the United States.",
+    "unknown_info": "",
+    "task_instructions": "Ask how much expedited shipping costs and how fast it is. End the chat once answered."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [],
+   "reward_basis": [
+    "DB",
+    "COMMUNICATE"
+   ],
+   "communicate_info": [
+    "14.95"
+   ]
+  }
+ },
+ {
+  "id": "heldout-which-order-bottle",
+  "category": "which_order",
+  "description": "No order number: find the bottle order from the email, then change its address.",
+  "user_scenario": {
+   "persona": "Jordan Lee, does not keep confirmation emails.",
+   "instructions": {
+    "reason_for_call": "You want your water bottle order shipped to a different address.",
+    "known_info": "Your email is jordan.lee@example.com. You ordered a Wander bottle today. The new address is 88 Arapahoe Ave, Boulder, CO 80302, United States. You do not know the order number.",
+    "unknown_info": "You do not know the order number.",
+    "task_instructions": "Ask to change the address on your water bottle order, without giving an order number. If asked which order, say the bottle you ordered today. When the assistant describes the change and asks you to confirm, say yes."
+   }
+  },
+  "evaluation_criteria": {
+   "actions": [
+    {
+     "name": "update_shipping_address",
+     "arguments": {
+      "order_number": "#1021",
+      "email": "jordan.lee@example.com",
+      "address1": "88 Arapahoe Ave",
+      "city": "Boulder",
+      "province_code": "CO",
+      "zip": "80302",
+      "country_code": "US"
+     }
+    }
+   ],
+   "reward_basis": [
+    "DB"
+   ]
+  }
+ }
+]

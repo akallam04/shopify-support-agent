@@ -1,8 +1,9 @@
 """Static checks and a gold replay for the simulation tasks. Exits non-zero when any task is broken.
 
-    python -m evals.sim.validate_tasks
+    python -m evals.sim.validate_tasks [--task-file evals/sim/heldout_tasks.json]
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -93,7 +94,9 @@ def validate(tasks: list[Task], seed: SimDB) -> dict[str, list[str]]:
 
 
 def main() -> None:
-    tasks = load_tasks()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task-file", default="evals/sim/tasks.json")
+    tasks = load_tasks(parser.parse_args().task_file)
     problems = validate(tasks, load_seed())
     for task_id, found in problems.items():
         for p in found:
