@@ -107,7 +107,7 @@ Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
 - [x] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing, 46/46 live contract checks, Shopify API 2026-10
 - [x] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a switchable confirmation gate, on the simulated store and on the live development store, checked against each other
 - [ ] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k
-- [ ] Phase 4: baseline, gate on versus off ablation, fixes, model comparison, prompt caching
+- [ ] Phase 4: baseline, then the headline comparison: confirmation enforced in code by the gate versus asked for in the prompt with the gate off; fixes, model comparison, prompt caching
 - [ ] Phase 5: CI, release manifest, structured logs, public demo sandbox and rate limits
 - [ ] Phase 6: site upgrade with a confirmation card, an inside-the-agent panel, and a how-it-works page
 - [ ] Phase 7: README rewrite and write-up with numbers from saved runs
