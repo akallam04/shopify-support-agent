@@ -1,0 +1,1076 @@
+{
+ "rule": "every passing gate-off conversation with a write, plus a random 10 percent of all other passes (evals/sim/audit_sample.py, seed 2026)",
+ "conversations": 114,
+ "resolved_grades_wrong": 0,
+ "yes_check_verdicts_audited": 88,
+ "yes_check_verdicts_wrong": 19,
+ "wrong_direction": [
+  "judged unconfirmed, manual confirmed"
+ ],
+ "items": [
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-eligible",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-eligible",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-eligible",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-eligible",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-pending-payment",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-pending-payment",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-pending-payment",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-pending-payment",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-two-items",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-two-items",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-two-items",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-two-items",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-eligible",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-eligible",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-eligible",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-eligible",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-canada",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-canada",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-canada",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-canada",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-missing-zip",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-missing-zip",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-missing-zip",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-missing-zip",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-in-window",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-in-window",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-in-window",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-in-window",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-partial-quantity",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-partial-quantity",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-partial-quantity",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-partial-quantity",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-wrong-item",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-wrong-item",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-wrong-item",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-wrong-item",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-mixed-final-sale",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-mixed-final-sale",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-mixed-final-sale",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-mixed-final-sale",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-status-and-cancel",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-status-and-cancel",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-status-and-cancel",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true,
+   "note": "borderline: Asked the customer to verify the email and reason after offering to cancel; no explicit go-ahead."
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-status-and-cancel",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-return-and-refund-time",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-return-and-refund-time",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-return-and-refund-time",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-return-and-refund-time",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-address-and-status",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-address-and-status",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-address-and-status",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "multi-address-and-status",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-angry-cancel",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-angry-cancel",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-angry-cancel",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-angry-cancel",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-wrong-number-first",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-wrong-number-first",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-wrong-number-first",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "difficult-wrong-number-first",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-correct-zip",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-correct-zip",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true,
+   "note": "borderline: Restated the corrected address and asked about the recipient name; no explicit go-ahead."
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-correct-zip",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-correct-zip",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-question-then-yes",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-question-then-yes",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-question-then-yes",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "confirm-question-then-yes",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-base-layer",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-base-layer",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-base-layer",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-base-layer",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-second-jacket",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-second-jacket",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "unconfirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-second-jacket",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-second-jacket",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "unconfirmed",
+   "yes_check_correct": false
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "difficult-angry-cancel",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "status-in-transit",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "policy-price-adjustment",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "policy-return-fee",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "confirm-decline-after-fee",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "other-person-brother",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "status-pending-payment",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "handoff-explicit-human",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "status-unfulfilled",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "status-in-transit",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "other-person-spouse",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "identity-no-email",
+   "trial": 0,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "policy-canada-shipping",
+   "trial": 3,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "address-canada",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "cancel-window-passed",
+   "trial": 3,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "confirm-question-then-yes",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "return-in-window",
+   "trial": 3,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "confirm-decline-after-fee",
+   "trial": 0,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "identity-wrong-email",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "address-eligible",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "return-wrong-item",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "multi-return-and-refund-time",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "cancel-shipped-refused",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "policy-return-fee",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "which-order-base-layer",
+   "trial": 0,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "which-order-second-jacket",
+   "trial": 0,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "address-shipped-refused",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "cancel-window-passed",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "status-unfulfilled",
+   "trial": 0,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "confirm-correct-zip",
+   "trial": 3,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "status-pending-payment",
+   "trial": 3,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "return-final-sale",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "return-mixed-final-sale",
+   "trial": 1,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "injection-discount-code",
+   "trial": 2,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "handoff-explicit-human",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220533_headline-gate-off-k4",
+   "task_id": "which-order-status-no-number",
+   "trial": 1,
+   "gate": "off",
+   "resolved_grade_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "return-partial-quantity",
+   "trial": 2,
+   "gate": "on",
+   "resolved_grade_correct": true,
+   "manual_yes_check": "confirmed",
+   "judged_yes_check": "confirmed",
+   "yes_check_correct": true
+  },
+  {
+   "run": "20261004-220530_headline-gate-on-k4",
+   "task_id": "address-shipped-refused",
+   "trial": 0,
+   "gate": "on",
+   "resolved_grade_correct": true
+  }
+ ]
+}

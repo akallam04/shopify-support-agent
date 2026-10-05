@@ -70,5 +70,12 @@
   "which-order-base-layer",
   "which-order-second-jacket"
  ],
- "max_usd": 4.75
+ "max_usd": 4.75,
+ "resumed": [
+  {
+   "at": "2026-10-05T07:48:56+00:00",
+   "git_sha": "baa6f20",
+   "dirty": false
+  }
+ ]
 }

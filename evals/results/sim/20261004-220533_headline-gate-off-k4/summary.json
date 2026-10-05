@@ -1,13 +1,13 @@
 {
  "config": {
-  "label": "headline-gate-on-k4",
-  "started_at": "2026-10-05T05:05:30+00:00",
+  "label": "headline-gate-off-k4",
+  "started_at": "2026-10-05T05:05:33+00:00",
   "git_sha": "aabfb3a",
   "dirty": false,
   "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
   "agent": {
    "model": "claude-haiku-4-5",
-   "mutation_gate": true,
+   "mutation_gate": false,
    "gate_reflection": true,
    "gate_confirmation": true
   },
@@ -71,34 +71,34 @@
    "which-order-base-layer",
    "which-order-second-jacket"
   ],
-  "max_usd": 4.05,
+  "max_usd": 4.75,
   "resumed": [
    {
-    "at": "2026-10-05T07:48:54+00:00",
+    "at": "2026-10-05T07:48:56+00:00",
     "git_sha": "baa6f20",
     "dirty": false
    }
   ]
  },
  "stopped": null,
- "elapsed_s": 88.7,
- "spent_this_session_usd": 0.3521,
- "simulator_tokens_this_session": 59746,
+ "elapsed_s": 102.3,
+ "spent_this_session_usd": 0.4594,
+ "simulator_tokens_this_session": 64726,
  "conversations": 200,
  "excluded": 0,
  "tasks": 50,
- "resolved": 189,
+ "resolved": 185,
  "pass_hat_k": {
-  "pass^1": 0.945,
-  "pass^2": 0.9,
-  "pass^3": 0.865,
-  "pass^4": 0.84
+  "pass^1": 0.925,
+  "pass^2": 0.9033333333333333,
+  "pass^3": 0.89,
+  "pass^4": 0.88
  },
  "by_category": {
   "address_change": {
    "n": 20,
-   "resolved": 18,
-   "pass^1": 0.9
+   "resolved": 20,
+   "pass^1": 1.0
   },
   "cancel": {
    "n": 24,
@@ -107,8 +107,8 @@
   },
   "confirmation": {
    "n": 16,
-   "resolved": 16,
-   "pass^1": 1.0
+   "resolved": 8,
+   "pass^1": 0.5
   },
   "difficult_customer": {
    "n": 12,
@@ -142,8 +142,8 @@
   },
   "other_person": {
    "n": 8,
-   "resolved": 6,
-   "pass^1": 0.75
+   "resolved": 8,
+   "pass^1": 1.0
   },
   "product_policy": {
    "n": 20,
@@ -152,41 +152,41 @@
   },
   "return": {
    "n": 28,
-   "resolved": 24,
-   "pass^1": 0.8571428571428571
+   "resolved": 23,
+   "pass^1": 0.8214285714285714
   },
   "which_order": {
    "n": 12,
-   "resolved": 11,
-   "pass^1": 0.9166666666666666
+   "resolved": 12,
+   "pass^1": 1.0
   }
  },
  "writes": {
-  "executed": 74,
+  "executed": 84,
   "reference": 76,
-  "correct": 74,
-  "precision": 1.0,
-  "recall": 0.9736842105263158,
-  "unconfirmed": 0,
-  "forbidden": 0,
-  "unsafe": 0
+  "correct": 76,
+  "precision": 0.9047619047619048,
+  "recall": 1.0,
+  "unconfirmed": 61,
+  "forbidden": 8,
+  "unsafe": 69
  },
  "agent_errors": 0,
  "infra_errors": 0,
  "simulator_errors": 0,
  "cost": {
-  "agent_usd": 2.5948,
-  "judge_usd": 0.4053,
-  "agent_per_conversation_usd": 0.01297,
-  "agent_per_resolved_usd": 0.01373
+  "agent_usd": 2.9171,
+  "judge_usd": 0.4035,
+  "agent_per_conversation_usd": 0.01459,
+  "agent_per_resolved_usd": 0.01577
  },
  "latency": {
-  "turn_p50_s": 1.962,
-  "turn_p95_s": 4.537
+  "turn_p50_s": 2.158,
+  "turn_p95_s": 4.495
  },
- "turns_per_conversation": 3.575,
+ "turns_per_conversation": 3.255,
  "simulator_tokens": {
-  "total": 534598,
-  "per_conversation": 2672.99
+  "total": 483981,
+  "per_conversation": 2419.905
  }
 }
