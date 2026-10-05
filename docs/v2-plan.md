@@ -378,6 +378,23 @@ The same outcome must always produce the same hash, whatever order the agent did
       API switched to the in-process executor with a per-session sandbox.
 - [ ] Deploy as described under "Deployment and container images".
 - [ ] Cold start measured, cheapest fix applied, before and after reported.
+- [ ] When the model API refuses or is unavailable (billing, usage limits, outages), the API
+      returns a typed error with CORS headers and the demo shows a friendly "the demo is resting,
+      try again later" message instead of a raw 500.
+- [ ] A daily GitHub Actions check sends one real chat message to the public demo endpoint and
+      fails unless it gets a proper answer, so a broken demo produces an email. It calls only
+      the public endpoint and needs no secrets.
+- [ ] Agent issues found by the Phase 4 runs, fixed and measured on fresh runs, never by
+      changing the frozen headline:
+      - The confirmation text ends with a doubled period ("within 1 business day..").
+      - A decline that also asks for something else ("No, change the address instead") drops
+        the second request.
+      - The canned handoff reply repeats word for word when a customer keeps asking for a person.
+      - The return confirmation does not show the return reason, so a guessed reason cannot be
+        caught by the customer.
+      - Some refusals (an unsupported country, a final-sale item) are handed off instead of
+        explained.
+      - The agent sometimes calls an order eligible before the policy check refuses it.
 
 ### Phase 6: website upgrade
 
