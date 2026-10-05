@@ -6,6 +6,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import subprocess
 import time
 from dataclasses import asdict, dataclass, field
@@ -185,6 +186,7 @@ def parse_args() -> argparse.Namespace:
 
 async def main() -> None:
     args = parse_args()
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     sim_settings = get_sim_settings()
     if not (sim_settings.sim_user_api_key and sim_settings.sim_user_base_url and sim_settings.sim_user_model):
         raise SystemExit("set SIM_USER_BASE_URL, SIM_USER_MODEL and SIM_USER_API_KEY in .env")
