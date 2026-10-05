@@ -1,7 +1,7 @@
 """Unit tests for the grounding gate."""
 
 from app.agent.nodes.verify import (
-    plain_dashes,
+    plain_text,
     check_citations,
     check_order_facts,
     verify_node,
@@ -72,10 +72,10 @@ def test_verify_node_skips_static_paths() -> None:
 
 
 def test_em_and_en_dashes_are_replaced_in_replies() -> None:
-    assert plain_dashes("It is in stock\u2014we have 12.") == "It is in stock - we have 12."
-    assert plain_dashes("Arrives in 3\u20136 business days, or 5 \u2013 7 for Canada.") == "Arrives in 3-6 business days, or 5-7 for Canada."
-    assert plain_dashes("Options:\n\u2014 Standard\n\u2014 Expedited") == "Options:\n- Standard\n- Expedited"
-    assert plain_dashes("No dashes here - already plain.") == "No dashes here - already plain."
+    assert plain_text("It is in stock\u2014we have 12.") == "It is in stock - we have 12."
+    assert plain_text("Arrives in 3\u20136 business days, or 5 \u2013 7 for Canada.") == "Arrives in 3-6 business days, or 5-7 for Canada."
+    assert plain_text("Options:\n\u2014 Standard\n\u2014 Expedited") == "Options:\n- Standard\n- Expedited"
+    assert plain_text("No dashes here - already plain.") == "No dashes here - already plain."
 
 
 def test_verify_node_cleans_dashes_on_every_passing_path() -> None:
@@ -95,3 +95,8 @@ def test_order_facts_from_earlier_verified_replies_stay_grounded() -> None:
     assert verify_node(state)["response"] == "Got it, I will start the return on #1022."
     invented = verify_node({**state, "draft": "I will start the return on #1099."})
     assert invented["response"] == "" and "#1099" in invented["verify_feedback"]
+
+
+def test_emoji_are_removed_from_replies() -> None:
+    assert plain_text("Found your order! \U0001F4E6 It ships today.") == "Found your order! It ships today."
+    assert plain_text("Thanks \U0001F44D\U0001F3FD") == "Thanks"
