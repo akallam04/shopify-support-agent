@@ -113,8 +113,7 @@ waits until something needs it.
 
 ### Deployment and container images
 
-The Phase 1 code is not deployed yet. It ships once, when the public sandbox needs the
-simulated store live. At that point:
+v2 shipped in Phase 5 with the public sandbox:
 
 - Images are tagged with the git SHA they were built from, and the Lambda is deployed by that
   tag, so the image the function uses always keeps a tag.
@@ -371,36 +370,40 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 5: production polish
 
-- [ ] GitHub Actions: lint, unit tests and gitleaks on push, a small simulation smoke run on
-      manual trigger or nightly, artifacts uploaded, badge in the README.
-- [ ] Release manifest: hash of prompts, model ids, policy and knowledge snapshot, git SHA,
-      stamped on every response, log line, and eval run.
-- [ ] Structured JSON logs with conversation and trace ids, per-node timing, tokens and cost.
-- [ ] Public demo safety: sandbox writes per session, clear labelling, rate limits, a per
-      session token cap, and a cap on total conversation size per request.
-- [ ] Signed session token carrying the pending action and the sandbox mutations over HTTP, and the
-      API switched to the in-process executor with a per-session sandbox.
-- [ ] Deploy as described under "Deployment and container images".
-- [ ] Cold start measured, cheapest fix applied, before and after reported.
-- [ ] When the model API refuses or is unavailable (billing, usage limits, outages), the API
+- [x] GitHub Actions: lint, unit tests and gitleaks on push, a small simulation smoke run on
+      manual trigger only (no scheduled paid runs), its results uploaded, badges in the README.
+- [x] Release manifest: hash of prompts, model ids, policy and knowledge snapshot, git SHA, and
+      gate switches, stamped on every response, log line, and eval run.
+- [x] Structured JSON logs with trace and session ids, per-node timing, tokens and cost, and no
+      message text.
+- [x] Public demo safety: sandbox writes per session, labelling on the page (a fuller banner
+      comes in Phase 6), API Gateway rate limits, a per-session token cap, and a cap on total
+      conversation size per request.
+- [x] Signed session token carrying the pending action and the sandbox mutations over HTTP, and
+      the API switched to the in-process executor with a per-session sandbox (`API_MODE=sandbox`).
+- [x] Deploy as described under "Deployment and container images": images tagged by commit,
+      the ECR rule expiring untagged images only, and the function holding only the read-only
+      Shopify token.
+- [x] Cold start measured, cheapest fix applied, before and after reported (`deploy/README.md`).
+- [x] When the model API refuses or is unavailable (billing, usage limits, outages), the API
       returns a typed error with CORS headers and the demo shows a friendly "the demo is resting,
       try again later" message instead of a raw 500.
-- [ ] A daily GitHub Actions check sends one real chat message to the public demo endpoint and
+- [x] A daily GitHub Actions check sends one real chat message to the public demo endpoint and
       fails unless it gets a proper answer, so a broken demo produces an email. It calls only
       the public endpoint and needs no secrets.
+- [x] Gate reflection off by default, with the switch kept, decided from the gate-parts runs.
 - [ ] Agent issues found by the Phase 4 runs, fixed and measured on fresh runs, never by
       changing the frozen headline:
-      - The confirmation text ends with a doubled period ("within 1 business day..").
-      - A decline that also asks for something else ("No, change the address instead") drops
-        the second request.
-      - The canned handoff reply repeats word for word when a customer keeps asking for a person.
-      - The return confirmation does not show the return reason, so a guessed reason cannot be
-        caught by the customer.
-      - Some refusals (an unsupported country, a final-sale item) are handed off instead of
-        explained.
-      - The agent sometimes calls an order eligible before the policy check refuses it.
-      - The order list shows only "fulfilled", and the agent sometimes reports that as
-        "delivered"; the list should carry delivery status like the status tool does.
+      - [x] The confirmation text ended with a doubled period.
+      - [x] A decline that also asks for something else dropped the second request.
+      - [x] The canned handoff reply repeated word for word.
+      - [x] The return confirmation did not show the return reason.
+      - [x] The order list showed only "fulfilled", and the agent sometimes called it delivered.
+      - [ ] Some refusals (an unsupported country, a final-sale item) are handed off instead of
+            explained.
+      - [ ] The agent sometimes calls an order eligible before the policy check refuses it.
+      - [ ] After a corrected detail at confirmation, the model sometimes asks for a yes itself
+            before the gate asks again.
 
 ### Phase 6: website upgrade
 

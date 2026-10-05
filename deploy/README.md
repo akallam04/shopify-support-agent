@@ -4,7 +4,7 @@ The backend runs as a container image on AWS Lambda (arm64 / Graviton) behind an
 
 ## What runs where
 
-- **Backend**: the FastAPI app plus its stdio MCP server, packaged in one image. The AWS Lambda Web Adapter forwards invokes to uvicorn, so the app and its lifespan-managed MCP session run unchanged. The vector index and embedding model are baked into the image under a world-readable path at build time; the entrypoint stages both into `/tmp` (Lambda's only writable path) before serving.
+- **Backend**: the FastAPI app, packaged in one image. In the deployed demo it runs in sandbox mode (`API_MODE=sandbox`): each visitor gets a private copy of the store, rebuilt per request from the frozen seed in `data/sim/seed.json` plus the changes listed in a signed session token, so write actions never reach the real store. In live mode (`API_MODE=live`, the default) it answers read-only from the live store through its stdio MCP server, as v1 did. The AWS Lambda Web Adapter forwards invokes to uvicorn, so the app and its lifespan-managed MCP session run unchanged. The vector index and embedding model are baked into the image under a world-readable path at build time; the entrypoint stages both into `/tmp` (Lambda's only writable path) before serving.
 - **Public entry**: an API Gateway HTTP API in front of the Lambda. A Lambda Function URL would be simpler, but brand-new AWS accounts block public Function URLs (`AuthType NONE` returns `403 Forbidden` regardless of the resource policy), and there is no per-account switch to disable that. API Gateway HTTP API is a separate public-endpoint path that is not subject to that block. The app needs no changes; the Web Adapter handles the API Gateway payload identically.
 - **Frontend**: `frontend/` is plain static files. Its `api-base` meta tag points at the API Gateway URL; deploy to Vercel.
 
@@ -15,7 +15,7 @@ The backend runs as a container image on AWS Lambda (arm64 / Graviton) behind an
 - ECR image storage: about 1.2 GB, free for the first year (500 MB tier), then roughly $0.15/month.
 - Vercel Hobby and Anthropic tokens (~$0.18 per 100 conversations): already accounted for.
 
-Effectively $0/month at demo scale. The one tradeoff is a cold start of a few seconds while the model loads after idle; the frontend retries a cold-start 503 transparently.
+Effectively $0/month at demo scale. The one tradeoff is a cold start of a few seconds after idle; the frontend retries a cold-start 503 transparently. Right after a new image is deployed, the first cold starts are slower while Lambda caches the image.
 
 ## Backend deploy (run from the repo root)
 
@@ -36,11 +36,19 @@ export LAMBDA_ROLE_NAME=aurora-support-lambda
    aws ecr create-repository --repository-name aurora-support --region $AWS_REGION
    ```
 
-2. Build the arm64 image and push it. `--provenance=false` is required, otherwise buildx pushes a multi-manifest index that Lambda rejects with "image manifest ... not supported":
+2. Build the arm64 image, tagged with the git commit it was built from, and push it. `--provenance=false` is required, otherwise buildx pushes a multi-manifest index that Lambda rejects with "image manifest ... not supported". `GIT_SHA` lets the release manifest name its commit inside the container:
 
    ```
+   export SHA=$(git rev-parse --short=12 HEAD)
    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR
-   docker buildx build --platform linux/arm64 --provenance=false -f deploy/Dockerfile -t $ECR:latest --push .
+   docker buildx build --platform linux/arm64 --provenance=false -f deploy/Dockerfile --build-arg GIT_SHA=$SHA -t $ECR:$SHA --push .
+   ```
+
+   Expire untagged images automatically (one time). The rule in `deploy/ecr-lifecycle.json` touches untagged images only, so the tagged image the function runs is never deleted. Preview it first with `aws ecr start-lifecycle-policy-preview`:
+
+   ```
+   aws ecr put-lifecycle-policy --repository-name aurora-support --region $AWS_REGION \
+     --lifecycle-policy-text file://deploy/ecr-lifecycle.json
    ```
 
 3. Create the Lambda execution role (one time, free):
@@ -80,8 +88,36 @@ export LAMBDA_ROLE_NAME=aurora-support-lambda
      -d '{"messages":[{"role":"user","content":"do you have waterproof jackets?"}]}'
    ```
 
-To ship a new build later: repeat step 2, then
-`aws lambda update-function-code --function-name aurora-support --image-uri $ECR:latest --region $AWS_REGION`.
+To ship a new build later: repeat step 2, then deploy by the commit tag, never by a moving tag:
+`aws lambda update-function-code --function-name aurora-support --image-uri $ECR:$SHA --region $AWS_REGION`.
+
+### Sandbox mode settings
+
+The demo needs three extra variables. Generate `SESSION_SIGNING_KEY` once into `.env` (for example with `python -c "import secrets; print(secrets.token_urlsafe(48))"` written straight into the file), then push all three without printing values:
+
+```
+.venv/bin/python deploy/sync_lambda_env.py SESSION_SIGNING_KEY API_MODE=sandbox WRITE_ACTIONS=true
+```
+
+`sync_lambda_env.py` refuses `SHOPIFY_WRITE_TOKEN` and `SIM_USER_API_KEY` under any name, so the function only ever holds the read-only Shopify token. After a deploy, check that:
+
+- `aws lambda get-function-configuration` lists no `SHOPIFY_WRITE_TOKEN`, and the admin token matches the read-only one (compare hashes, not values);
+- `GET /health` returns the new `release`;
+- a cancel confirmed in one chat shows up in that chat only, and the real store's order is unchanged.
+
+Every request writes one JSON line to CloudWatch with a trace id, the release, per-node timings, tokens, cost, and any writes, and no message text.
+
+## Cold start
+
+Measured on the live function by forcing new execution environments (a description change), timing a cold `GET /health` and then a first chat, and reading `Init Duration` from the Lambda logs:
+
+| | v1 (2 samples) | v2 as first deployed (2) | Model copy removed (7) | Plus background prefetch (7) |
+|---|---|---|---|---|
+| Init duration | 4.0 to 4.9s | 4.2s and 10s, the init limit | 2.2 to 6.1s | 3.0 to 5.5s, median 4.0s |
+| First retrieval on a cold environment | not measured | up to 8.4s | 0.4 to 24s, two of seven over 20s | 0.75 to 1.1s |
+| First chat | 2.9 to 3.4s | 4.5 to 11.5s | 3.7 to 26.9s | 3.5 to 4.3s |
+
+The cost was Lambda loading container image layers lazily: on a host without the image cached, the embedding model's bytes were fetched on demand. The entrypoint used to copy all 167 MB of model files into `/tmp` during init, which sometimes pushed init past its 10 second limit. It now links the model read-only from the image, copies only onnxruntime's small telemetry folder, drops the unused 80 MB archive at build time, and reads the model and onnxruntime in the background as the container starts, so that fetch overlaps startup instead of the first question. All of it is free. Warm chats take about 3 to 3.5 seconds, most of it in the two model calls.
 
 ## Request limits
 
@@ -97,7 +133,8 @@ aws apigatewayv2 update-stage --api-id <api-id> --stage-name '$default' --region
   cutting it off at an exact count.
 - **Lambda concurrency:** capped by the account limit of 10 concurrent executions. Reserved
   concurrency cannot be set lower, because AWS requires at least 10 to stay unreserved.
-- **Request size:** each message is capped at 4,000 characters and the history at 20 messages.
+- **Request size:** each message is capped at 4,000 characters, the history at 20 messages, and the whole conversation at 16,000 characters per request.
+- **Per session:** a demo session stops at 60,000 model tokens and asks the visitor to start a new conversation. Sessions expire after 30 idle minutes.
 
 Throttled responses (API Gateway 429, Lambda 503) come back without CORS headers, so the
 browser sees them as network errors. The frontend therefore treats throttles, concurrency

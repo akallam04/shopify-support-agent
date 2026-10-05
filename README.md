@@ -4,7 +4,7 @@
 
 An AI customer support agent for a Shopify store. It answers product questions with RAG over the live store catalog, looks up order status through a self-built MCP server wrapping the Shopify Admin GraphQL API, answers shipping and returns questions from a policy document set, and refuses or escalates anything out of scope. The agent is an explicit LangGraph state machine served by FastAPI, and every behavior is measured by an eval harness with 53 labeled test cases.
 
-**Live demo: https://shopify-support-agent.vercel.app** (a demo storefront with the agent embedded as a real support widget: React-free frontend on Vercel, FastAPI backend on AWS Lambda). The first message after an idle period cold-starts the backend and takes a few seconds; the UI retries automatically.
+**Live demo: https://shopify-support-agent.vercel.app** (a demo storefront with the agent embedded as a real support widget: React-free frontend on Vercel, FastAPI backend on AWS Lambda). Each visitor gets a private sandbox copy of the store, so you can ask the agent to cancel an order, change an address, or start a return and watch it ask for your confirmation; nothing you change reaches the real store or anyone else's chat. The first message after an idle period cold-starts the backend and takes a few seconds.
 ![Aurora Outfitters storefront with the support agent open](docs/demo.png)
 
 ## Architecture
@@ -197,6 +197,6 @@ Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
 - [x] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a switchable confirmation gate, on the simulated store and on the live development store, checked against each other
 - [x] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k, over 50 validated tasks
 - [x] Phase 4: baseline, then the headline comparison: confirmation enforced in code by the gate versus asked for in the prompt with the gate off; fixes, held-out tasks, model comparison, prompt caching, grader audit
-- [ ] Phase 5: CI, release manifest, structured logs, public demo sandbox and rate limits
+- [x] Phase 5: CI, release manifest, structured logs, a per-session sandbox for the public demo with signed session state and usage caps, friendly outage messages, a daily live demo check, and a measured cold start fix
 - [ ] Phase 6: site upgrade with a confirmation card, an inside-the-agent panel, and a how-it-works page
 - [ ] Phase 7: README rewrite and write-up with numbers from saved runs
