@@ -1,0 +1,8 @@
+{
+ "taxonomy": "evals/sim/taxonomy.md",
+ "failures": [
+  {"task_id": "return-already-requested", "trial": 0, "label": "fact_missing", "owner": "agent", "note": "Same refusal text as Haiku: 0 available to return, no mention of the existing return."},
+  {"task_id": "which-order-second-jacket", "trial": 0, "label": "fact_missing", "owner": "agent", "note": "Looked up both orders but the status tool shows neither return status nor delivery date, so it could not tell which order was free to return. Tool gap, task kept."}
+ ],
+ "passes_on_haiku_failures": ["address-unsupported-country", "return-wrong-item"]
+}

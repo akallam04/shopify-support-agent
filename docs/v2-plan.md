@@ -349,11 +349,11 @@ The same outcome must always produce the same hash, whatever order the agent did
       frustrated, vague, or rambling customers; a customer who says no or changes their mind
       at the confirmation step; handoff requests; and a customer with several orders where
       the agent must ask which one.
-- [ ] Task validation: replay every reference trajectory through the policy engine, run a
+- [x] Task validation: replay every reference trajectory through the policy engine, run a
       strong model once and review its failures for task bugs, fix or drop ambiguous tasks.
-- [ ] Failure taxonomy with labels and manual spot checks.
+- [x] Failure taxonomy with labels and manual spot checks.
 - [x] One command that turns a failing trajectory into a new regression task.
-- [ ] The 53-case suite stays as the fast single-turn gate and must stay at 53/53.
+- [x] The 53-case suite stays as the fast single-turn gate and must stay at 53/53.
 
 ### Phase 4: iterate and measure
 
