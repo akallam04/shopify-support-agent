@@ -195,3 +195,18 @@ def test_a_variant_not_on_the_order_is_not_found(db: SimDB) -> None:
     result = execute(delivered(db, 5), "request_return", return_args({"title": "Stormline Rain Jacket", "variant": "size L"}))
     assert result["code"] == "item_not_found"
     assert "Stormline Rain Jacket (M)" in result["reason"]
+
+
+def test_a_wrong_item_return_matches_the_ordered_item_whatever_size_arrived(db: SimDB) -> None:
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "Stormline Rain Jacket", "variant": "L", "quantity": 1}, reason="wrong_item"))
+    assert result["ok"] is True
+    assert "No return shipping fee" in result["fee"]
+    assert db.orders["#1001"].returns[0].line_items[0].line_item_id == "l1"
+
+
+def test_a_size_mismatch_explains_how_to_return_a_wrong_item(db: SimDB) -> None:
+    result = execute(delivered(db, 5), "request_return", return_args({"title": "Stormline Rain Jacket", "variant": "L", "quantity": 1}, reason="size_too_large"))
+    assert result["code"] == "item_not_found"
+    assert "reason wrong_item" in result["reason"]
+    unknown = execute(delivered(db, 5), "request_return", return_args({"title": "Ember 750 Sleeping Bag"}))
+    assert "wrong_item" not in unknown["reason"]

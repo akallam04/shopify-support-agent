@@ -255,7 +255,10 @@ def variant_key(text: str) -> str:
     return " ".join(w for w in text.lower().split() if w not in VARIANT_FILLER)
 
 
-def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, int]], policy.Decision]:
+WRONG_ITEM_HINT = "If a different size or color arrived than was ordered, return the ordered item with the reason wrong_item."
+
+
+def _resolve_items(order: Order, raw_items: Any, reason: str = "") -> tuple[list[tuple[LineItem, int]], policy.Decision]:
     if not isinstance(raw_items, list) or not raw_items:
         return [], policy.ALLOWED
     resolved: list[tuple[LineItem, int]] = []
@@ -272,11 +275,15 @@ def _resolve_items(order: Order, raw_items: Any) -> tuple[list[tuple[LineItem, i
         if not matches:
             wanted = words(title)
             matches = [li for li in order.line_items if wanted and all(prefix_hit(w, words(li.title)) for w in wanted)]
+        by_title = matches
         if variant:
             matches = [li for li in matches if variant_key(li.variant_title or "") == variant_key(variant)]
+        if not matches and len(by_title) == 1 and reason == "wrong_item":
+            matches = by_title
         if not matches:
             on_order = "; ".join(_items_text([(li, li.quantity)]) for li in order.line_items)
-            return [], policy.refuse("item_not_found", f"Order {order.name} does not include that item. It has: {on_order}.")
+            hint = f" {WRONG_ITEM_HINT}" if by_title else ""
+            return [], policy.refuse("item_not_found", f"Order {order.name} does not include that item. It has: {on_order}.{hint}")
         if len(matches) > 1:
             variants = ", ".join(li.variant_title or "standard" for li in matches)
             return [], policy.refuse("ambiguous_item", f"Order {order.name} has more than one {matches[0].title}: {variants}. Which one?")
@@ -341,7 +348,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         )
     else:
         reason = str(args.get("reason") or "").strip()
-        pairs, decision = _resolve_items(order, args.get("items"))
+        pairs, decision = _resolve_items(order, args.get("items"), str(args.get("reason") or ""))
         if decision.allowed:
             products = backend.products_by_id({li.product_id for li, _ in pairs if li.product_id})
             decision = policy.can_return(order, pairs, products, reason, now)
