@@ -40,7 +40,7 @@ Key decisions:
 |---|---|---|---|---|---|---|---|
 | baseline (Haiku 4.5) | 96% (51/53) | 100% | 100% | 100% | 100% | 2.60s / 5.12s | $0.17 |
 | after iteration (Haiku 4.5) | **100% (53/53)** | 100% | 100% | 100% | 100% | 2.18s / 3.84s | **$0.18** |
-| comparison (Sonnet 5 answers) | 100% (53/53) | 100% | 100% | 100% | 100% | 2.70s / 5.62s | $0.43 |
+| comparison (Sonnet 5 answers) | 100% (53/53) | 100% | 100% | 100% | 100% | 2.70s / 5.62s | $0.31 |
 
 The baseline ran under the initial rubrics; two of its "failures" were bugs in my own eval rubrics, corrected during iteration (noted below), so the 96 to 100 jump is a mix of agent fixes and harness fixes, not agent fixes alone. What changed, in order of interest:
 
@@ -50,7 +50,7 @@ The baseline ran under the initial rubrics; two of its "failures" were bugs in m
 - **A prompt fix.** Pending-payment orders are now always reported with the payment status, the actionable part for the customer.
 - **Two eval bugs.** The judge originally could not see the agent's tool outputs, so it occasionally distrusted correct order summaries as possibly fabricated; and one rubric accidentally demanded an exhaustive feature list instead of accuracy.
 
-**Model decision:** both models pass at 100%, so the cheaper one wins. Haiku 4.5 serves answers at 2.4x lower cost and lower latency (3.84s versus 5.62s at p95) than Sonnet 5 on this workload, with no accuracy difference. The router and answer models are one config value each, and re-running the comparison is one command: `ANSWER_MODEL=claude-sonnet-5 python -m evals.run_evals`.
+**Model decision:** both models pass at 100%, so the cheaper one wins. Haiku 4.5 serves answers at 1.78x lower cost and lower latency (3.84s versus 5.62s at p95) than Sonnet 5 on this workload, with no accuracy difference. Costs are at October 2026 prices: Sonnet 5's price fell by a third on both input and output after these July runs, so its column was recomputed from the saved per-case costs with `scripts/reprice_model_comparison.py`, which separates the Haiku router's share (at July prices the gap was 2.45x). Haiku's price did not change. The router and answer models are one config value each, and re-running the comparison is one command: `ANSWER_MODEL=claude-sonnet-5 python -m evals.run_evals`.
 
 Full per-case records for every run live in `evals/results/`.
 
