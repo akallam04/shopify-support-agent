@@ -321,7 +321,11 @@ def test_a_saved_conversation_rebuilds_to_the_same_end_state(monkeypatch, seed, 
 def test_the_yes_check_judges_the_change_in_store_terms_not_raw_arguments(seed, tasks) -> None:
     args = {"order_number": "#1009", "email": "ethan.brooks@example.com", "items": [{"title": "Sierra Sun Hoody", "variant": "L", "quantity": 1}], "reason": "wrong_item"}
     summary = effective_change(seed, tasks["return-wrong-item"], "request_return", args)
-    assert "1 x Sierra Sun Hoody (M)" in summary and "No return shipping fee" in summary
+    assert summary == "request a return of 1 x Sierra Sun Hoody (M) from order #1009, because a different size or color arrived than was ordered"
+    fee_terms = effective_change(seed, tasks["return-in-window"], "request_return", {**args, "order_number": "#1022", "email": "jordan.lee@example.com", "items": [{"title": "Stormline Rain Jacket", "quantity": 1}], "reason": "size_too_large"})
+    assert fee_terms == "request a return of 1 x Stormline Rain Jacket (L) from order #1022"
+    cancel = effective_change(seed, tasks["cancel-eligible"], "cancel_order", {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake"})
+    assert cancel == "cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD)"
     refused = effective_change(seed, tasks["cancel-shipped-refused"], "cancel_order", {"order_number": "#1001", "email": MAYA, "reason": "changed_mind"})
     assert refused.startswith("cancel_order with")
 

@@ -18,10 +18,11 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.config import get_settings
+from evals.run_evals import usage_cost
 from evals.sim.config import get_sim_settings
 from evals.sim.env import build_db, load_seed
-from evals.sim.grader import grade
-from evals.sim.metrics import summarize
+from evals.sim.grader import grade, successful_writes, unconfirmed
+from evals.sim.metrics import cut_by_billing, summarize
 from evals.sim.orchestrator import Conversation
 from evals.sim.schema import WRITE_TOOLS, Task, load_tasks
 from mcp_server.backends.sim import SimStoreBackend
@@ -54,7 +55,16 @@ def rebuild(record: dict[str, Any], task: Task, seed: SimDB) -> Conversation:
     )
 
 
-async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: float) -> dict[str, Any]:
+async def recheck_writes(conv: Conversation, record: dict[str, Any], seed: SimDB, client: Any, judge: str) -> dict[str, Any]:
+    flagged, usage = await unconfirmed(client, judge, conv, successful_writes(conv), seed)
+    graded = json.loads(json.dumps(record["grade"]))
+    graded["writes"]["unconfirmed"] = flagged
+    graded["judge_cost_usd"] = round(graded["judge_cost_usd"] + usage_cost(usage), 6)
+    graded["yes_check_cost_usd"] = round(usage_cost(usage), 6)
+    return graded
+
+
+async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: float, yes_check_only: bool = False) -> dict[str, Any]:
     tasks = {t.id: t for t in load_tasks(task_file)}
     seed = load_seed()
     records = [json.loads(line) for line in (run_dir / "trajectories.jsonl").read_text().splitlines()]
@@ -62,19 +72,30 @@ async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: fl
     judge = get_sim_settings().sim_judge_model
     spent, out, changes = 0.0, [], []
     for record in records:
-        if record.get("grade") is None or (only and record["task_id"] not in only):
+        if record.get("grade") is None or cut_by_billing(record) or (only and record["task_id"] not in only):
             out.append(record)
             continue
         if spent >= max_usd:
             raise SystemExit(f"stopped at the ${max_usd:.2f} cap before regrading everything; nothing was written")
         conv = rebuild(record, tasks[record["task_id"]], seed)
-        graded = await grade(conv, seed, client, judge)
-        if graded["db_match"] != record["grade"]["db_match"]:
+        if yes_check_only:
+            if not record["grade"]["writes"]["executed"]:
+                out.append(record)
+                continue
+            graded = await recheck_writes(conv, record, seed, client, judge)
+            spent += graded["yes_check_cost_usd"]
+        else:
+            graded = await grade(conv, seed, client, judge)
+            spent += graded["judge_cost_usd"]
+        if graded["db_match"] != record["grade"]["db_match"] or len(successful_writes(conv)) != len(record["grade"]["writes"]["executed"]):
             raise ReplayMismatch(f"{record['task_id']} trial {record['trial']}: rebuilt end state does not match the original grade")
-        spent += graded["judge_cost_usd"]
         graded["agent_cost_usd"] = record["grade"]["agent_cost_usd"]
-        if graded["reward"] != record["grade"]["reward"]:
-            changes.append({"task_id": record["task_id"], "trial": record["trial"], "before": record["grade"]["reward"], "after": graded["reward"]})
+        if graded["reward"] != record["grade"]["reward"] or len(graded["writes"]["unconfirmed"]) != len(record["grade"]["writes"]["unconfirmed"]):
+            changes.append({
+                "task_id": record["task_id"], "trial": record["trial"],
+                "reward": [record["grade"]["reward"], graded["reward"]],
+                "unconfirmed_writes": [len(record["grade"]["writes"]["unconfirmed"]), len(graded["writes"]["unconfirmed"])],
+            })
         out.append({**record, "grade": graded, "regraded_from": record["grade"]["reward"]})
     k = json.loads((run_dir / "config.json").read_text())["k"]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -83,6 +104,7 @@ async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: fl
         "regraded_at": stamp,
         "task_file": task_file,
         "tasks": sorted(only) if only else "all",
+        "mode": "yes-check only" if yes_check_only else "full",
         "judge_usd": round(spent, 4),
         "changes": changes,
         "before": summarize(records, k),
@@ -98,13 +120,14 @@ def main() -> None:
     p.add_argument("--task-file", default="evals/sim/tasks.json")
     p.add_argument("--tasks", default="")
     p.add_argument("--max-usd", type=float, required=True)
+    p.add_argument("--yes-check-only", action="store_true")
     args = p.parse_args()
     only = {t.strip() for t in args.tasks.split(",") if t.strip()}
-    report = asyncio.run(regrade_run(Path(args.run), args.task_file, only, args.max_usd))
+    report = asyncio.run(regrade_run(Path(args.run), args.task_file, only, args.max_usd, args.yes_check_only))
     for key in ("before", "after"):
         s = report[key]
-        print(f"{key}: resolved {s['resolved']}/{s['conversations']}, {s['pass_hat_k']}, unsafe writes {s['writes']['unsafe']}")
-    print(f"changed grades: {report['changes']}")
+        print(f"{key}: resolved {s['resolved']}/{s['conversations']}, resolved safely {s['resolved_safely']}, {s['pass_hat_k']}, safe {s['pass_hat_k_safe']}, unsafe writes {s['writes']['unsafe']}")
+    print(f"changed grades: {len(report['changes'])}")
     print(f"judge cost ${report['judge_usd']:.3f}")
 
 
