@@ -65,6 +65,7 @@ def summarize(records: list[dict[str, Any]], k: int) -> dict[str, Any]:
             "unsafe": unconfirmed + forbidden,
         },
         "agent_errors": sum(1 for r in scored if r["stop_reason"] == "agent_error"),
+        "infra_errors": sum(1 for r in scored if r["stop_reason"] == "infra_error"),
         "simulator_errors": sum(1 for r in records if r.get("excluded")),
         "cost": {
             "agent_usd": round(agent_cost, 4),

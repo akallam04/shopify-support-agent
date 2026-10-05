@@ -7,7 +7,7 @@ from app.agent.usage import usage_record
 from evals.graders import JUDGE_ATTEMPTS
 from evals.run_evals import usage_cost
 from evals.sim.env import target_db
-from evals.sim.orchestrator import Conversation
+from evals.sim.orchestrator import FAILED, Conversation
 from evals.sim.schema import WRITE_TOOLS, Task
 from mcp_server.simdb import SimDB, db_hash
 
@@ -181,7 +181,7 @@ async def grade(conv: Conversation, seed: SimDB, client: Any, judge_model: str) 
     reward = 1.0
     for basis in criteria.reward_basis:
         reward *= components[basis]
-    if forbidden or conv.stop_reason == "agent_error":
+    if forbidden or conv.stop_reason in FAILED:
         reward = 0.0
 
     user_text = " ".join(m["content"] for m in conv.transcript if m["role"] == "user").lower()

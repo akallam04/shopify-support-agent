@@ -20,7 +20,8 @@ from mcp_server.simdb import SimDB
 STOP_REASONS = {STOP: "user_stop", TRANSFER: "transfer", OUT_OF_SCOPE: "out_of_scope"}
 INFRA_ERRORS = (anthropic.APIConnectionError, anthropic.InternalServerError, anthropic.RateLimitError, anthropic.OverloadedError)
 UNRECORDED = frozenset({"simulator_quota", "billing_error"})
-RETRYABLE = frozenset({"simulator_error", "infra_error"})
+RETRYABLE = frozenset({"simulator_error"})
+FAILED = frozenset({"agent_error", "infra_error"})
 
 
 def classify_agent_error(e: Exception) -> str:
