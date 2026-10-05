@@ -6,7 +6,8 @@ from math import comb
 from pathlib import Path
 from typing import Any
 
-from evals.sim.orchestrator import UNRECORDED, billing_text
+from app.model_errors import billing_text
+from evals.sim.orchestrator import UNRECORDED
 
 
 def pass_hat_k(rewards_by_task: dict[str, list[float]], k: int) -> float | None:

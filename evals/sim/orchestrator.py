@@ -11,6 +11,7 @@ from app.agent.graph import build_graph
 from app.agent.tool_executor import InProcessTools
 from app.config import Settings
 from app.costs import usage_cost
+from app.model_errors import is_billing_error
 from evals.sim.config import SimSettings
 from evals.sim.env import build_db
 from evals.sim.schema import Task
@@ -20,13 +21,6 @@ from mcp_server.simdb import SimDB
 
 STOP_REASONS = {STOP: "user_stop", TRANSFER: "transfer", OUT_OF_SCOPE: "out_of_scope"}
 INFRA_ERRORS = (anthropic.APIConnectionError, anthropic.InternalServerError, anthropic.RateLimitError, anthropic.OverloadedError)
-BILLING_MARKERS = ("credit balance", "usage limit")
-
-
-def billing_text(text: str) -> bool:
-    return any(m in text.lower() for m in BILLING_MARKERS)
-
-
 UNRECORDED = frozenset({"simulator_quota", "billing_error", "budget_stop"})
 RETRYABLE = frozenset({"simulator_error"})
 FAILED = frozenset({"agent_error", "infra_error"})
@@ -36,10 +30,6 @@ class Meter(Protocol):
     def charge(self, usd: float) -> None: ...
 
     def exhausted(self) -> bool: ...
-
-
-def is_billing_error(e: Exception) -> bool:
-    return isinstance(e, anthropic.BadRequestError) and billing_text(str(e))
 
 
 def classify_agent_error(e: Exception) -> str:

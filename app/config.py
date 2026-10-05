@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # vector index location, pointed at writable /tmp inside lambda
     chroma_path: str = "chroma_db"
 
+    api_mode: Literal["live", "sandbox"] = "live"
+    session_signing_key: str = ""
+    session_token_cap: int = 60000
+    max_conversation_chars: int = 16000
+
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 

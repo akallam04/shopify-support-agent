@@ -19,12 +19,13 @@ import httpx
 from anthropic import AsyncAnthropic
 
 from app.config import get_settings
+from app.model_errors import is_billing_error
 from app.rag.vectorstore import ChromaVectorStore
 from evals.sim.config import get_sim_settings
 from evals.sim.env import load_seed
 from evals.sim.grader import JudgeError, grade
 from evals.sim.metrics import recorded, summarize
-from evals.sim.orchestrator import INFRA_ERRORS, RETRYABLE, UNRECORDED, AgentConfig, Conversation, is_billing_error, run_conversation
+from evals.sim.orchestrator import INFRA_ERRORS, RETRYABLE, UNRECORDED, AgentConfig, Conversation, run_conversation
 from evals.sim.schema import Task, load_tasks
 from evals.sim.user_sim import SimTokens
 from mcp_server.simdb import db_hash
