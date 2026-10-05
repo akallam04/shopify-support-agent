@@ -13,13 +13,15 @@ import random
 from pathlib import Path
 from typing import Any
 
+from evals.sim.metrics import recorded
+
 SEED = 2026
 SHARE = 0.10
 
 
 def load(run: Path) -> list[dict[str, Any]]:
     gate = json.loads((run / "config.json").read_text())["agent"]["mutation_gate"]
-    records = [json.loads(line) for line in (run / "trajectories.jsonl").read_text().splitlines()]
+    records = recorded([json.loads(line) for line in (run / "trajectories.jsonl").read_text().splitlines()])
     return [{**r, "run": run.name, "gate": gate} for r in records if r.get("grade") and r["grade"]["reward"] == 1.0]
 
 

@@ -23,8 +23,8 @@ from app.rag.vectorstore import ChromaVectorStore
 from evals.sim.config import get_sim_settings
 from evals.sim.env import load_seed
 from evals.sim.grader import JudgeError, grade
-from evals.sim.metrics import summarize
-from evals.sim.orchestrator import INFRA_ERRORS, RETRYABLE, UNRECORDED, AgentConfig, Conversation, run_conversation
+from evals.sim.metrics import recorded, summarize
+from evals.sim.orchestrator import INFRA_ERRORS, RETRYABLE, UNRECORDED, AgentConfig, Conversation, is_billing_error, run_conversation
 from evals.sim.schema import Task, load_tasks
 from evals.sim.user_sim import SimTokens
 from mcp_server.simdb import db_hash
@@ -118,8 +118,7 @@ def load_done(path: Path) -> set[tuple[str, int]]:
     if not path.exists():
         return set()
     done = set()
-    for line in path.read_text().splitlines():
-        r = json.loads(line)
+    for r in recorded([json.loads(line) for line in path.read_text().splitlines()]):
         if not r.get("excluded"):
             done.add((r["task_id"], r["trial"]))
     return done
@@ -141,6 +140,11 @@ async def attempt(task: Task, trial: int, ctx: dict[str, Any], budget: Budget) -
             graded = await grade(conv, ctx["seed"], ctx["client"], ctx["sim_settings"].sim_judge_model)
         except (*INFRA_ERRORS, JudgeError) as e:
             return record(conv, None, f"grading failed: {type(e).__name__}: {e}"[:300])
+        except Exception as e:
+            if is_billing_error(e):
+                budget.stopped = "billing_error"
+                return None
+            raise
         budget.charge(graded["judge_cost_usd"])
         budget.completed += 1
         budget.completed_usd += graded["agent_cost_usd"] + graded["judge_cost_usd"]
@@ -209,6 +213,8 @@ async def main() -> None:
         config = json.loads((run_dir / "config.json").read_text())
         if config["sim_model"] != sim_settings.sim_user_model or config["agent"] != asdict(agent):
             raise SystemExit("resume must keep the same simulator model and agent settings")
+        config.setdefault("resumed", []).append({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_sha": sha, "dirty": dirty})
+        (run_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
         tasks = select_tasks(load_tasks(config.get("task_file", TASK_FILE)), ",".join(config["task_ids"]), "", 0)
         args.k = config["k"]
     else:
@@ -284,7 +290,7 @@ async def main() -> None:
     if budget.completed and budget.completed_usd / budget.completed > budget.per_conversation * 1.3:
         print(f"note: measured ${budget.completed_usd / budget.completed:.4f} per conversation, above the ${budget.per_conversation:.4f} estimate")
     if budget.stopped == "billing_error":
-        print("stopped: the Anthropic credit balance ran out. Conversations cut off by it are not recorded.")
+        print("stopped: the Anthropic API refused requests for billing (credit balance or usage limit). Conversations cut off by it are not recorded.")
     print(f"results in {run_dir}")
 
 

@@ -5,6 +5,8 @@ from collections import defaultdict
 from math import comb
 from typing import Any
 
+from evals.sim.orchestrator import UNRECORDED, billing_text
+
 
 def pass_hat_k(rewards_by_task: dict[str, list[float]], k: int) -> float | None:
     values = [
@@ -22,7 +24,16 @@ def percentile(values: list[float], q: float) -> float | None:
     return ordered[min(len(ordered) - 1, int(round(q * (len(ordered) - 1))))]
 
 
+def cut_by_billing(record: dict[str, Any]) -> bool:
+    return record.get("stop_reason") in UNRECORDED or (record.get("stop_reason") == "agent_error" and billing_text(record.get("error") or ""))
+
+
+def recorded(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [r for r in records if not cut_by_billing(r)]
+
+
 def summarize(records: list[dict[str, Any]], k: int) -> dict[str, Any]:
+    records = recorded(records)
     scored = [r for r in records if not r.get("excluded")]
     by_task: dict[str, list[float]] = defaultdict(list)
     by_category: dict[str, list[float]] = defaultdict(list)

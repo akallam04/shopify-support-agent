@@ -11,7 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from evals.sim.metrics import summarize
+from evals.sim.metrics import recorded, summarize
 
 SUBSETS = Path("evals/sim/subsets.json")
 BOOTSTRAP_SAMPLES = 10000
@@ -24,7 +24,7 @@ def graded_file(run: Path) -> Path:
 
 
 def load(run: Path, tasks: set[str] | None, max_trials: int | None) -> list[dict[str, Any]]:
-    records = [json.loads(line) for line in graded_file(run).read_text().splitlines()]
+    records = recorded([json.loads(line) for line in graded_file(run).read_text().splitlines()])
     return [
         r for r in records
         if r.get("grade") and (tasks is None or r["task_id"] in tasks) and (max_trials is None or r["trial"] < max_trials)

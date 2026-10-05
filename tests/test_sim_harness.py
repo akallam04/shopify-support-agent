@@ -14,7 +14,7 @@ from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, effective_change, grade
 from evals.sim.make_regression_task import regression_task
 from evals.sim.regrade import rebuild
-from evals.sim.run_sim import Budget, record
+from evals.sim.run_sim import Budget, load_done, record
 from evals.sim.metrics import pass_hat_k, summarize
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
@@ -355,3 +355,26 @@ def test_comparisons_pair_tasks_and_prefer_regraded_files(tmp_path) -> None:
     low, high = result["pass1_difference_b_minus_a"]["ci95"]
     assert low <= 0.5 <= high
     assert compare_runs.compare(a, b, None, 1)["k"] == 1
+
+
+USAGE_LIMIT = "You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."
+
+
+@pytest.mark.parametrize("message", [USAGE_LIMIT, "Your credit balance is too low to access the Anthropic API."])
+def test_billing_refusals_stop_runs_instead_of_failing_the_agent(message: str) -> None:
+    request = httpx.Request("POST", "https://api.anthropic.test")
+    error = __import__("anthropic").BadRequestError(message, response=httpx.Response(400, request=request), body=None)
+    assert orchestrator.classify_agent_error(error) == "billing_error"
+    assert "billing_error" in orchestrator.UNRECORDED
+
+
+def test_conversations_cut_off_by_billing_are_left_out_of_results_and_rerun(tmp_path) -> None:
+    base = {"category": "cancel", "agent_turns": 1, "turn_latency_s": [1.0], "sim_tokens": {"total": 10}, "excluded": None,
+            "grade": {"reward": 0.0, "agent_cost_usd": 0.01, "judge_cost_usd": 0.0, "writes": {"executed": [], "reference": [], "unconfirmed": [], "forbidden": []}}}
+    cut = {**base, "task_id": "a", "trial": 0, "stop_reason": "agent_error", "error": f"BadRequestError: Error code: 400 - {USAGE_LIMIT}"}
+    real = {**base, "task_id": "b", "trial": 0, "stop_reason": "agent_error", "error": "ValueError: bug"}
+    path = tmp_path / "trajectories.jsonl"
+    path.write_text(json.dumps(cut) + "\n" + json.dumps(real) + "\n")
+    assert load_done(path) == {("b", 0)}
+    s = summarize([cut, real], 1)
+    assert s["conversations"] == 1 and s["agent_errors"] == 1

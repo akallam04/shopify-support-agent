@@ -20,6 +20,13 @@ from mcp_server.simdb import SimDB
 
 STOP_REASONS = {STOP: "user_stop", TRANSFER: "transfer", OUT_OF_SCOPE: "out_of_scope"}
 INFRA_ERRORS = (anthropic.APIConnectionError, anthropic.InternalServerError, anthropic.RateLimitError, anthropic.OverloadedError)
+BILLING_MARKERS = ("credit balance", "usage limit")
+
+
+def billing_text(text: str) -> bool:
+    return any(m in text.lower() for m in BILLING_MARKERS)
+
+
 UNRECORDED = frozenset({"simulator_quota", "billing_error", "budget_stop"})
 RETRYABLE = frozenset({"simulator_error"})
 FAILED = frozenset({"agent_error", "infra_error"})
@@ -31,10 +38,14 @@ class Meter(Protocol):
     def exhausted(self) -> bool: ...
 
 
+def is_billing_error(e: Exception) -> bool:
+    return isinstance(e, anthropic.BadRequestError) and billing_text(str(e))
+
+
 def classify_agent_error(e: Exception) -> str:
     if isinstance(e, INFRA_ERRORS):
         return "infra_error"
-    if isinstance(e, anthropic.BadRequestError) and "credit balance" in str(e).lower():
+    if is_billing_error(e):
         return "billing_error"
     return "agent_error"
 
