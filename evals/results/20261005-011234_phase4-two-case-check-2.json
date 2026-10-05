@@ -1,0 +1,83 @@
+{
+  "label": "phase4-two-case-check-2",
+  "created_at": "2026-10-05T08:12:34+00:00",
+  "git_commit": "615fa6e",
+  "models": {
+    "router": "claude-haiku-4-5",
+    "answer": "claude-haiku-4-5",
+    "judge": "claude-sonnet-5"
+  },
+  "summary": {
+    "n": 2,
+    "pass_rate": 100.0,
+    "intent_accuracy": 100.0,
+    "retrieval_hit_rate": 100.0,
+    "tool_success_rate": 100.0,
+    "refusal_correct_rate": null,
+    "mean_latency_s": 3.25,
+    "p95_latency_s": 2.51,
+    "mean_agent_tokens": 2678,
+    "cost_per_conversation_usd": 0.00353,
+    "cost_per_100_conversations_usd": 0.35,
+    "judge_cost_total_usd": 0.0056,
+    "categories": {
+      "order": {
+        "n": 1,
+        "pass_rate": 100.0,
+        "intent_accuracy": 100.0,
+        "retrieval_hit_rate": null,
+        "tool_success_rate": 100.0,
+        "refusal_correct_rate": null,
+        "mean_latency_s": 3.99
+      },
+      "policy": {
+        "n": 1,
+        "pass_rate": 100.0,
+        "intent_accuracy": 100.0,
+        "retrieval_hit_rate": 100.0,
+        "tool_success_rate": null,
+        "refusal_correct_rate": null,
+        "mean_latency_s": 2.51
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "order-007",
+      "category": "order",
+      "pass": true,
+      "checks": {
+        "intent": true,
+        "contains": true,
+        "tools": true,
+        "judge": true
+      },
+      "judge_reason": "The agent lists all 7 orders in correct newest-to-oldest order, with statuses and totals accurately matching the ground truth data. Listing all orders (more than 'only a few') is acceptable since the criteria says listing a few is fine, not required.",
+      "intent_actual": "order",
+      "retries": 0,
+      "latency_s": 3.99,
+      "agent_tokens": 3987,
+      "agent_cost_usd": 0.005115,
+      "judge_cost_usd": 0.003592,
+      "response": "You have 7 recent orders. Here they are from newest to oldest:\n\nOrder #1023 (Oct 4) - Unfulfilled, Paid - $84.99\nOrder #1020 (Oct 4) - Refunded - $84.99\nOrder #1019 (Sep 30) - Fulfilled, Paid - $149.95\nOrder #1016 (Aug 15) - Fulfilled, Paid - $219.99\nOrder #1003 (Jul 7) - Refunded - $129.99\nOrder #1002 (Jul 7) - Unfulfilled, Paid - $169.98\nOrder #1001 (Jul 7) - Fulfilled, Paid - $219.94\n\nWant me to pull up details and tracking for any of these?"
+    },
+    {
+      "id": "policy-008",
+      "category": "policy",
+      "pass": true,
+      "checks": {
+        "intent": true,
+        "retrieval": true,
+        "judge": true
+      },
+      "judge_reason": "The agent clearly states that if the price drop occurs within 14 days of the order date, the difference will be refunded to the original payment method, satisfying the core criteria. It also adds relevant policy exceptions, which do not contradict the requirement.",
+      "intent_actual": "policy",
+      "retries": 0,
+      "latency_s": 2.51,
+      "agent_tokens": 1369,
+      "agent_cost_usd": 0.001949,
+      "judge_cost_usd": 0.001972,
+      "response": "Great question! If the jacket dropped in price within 14 days of your order date, we'll refund the difference to your original payment method [policy-faq-price-adjustments]. Just keep in mind that price adjustments don't apply if the item is on FINAL SALE or if the price change is between different sale events [policy-faq-price-adjustments].\n\nTo process this, I'd recommend reaching out to support@auroraoutfitters.com with your order number and they can take care of it for you."
+    }
+  ]
+}

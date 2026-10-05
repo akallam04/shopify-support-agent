@@ -1,0 +1,83 @@
+{
+  "label": "phase4-two-case-check-3",
+  "created_at": "2026-10-05T08:12:41+00:00",
+  "git_commit": "615fa6e",
+  "models": {
+    "router": "claude-haiku-4-5",
+    "answer": "claude-haiku-4-5",
+    "judge": "claude-sonnet-5"
+  },
+  "summary": {
+    "n": 2,
+    "pass_rate": 100.0,
+    "intent_accuracy": 100.0,
+    "retrieval_hit_rate": 100.0,
+    "tool_success_rate": 100.0,
+    "refusal_correct_rate": null,
+    "mean_latency_s": 2.71,
+    "p95_latency_s": 2.06,
+    "mean_agent_tokens": 2643,
+    "cost_per_conversation_usd": 0.00336,
+    "cost_per_100_conversations_usd": 0.34,
+    "judge_cost_total_usd": 0.0062,
+    "categories": {
+      "order": {
+        "n": 1,
+        "pass_rate": 100.0,
+        "intent_accuracy": 100.0,
+        "retrieval_hit_rate": null,
+        "tool_success_rate": 100.0,
+        "refusal_correct_rate": null,
+        "mean_latency_s": 3.35
+      },
+      "policy": {
+        "n": 1,
+        "pass_rate": 100.0,
+        "intent_accuracy": 100.0,
+        "retrieval_hit_rate": 100.0,
+        "tool_success_rate": null,
+        "refusal_correct_rate": null,
+        "mean_latency_s": 2.06
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "order-007",
+      "category": "order",
+      "pass": true,
+      "checks": {
+        "intent": true,
+        "contains": true,
+        "tools": true,
+        "judge": true
+      },
+      "judge_reason": "The agent lists orders newest first (#1023, #1020, #1019, #1016 in correct chronological order), with accurate statuses matching the tool data (e.g., #1023 Unfulfilled/Paid, #1020 Refunded, #1019 and #1016 Fulfilled/Paid). Totals match exactly. Listing only the top 4 of 7 is explicitly allowed by the criteria ('Listing only the most recent few is fine'). All information presented is honest and consistent with the ground truth data.",
+      "intent_actual": "order",
+      "retries": 0,
+      "latency_s": 3.35,
+      "agent_tokens": 3950,
+      "agent_cost_usd": 0.00493,
+      "judge_cost_usd": 0.00436,
+      "response": "You've placed 7 orders with us. Here are your most recent ones:\n\nOrder #1023 (Oct 4, 2026) - 84.99 USD - Unfulfilled, Paid\nOrder #1020 (Oct 4, 2026) - 84.99 USD - Refunded\nOrder #1019 (Sep 30, 2026) - 149.95 USD - Fulfilled, Paid\nOrder #1016 (Aug 15, 2026) - 219.99 USD - Fulfilled, Paid\n\nWould you like me to check the detailed status and tracking for any of these orders?"
+    },
+    {
+      "id": "policy-008",
+      "category": "policy",
+      "pass": true,
+      "checks": {
+        "intent": true,
+        "retrieval": true,
+        "judge": true
+      },
+      "judge_reason": "The agent response explains the one-time price adjustment ('applies once per order'), specifies the 14-day window from order date, and states the difference is refunded to the original payment method. All elements of the criteria are satisfied.",
+      "intent_actual": "policy",
+      "retries": 0,
+      "latency_s": 2.06,
+      "agent_tokens": 1336,
+      "agent_cost_usd": 0.001784,
+      "judge_cost_usd": 0.001792,
+      "response": "Great question! If the jacket dropped in price within 14 days of your order date, we'll refund the difference to your original payment method [policy-faq-price-adjustments]. This adjustment applies once per order, but it doesn't work between different sale events or on FINAL SALE items, so check whether your jacket falls into either of those categories."
+    }
+  ]
+}
