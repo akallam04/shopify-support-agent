@@ -21,6 +21,7 @@ from app.agent.prompts import (
     with_digest,
 )
 from app.agent.state import AgentState
+from app.agent.usage import usage_record
 from app.config import Settings
 from mcp_server.tools import ToolInputError, idempotency_key
 
@@ -45,16 +46,7 @@ def _last_user_text(state: AgentState) -> str:
 
 
 def _usage(state: AgentState, node: str, model: str, response: Any) -> list[dict[str, Any]]:
-    usage = list(state.get("usage", []))
-    usage.append(
-        {
-            "node": node,
-            "model": model,
-            "input_tokens": response.usage.input_tokens,
-            "output_tokens": response.usage.output_tokens,
-        }
-    )
-    return usage
+    return list(state.get("usage", [])) + [usage_record(node, model, response)]
 
 
 def result_message(result: dict[str, Any]) -> str:

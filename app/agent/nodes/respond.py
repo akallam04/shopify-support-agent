@@ -15,6 +15,7 @@ from app.agent.prompts import (
     with_digest,
 )
 from app.agent.state import AgentState
+from app.agent.usage import usage_record
 
 # refusal and escalation paths are static on purpose: deterministic, free,
 # and hostile input never gets to steer the wording
@@ -77,14 +78,7 @@ def make_respond_node(client: AsyncAnthropic, model: str):
         )
         draft = "".join(b.text for b in response.content if b.type == "text").strip()
         usage = list(state.get("usage", []))
-        usage.append(
-            {
-                "node": "respond",
-                "model": model,
-                "input_tokens": response.usage.input_tokens,
-                "output_tokens": response.usage.output_tokens,
-            }
-        )
+        usage.append(usage_record("respond", model, response))
         return {"draft": draft, "usage": usage}
 
     return respond

@@ -7,6 +7,7 @@ from anthropic import AsyncAnthropic
 
 from app.agent.prompts import ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE, with_digest
 from app.agent.state import AgentState
+from app.agent.usage import usage_record
 from app.config import Settings
 
 MAX_TOOL_ROUNDS = 3
@@ -31,14 +32,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
                 messages=messages,
                 tools=tools.anthropic_tools,
             )
-            usage.append(
-                {
-                    "node": "order_tools",
-                    "model": model,
-                    "input_tokens": response.usage.input_tokens,
-                    "output_tokens": response.usage.output_tokens,
-                }
-            )
+            usage.append(usage_record("order_tools", model, response))
             tool_uses = [b for b in response.content if b.type == "tool_use"]
             if not tool_uses:
                 draft = "".join(b.text for b in response.content if b.type == "text").strip()

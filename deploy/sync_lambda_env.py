@@ -19,7 +19,7 @@ from dotenv import dotenv_values
 
 FUNCTION = "aurora-support"
 REGION = "us-east-1"
-LOCAL_ONLY_KEYS = frozenset({"SHOPIFY_WRITE_TOKEN"})
+LOCAL_ONLY_KEYS = frozenset({"SHOPIFY_WRITE_TOKEN", "SIM_USER_API_KEY"})
 
 
 def aws(*args: str) -> subprocess.CompletedProcess[str]:

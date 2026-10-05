@@ -7,6 +7,7 @@ from anthropic import AsyncAnthropic
 
 from app.agent.prompts import ROUTER_SCHEMA, ROUTER_SYSTEM, with_digest
 from app.agent.state import AgentState
+from app.agent.usage import usage_record
 
 
 def make_route_node(client: AsyncAnthropic, model: str):
@@ -22,14 +23,7 @@ def make_route_node(client: AsyncAnthropic, model: str):
         )
         parsed = json.loads(next(b.text for b in response.content if b.type == "text"))
         usage = list(state.get("usage", []))
-        usage.append(
-            {
-                "node": "route",
-                "model": model,
-                "input_tokens": response.usage.input_tokens,
-                "output_tokens": response.usage.output_tokens,
-            }
-        )
+        usage.append(usage_record("route", model, response))
         return {
             "intent": parsed["intent"],
             "search_query": parsed["search_query"],
