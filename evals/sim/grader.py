@@ -13,7 +13,7 @@ from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.simdb import SimDB, db_hash
 from mcp_server.tools import ToolInputError, prepare
 
-NL_SYSTEM = """You grade a conversation between a customer and an online store's support assistant against numbered assertions. The tool results show what the assistant's tools actually returned and are ground truth. An assertion holds only if the conversation clearly satisfies it."""
+NL_SYSTEM = """You grade a conversation between a customer and an online store's support assistant against numbered assertions. The tool results show what the assistant's tools actually returned and are ground truth. An assertion holds only if the conversation clearly satisfies it. When an assertion states exceptions, behavior covered by an exception does not violate it."""
 
 NL_SCHEMA = {
     "type": "object",
