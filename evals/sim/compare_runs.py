@@ -11,16 +11,11 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from evals.sim.metrics import recorded, resolved_safely, summarize
+from evals.sim.metrics import graded_file, recorded, resolved_safely, summarize
 
 SUBSETS = Path("evals/sim/subsets.json")
 BOOTSTRAP_SAMPLES = 10000
 SEED = 2026
-
-
-def graded_file(run: Path) -> Path:
-    regraded = sorted(run.glob("regraded-*.jsonl"))
-    return regraded[-1] if regraded else run / "trajectories.jsonl"
 
 
 def load(run: Path, tasks: set[str] | None, max_trials: int | None) -> list[dict[str, Any]]:

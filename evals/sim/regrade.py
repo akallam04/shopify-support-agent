@@ -1,6 +1,6 @@
 """Re-grade saved simulated conversations with the current task file, without re-running them.
 
-The end state is rebuilt by replaying each conversation's recorded write calls on a fresh store,
+Each regrade starts from the run's latest grades, so successive fixes accumulate. The end state is rebuilt by replaying each conversation's recorded write calls on a fresh store,
 and checked against the original grade's database result before anything is re-graded. Handoffs
 are rebuilt from the customer's message, so whether a handoff happened is exact but the count may
 differ.
@@ -22,7 +22,7 @@ from evals.run_evals import usage_cost
 from evals.sim.config import get_sim_settings
 from evals.sim.env import build_db, load_seed
 from evals.sim.grader import grade, successful_writes, unconfirmed
-from evals.sim.metrics import cut_by_billing, summarize
+from evals.sim.metrics import cut_by_billing, graded_file, summarize
 from evals.sim.orchestrator import Conversation
 from evals.sim.schema import WRITE_TOOLS, Task, load_tasks
 from mcp_server.backends.sim import SimStoreBackend
@@ -67,7 +67,8 @@ async def recheck_writes(conv: Conversation, record: dict[str, Any], seed: SimDB
 async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: float, yes_check_only: bool = False) -> dict[str, Any]:
     tasks = {t.id: t for t in load_tasks(task_file)}
     seed = load_seed()
-    records = [json.loads(line) for line in (run_dir / "trajectories.jsonl").read_text().splitlines()]
+    source = graded_file(run_dir)
+    records = [json.loads(line) for line in source.read_text().splitlines()]
     client = AsyncAnthropic(api_key=get_settings().anthropic_api_key, max_retries=4)
     judge = get_sim_settings().sim_judge_model
     spent, out, changes = 0.0, [], []
@@ -102,6 +103,7 @@ async def regrade_run(run_dir: Path, task_file: str, only: set[str], max_usd: fl
     (run_dir / f"regraded-{stamp}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in out))
     report = {
         "regraded_at": stamp,
+        "source": source.name,
         "task_file": task_file,
         "tasks": sorted(only) if only else "all",
         "mode": "yes-check only" if yes_check_only else "full",

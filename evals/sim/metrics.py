@@ -3,6 +3,7 @@
 import statistics
 from collections import defaultdict
 from math import comb
+from pathlib import Path
 from typing import Any
 
 from evals.sim.orchestrator import UNRECORDED, billing_text
@@ -22,6 +23,11 @@ def percentile(values: list[float], q: float) -> float | None:
         return None
     ordered = sorted(values)
     return ordered[min(len(ordered) - 1, int(round(q * (len(ordered) - 1))))]
+
+
+def graded_file(run: Path) -> Path:
+    regraded = sorted(run.glob("regraded-*.jsonl"))
+    return regraded[-1] if regraded else run / "trajectories.jsonl"
 
 
 def cut_by_billing(record: dict[str, Any]) -> bool:
