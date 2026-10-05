@@ -395,6 +395,8 @@ The same outcome must always produce the same hash, whatever order the agent did
       - Some refusals (an unsupported country, a final-sale item) are handed off instead of
         explained.
       - The agent sometimes calls an order eligible before the policy check refuses it.
+      - The order list shows only "fulfilled", and the agent sometimes reports that as
+        "delivered"; the list should carry delivery status like the status tool does.
 
 ### Phase 6: website upgrade
 
