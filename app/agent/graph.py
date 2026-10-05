@@ -1,5 +1,8 @@
 """Wires the nodes into the state machine. The whole control flow lives on this page."""
 
+import asyncio
+import time
+from collections.abc import Callable
 from typing import Any
 
 from anthropic import AsyncAnthropic
@@ -16,6 +19,26 @@ from app.agent.nodes.verify import verify_node
 from app.agent.state import AgentState
 from app.config import Settings
 from app.rag.vectorstore import VectorStore
+
+
+def _with_timing(state: AgentState, update: dict[str, Any] | None, node: str, started: float) -> dict[str, Any]:
+    timing = {"node": node, "ms": round((time.perf_counter() - started) * 1000, 1)}
+    return {**(update or {}), "timings": list(state.get("timings", [])) + [timing]}
+
+
+def timed(node: str, fn: Callable[[AgentState], Any]) -> Callable[[AgentState], Any]:
+    if asyncio.iscoroutinefunction(fn):
+        async def run_async(state: AgentState) -> dict[str, Any]:
+            started = time.perf_counter()
+            return _with_timing(state, await fn(state), node, started)
+
+        return run_async
+
+    def run(state: AgentState) -> dict[str, Any]:
+        started = time.perf_counter()
+        return _with_timing(state, fn(state), node, started)
+
+    return run
 
 
 def _after_sanitize(state: AgentState) -> str:
@@ -70,17 +93,17 @@ def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any 
         client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
     g = StateGraph(AgentState)
-    g.add_node("sanitize", sanitize_node)
-    g.add_node("context", make_context_node(settings.context_keep_messages))
-    g.add_node("confirm", make_confirm_node(client, settings.router_model))
-    g.add_node("execute", make_execute_node(tools))
-    g.add_node("route", make_route_node(client, settings.router_model, bool(tools.write_tool_names)))
-    g.add_node("retrieve", make_retrieve_node(store))
-    g.add_node("order_tools", make_order_tools_node(client, settings.answer_model, tools, settings))
-    g.add_node("gate", make_gate_node(client, settings.router_model, tools, settings))
-    g.add_node("handoff", make_handoff_node(tools))
-    g.add_node("respond", make_respond_node(client, settings.answer_model))
-    g.add_node("verify", verify_node)
+    g.add_node("sanitize", timed("sanitize", sanitize_node))
+    g.add_node("context", timed("context", make_context_node(settings.context_keep_messages)))
+    g.add_node("confirm", timed("confirm", make_confirm_node(client, settings.router_model)))
+    g.add_node("execute", timed("execute", make_execute_node(tools)))
+    g.add_node("route", timed("route", make_route_node(client, settings.router_model, bool(tools.write_tool_names))))
+    g.add_node("retrieve", timed("retrieve", make_retrieve_node(store)))
+    g.add_node("order_tools", timed("order_tools", make_order_tools_node(client, settings.answer_model, tools, settings)))
+    g.add_node("gate", timed("gate", make_gate_node(client, settings.router_model, tools, settings)))
+    g.add_node("handoff", timed("handoff", make_handoff_node(tools)))
+    g.add_node("respond", timed("respond", make_respond_node(client, settings.answer_model)))
+    g.add_node("verify", timed("verify", verify_node))
 
     g.add_edge(START, "sanitize")
     g.add_conditional_edges("sanitize", _after_sanitize)

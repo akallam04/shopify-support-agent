@@ -328,3 +328,11 @@ def test_reflection_is_off_by_default_and_the_switch_turns_it_on(db: SimDB) -> N
     assert client.count("reflect") == 0 and state["pending_action"]["action"] == "cancel_order"
     _, switched, _, _, _ = first_turn(make_db(), script(), gate_reflection=True)
     assert switched.count("reflect") == 1
+
+
+def test_every_turn_records_how_long_each_node_took(db: SimDB) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)]}
+    _, _, _, _, state = first_turn(db, script)
+    nodes = [t["node"] for t in state["timings"]]
+    assert nodes == ["sanitize", "context", "route", "order_tools", "gate", "verify"]
+    assert all(t["ms"] >= 0 for t in state["timings"])
