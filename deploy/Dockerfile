@@ -27,6 +27,7 @@ COPY data ./data
 # both world-readable so the entrypoint can stage them into /tmp at cold start
 RUN mkdir -p /opt/apphome \
     && CHROMA_PATH=/app/chroma_db python -m app.rag.index \
+    && rm -f /opt/apphome/.cache/chroma/onnx_models/*/onnx.tar.gz \
     && chmod -R a+rX /opt/apphome /app/chroma_db
 
 COPY deploy/entrypoint.sh ./entrypoint.sh
