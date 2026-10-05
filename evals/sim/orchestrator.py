@@ -64,7 +64,7 @@ class Conversation:
     task: Task
     trial: int
     backend: SimStoreBackend
-    sim: UserSimulator
+    sim: UserSimulator | None
     transcript: list[dict[str, str]] = field(default_factory=list)
     turns: list[dict[str, Any]] = field(default_factory=list)
     stop_reason: str = "max_turns"

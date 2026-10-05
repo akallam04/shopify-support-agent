@@ -13,7 +13,8 @@ from evals.sim.config import SimSettings
 from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, grade
 from evals.sim.make_regression_task import regression_task
-from evals.sim.run_sim import Budget
+from evals.sim.regrade import rebuild
+from evals.sim.run_sim import Budget, record
 from evals.sim.metrics import pass_hat_k, summarize
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
@@ -303,3 +304,13 @@ def test_new_conversations_are_admitted_on_the_measured_cost_when_it_is_higher()
     assert budget.can_start()
     budget.in_flight = 1
     assert not budget.can_start()
+
+
+def test_a_saved_conversation_rebuilds_to_the_same_end_state(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [UserTurn("Please cancel order #1023, email " + MAYA + ". I ordered it by mistake.", None), UserTurn("yes", None), UserTurn("", STOP)])
+    client = FakeAnthropic({"route": [ROUTE_1023], "order_tools": [("cancel_order", CANCEL_1023)], "reflect": [PROCEED], "judge_confirm": [{"confirmed": True, "reason": "said yes"}]})
+    conv = converse(seed, tasks["cancel-eligible"], client)
+    saved = json.loads(json.dumps(record(conv, asyncio.run(grade(conv, seed, client, "claude-sonnet-5-5")), None)))
+    rebuilt = rebuild(saved, tasks["cancel-eligible"], seed)
+    assert db_hash(rebuilt.backend.db) == db_hash(conv.backend.db)
+    assert rebuilt.transcript == conv.transcript
