@@ -1,0 +1,248 @@
+import asyncio
+import json
+from types import SimpleNamespace
+from typing import Any
+
+import httpx
+import pytest
+
+from app.agent.prompts import CONFIRM_CLASSIFIER_SCHEMA, REFLECTION_SCHEMA, ROUTER_SCHEMA
+from app.config import Settings
+from evals.sim import orchestrator, user_sim
+from evals.sim.config import SimSettings
+from evals.sim.env import TaskError, build_db, load_seed, target_db
+from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, grade
+from evals.sim.metrics import pass_hat_k, summarize
+from evals.sim.orchestrator import AgentConfig, run_conversation
+from evals.sim.schema import Task, load_tasks
+from evals.sim.user_sim import STOP, SimulatorError, SimulatorQuotaError, UserSimulator, UserTurn
+from evals.sim.validate_tasks import check_task, validate
+from mcp_server.clock import parse_instant
+from mcp_server.simdb import db_hash
+
+MAYA = "maya.thompson@example.com"
+
+
+@pytest.fixture(scope="module")
+def seed():
+    return load_seed()
+
+
+@pytest.fixture(scope="module")
+def tasks() -> dict[str, Task]:
+    return {t.id: t for t in load_tasks()}
+
+
+def reply(*blocks: SimpleNamespace) -> SimpleNamespace:
+    return SimpleNamespace(content=list(blocks), usage=SimpleNamespace(input_tokens=100, output_tokens=20), stop_reason="end_turn")
+
+
+def text(value: str) -> SimpleNamespace:
+    return SimpleNamespace(type="text", text=value)
+
+
+class FakeAnthropic:
+    def __init__(self, script: dict[str, list[Any]]) -> None:
+        self.script = script
+        self.kinds: list[str] = []
+        self.messages = self
+
+    async def create(self, **kwargs: Any) -> SimpleNamespace:
+        schema = (kwargs.get("output_config") or {}).get("format", {}).get("schema")
+        kind = {id(ROUTER_SCHEMA): "route", id(REFLECTION_SCHEMA): "reflect", id(CONFIRM_CLASSIFIER_SCHEMA): "confirm", id(NL_SCHEMA): "nl", id(CONFIRM_SCHEMA): "judge_confirm"}.get(id(schema))
+        if kind is None:
+            kind = "order_tools" if "tools" in kwargs else "respond"
+        self.kinds.append(kind)
+        step = self.script[kind].pop(0)
+        if isinstance(step, tuple):
+            return reply(SimpleNamespace(type="tool_use", name=step[0], input=step[1], id=f"tu_{len(self.kinds)}"))
+        return reply(text(step if isinstance(step, str) else json.dumps(step)))
+
+
+def sim_settings() -> SimSettings:
+    return SimSettings(_env_file=None, sim_user_base_url="http://sim.test/v1", sim_user_api_key="test", sim_user_model="sim-model", max_agent_turns=6)
+
+
+def scripted_customer(monkeypatch: pytest.MonkeyPatch, turns: list[UserTurn | Exception]) -> None:
+    queue = list(turns)
+
+    async def next_message(self: UserSimulator, client: Any, transcript: list[dict[str, str]]) -> UserTurn:
+        self.tokens.prompt += 200
+        self.tokens.completion += 10
+        self.tokens.calls += 1
+        step = queue.pop(0)
+        if isinstance(step, Exception):
+            raise step
+        return step
+
+    monkeypatch.setattr(UserSimulator, "next_message", next_message)
+
+
+def converse(seed, task: Task, client: FakeAnthropic, agent: AgentConfig | None = None):
+    async def go():
+        async with httpx.AsyncClient() as http:
+            return await run_conversation(task, 0, seed, agent or AgentConfig("claude-haiku-4-5"), Settings(_env_file=None, anthropic_api_key="test"), object(), client, http, sim_settings())
+
+    return asyncio.run(go())
+
+
+CANCEL_1023 = {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake"}
+ROUTE_1023 = {"intent": "order", "search_query": "", "order_number": "#1023", "email": MAYA}
+PROCEED = {"verdict": "proceed", "issues": [], "question": ""}
+
+
+def test_the_shipped_tasks_pass_validation(seed, tasks) -> None:
+    assert validate(list(tasks.values()), seed) == {}
+    assert len(tasks) == 50
+
+
+def test_validation_catches_broken_tasks(seed, tasks) -> None:
+    idle = tasks["cancel-shipped-refused"].model_copy(deep=True)
+    idle.evaluation_criteria.reward_basis = ["DB"]
+    assert any("idle agent" in p for p in check_task(idle, seed, ""))
+
+    refused = tasks["cancel-eligible"].model_copy(deep=True)
+    refused.evaluation_criteria.actions[-1].arguments["order_number"] = "#1001"
+    assert any("refused" in p for p in check_task(refused, seed, ""))
+
+    leaky = tasks["identity-no-email"].model_copy(deep=True)
+    leaky.user_scenario.must_not_reveal = ["#1005"]
+    assert any("must_not_reveal" in p for p in check_task(leaky, seed, ""))
+
+    ungrounded = tasks["policy-return-fee"].model_copy(deep=True)
+    ungrounded.evaluation_criteria.communicate_info = ["9.99"]
+    assert any("not in any tool output" in p for p in check_task(ungrounded, seed, ""))
+
+
+def test_overlays_move_the_clock_relative_dates(seed, tasks) -> None:
+    db = build_db(seed, tasks["cancel-pending-payment"].initial_state)
+    placed = parse_instant(db.orders["#1014"].processed_at)
+    assert (parse_instant(db.meta.frozen_now) - placed).total_seconds() == 40 * 60
+    assert db_hash(seed) != db_hash(db)
+    delivered = build_db(seed, tasks["return-partial-quantity"].initial_state)
+    assert all(f.display_status == "DELIVERED" for f in delivered.orders["#1006"].fulfillments)
+    with pytest.raises(TaskError):
+        build_db(seed, tasks["cancel-eligible"].initial_state.model_copy(update={"place": {"#9999": "1h"}}))
+
+
+def test_target_db_applies_only_reference_writes(seed, tasks) -> None:
+    assert db_hash(target_db(seed, tasks["cancel-shipped-refused"])) == db_hash(seed)
+    target = target_db(seed, tasks["cancel-eligible"])
+    assert target.orders["#1023"].cancelled_at is not None
+
+
+def test_pass_hat_k_matches_the_combinatorial_definition() -> None:
+    rewards = {"a": [1.0, 1.0, 0.0, 0.0], "b": [1.0, 1.0, 1.0, 1.0]}
+    assert pass_hat_k(rewards, 1) == pytest.approx((0.5 + 1.0) / 2)
+    assert pass_hat_k(rewards, 2) == pytest.approx((1 / 6 + 1.0) / 2)
+    assert pass_hat_k({"a": [1.0]}, 2) is None
+
+
+def test_communicate_alternatives_are_case_insensitive() -> None:
+    assert communicated(["14 days", "fourteen days"], "within fourteen days of your order")
+    assert not communicated("7.50", "the fee is 7 dollars")
+
+
+def test_confirmed_cancel_conversation_scores_one(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [UserTurn("Please cancel order #1023, email " + MAYA + ". I ordered it by mistake.", None), UserTurn("yes", None), UserTurn("", STOP)])
+    client = FakeAnthropic({"route": [ROUTE_1023], "order_tools": [("cancel_order", CANCEL_1023)], "reflect": [PROCEED], "judge_confirm": [{"confirmed": True, "reason": "said yes"}]})
+    conv = converse(seed, tasks["cancel-eligible"], client)
+    assert conv.stop_reason == "user_stop"
+    assert conv.sim.tokens.calls == 3
+
+    graded = asyncio.run(grade(conv, seed, client, "claude-sonnet-5-5"))
+    assert graded["reward"] == 1.0
+    assert graded["writes"]["executed"] == [("cancel_order", "#1023")]
+    assert graded["writes"]["unconfirmed"] == []
+    assert graded["agent_cost_usd"] > 0
+
+
+def test_a_write_without_a_yes_is_flagged_and_forbidden_writes_zero_the_reward(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [UserTurn("I'm thinking about cancelling #1023, email " + MAYA + ".", None), UserTurn("", STOP)])
+    client = FakeAnthropic({"route": [ROUTE_1023], "order_tools": [("cancel_order", CANCEL_1023), "Done, it is cancelled."], "judge_confirm": [{"confirmed": False, "reason": "no yes"}], "nl": [{"results": [{"index": 0, "holds": False, "reason": "it did"}]}]})
+    conv = converse(seed, tasks["confirm-decline"], client, AgentConfig("claude-haiku-4-5", mutation_gate=False))
+    graded = asyncio.run(grade(conv, seed, client, "claude-sonnet-5-5"))
+    assert graded["reward"] == 0.0
+    assert len(graded["writes"]["unconfirmed"]) == 1
+    assert len(graded["writes"]["forbidden"]) == 1
+    assert "nl" not in client.kinds
+
+
+def test_quota_errors_end_the_conversation_unrecorded(monkeypatch, seed, tasks) -> None:
+    scripted_customer(monkeypatch, [SimulatorQuotaError("out of quota")])
+    conv = converse(seed, tasks["cancel-eligible"], FakeAnthropic({}))
+    assert conv.stop_reason in orchestrator.UNRECORDED
+
+
+def test_agent_infra_errors_are_retryable_not_agent_failures() -> None:
+    request = httpx.Request("POST", "https://api.anthropic.test")
+    overloaded = __import__("anthropic").OverloadedError("busy", response=httpx.Response(529, request=request), body=None)
+    assert orchestrator.classify_agent_error(overloaded) == "infra_error"
+    assert orchestrator.classify_agent_error(ValueError("bug")) == "agent_error"
+
+
+def simulator(handler) -> tuple[UserSimulator, httpx.AsyncClient]:
+    task = load_tasks()[0]
+    sim = UserSimulator(task.user_scenario, "m", "http://sim.test/v1", "test", retries=1)
+    return sim, httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+
+def run_sim_call(sim: UserSimulator, client: httpx.AsyncClient, transcript: list[dict[str, str]]):
+    async def go():
+        async with client:
+            return await sim.next_message(client, transcript)
+
+    return asyncio.run(go())
+
+
+def test_the_simulator_sees_roles_swapped_and_citations_stripped() -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": f"Thanks! {STOP}"}}], "usage": {"prompt_tokens": 50, "completion_tokens": 4}})
+
+    sim, client = simulator(handler)
+    turn = run_sim_call(sim, client, [{"role": "user", "content": "Where is #1001?"}, {"role": "assistant", "content": "It shipped [policy-shipping]."}])
+    assert turn.signal == STOP and turn.text == "Thanks!"
+    assert [m["role"] for m in seen["messages"]] == ["system", "user", "assistant", "user"]
+    assert seen["messages"][-1]["content"] == "It shipped."
+    assert seen["enable_thinking"] is False
+    assert sim.tokens.total == 54
+
+
+def test_quota_and_throttling_responses_are_told_apart(monkeypatch) -> None:
+    monkeypatch.setattr(user_sim.asyncio, "sleep", _instant)
+    sim, client = simulator(lambda r: httpx.Response(403, json={"code": "AllocationQuota.FreeTierOnly", "message": "free tier quota exhausted"}))
+    with pytest.raises(SimulatorQuotaError):
+        run_sim_call(sim, client, [])
+    sim, client = simulator(lambda r: httpx.Response(429, json={"code": "Throttling.RateQuota", "message": "Requests rate limit exceeded"}))
+    with pytest.raises(SimulatorError) as raised:
+        run_sim_call(sim, client, [])
+    assert not isinstance(raised.value, SimulatorQuotaError)
+
+
+async def _instant(*_: Any) -> None:
+    return None
+
+
+def test_summaries_count_unsafe_writes_and_skip_excluded_runs() -> None:
+    def rec(task: str, reward: float, executed=(), reference=(), unconfirmed=0) -> dict[str, Any]:
+        return {
+            "task_id": task, "category": "cancel", "trial": 0, "stop_reason": "user_stop", "agent_turns": 2,
+            "turn_latency_s": [1.0, 2.0], "sim_tokens": {"total": 1000}, "excluded": None,
+            "grade": {"reward": reward, "agent_cost_usd": 0.01, "judge_cost_usd": 0.002,
+                      "writes": {"executed": [list(e) for e in executed], "reference": [list(r) for r in reference], "unconfirmed": [{}] * unconfirmed, "forbidden": []}},
+        }
+
+    records = [
+        rec("a", 1.0, [("cancel_order", "#1")], [("cancel_order", "#1")]),
+        rec("b", 0.0, [("cancel_order", "#2")], [], unconfirmed=1),
+        {"task_id": "c", "category": "cancel", "trial": 0, "excluded": "simulator_error", "sim_tokens": {"total": 300}},
+    ]
+    s = summarize(records, 1)
+    assert s["conversations"] == 2 and s["excluded"] == 1
+    assert s["writes"]["precision"] == 0.5 and s["writes"]["recall"] == 1.0
+    assert s["writes"]["unsafe"] == 1
+    assert s["simulator_tokens"]["total"] == 2300
+    assert s["cost"]["agent_per_resolved_usd"] == 0.02
