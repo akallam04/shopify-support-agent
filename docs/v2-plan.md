@@ -357,13 +357,17 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 4: iterate and measure
 
-- [ ] Baseline simulation run, plus the mutation gate on versus off ablation.
-- [ ] Fix failures, preferring graph and code fixes over prompt edits. Re-run. Log before
-      and after, separating agent fixes from task and harness fixes.
-- [ ] Model comparison on pass^k and cost per resolved conversation, after checking the
+- [x] Baseline simulation run, plus the mutation gate on versus off ablation and the gate-parts
+      measurement (reflection off, confirmation off).
+- [x] Fix failures, preferring graph and code fixes over prompt edits. Re-run. Log before
+      and after, separating agent fixes from task and harness fixes (docs/fix-log.md). Ten
+      held-out tasks, committed before the first fix, run once on the frozen code.
+- [x] Model comparison on pass^k and cost per resolved conversation, after checking the
       current Anthropic lineup.
-- [ ] Prompt caching on the stable blocks, with the cost and latency change reported.
-- [ ] Report counts as well as percentages, and do not over-claim on about 50 tasks.
+- [x] Prompt caching on the stable blocks, with the cost change reported (57 percent of Sonnet
+      5.5's agent cost). The latency change was not measured separately.
+- [x] Report counts as well as percentages, and do not over-claim on about 50 tasks. Grader
+      audit of 114 passing conversations, with grading fixes regraded and both numbers kept.
 
 ### Phase 5: production polish
 

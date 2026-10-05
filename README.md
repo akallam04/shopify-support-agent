@@ -54,6 +54,83 @@ The baseline ran under the initial rubrics; two of its "failures" were bugs in m
 
 Full per-case records for every run live in `evals/results/`.
 
+## Simulation results (v2)
+
+v2 lets the agent change orders: cancel, change the shipping address, request a return, and hand off. It is measured the way [tau-bench](https://github.com/sierra-research/tau2-bench) measures agents: a simulated customer (Qwen 3.8 Flash) plays a scripted scenario against the real agent (Claude Haiku 4.5) and a simulated copy of the store, and each conversation is graded on the store's end state, the facts the agent had to tell the customer, judged assertions (Claude Sonnet 5.5 as judge, with the tool outputs as ground truth), and whether every write had a clear yes. pass^k is the chance that all k tries of a task succeed.
+
+**The headline compares enforcing confirmation in code against asking for it in the prompt.** With the gate on, the graph holds every proposed change, checks it against policy, and shows the customer the exact change until they say yes. With the gate off, the same prompt tells the model to describe the change and wait for a yes, and nothing enforces it. Same agent code, same 50 tasks, 4 tries each, 200 conversations per arm.
+
+"Resolved" counts a conversation as solved when the end state and required facts are right, whether or not the customer agreed to the change. "Resolved safely" also requires that every write had a clear yes and none was forbidden. This combined view was added after the partial headline was seen, and it is built only from the yes-check and forbidden-write checks that were already part of grading.
+
+| | Gate off: resolved | Gate off: resolved safely | Gate on: resolved | Gate on: resolved safely |
+|---|---|---|---|---|
+| Conversations | 185 of 200 | 151 of 200 | 190 of 200 | 190 of 200 |
+| pass^1 | 0.925 | 0.755 | 0.950 | 0.950 |
+| pass^2 | 0.903 | 0.693 | 0.910 | 0.910 |
+| pass^3 | 0.890 | 0.660 | 0.880 | 0.880 |
+| pass^4 | 0.880 | 0.640 | 0.860 | 0.860 |
+
+| | Gate off | Gate on |
+|---|---|---|
+| Writes without a clear yes | 39 | 0 |
+| Forbidden writes (for example, cancelling an order the customer was about to keep) | 8 | 0 |
+| Conversations with an unsafe write | 42 | 0 |
+| Write precision / recall | 0.905 / 1.000 | 1.000 / 0.974 |
+| Agent cost per resolved conversation | $0.0158 | $0.0137 |
+| Turn latency p50 / p95 | 2.16s / 4.50s | 1.96s / 4.54s |
+
+On resolved alone the two arms are level: gate on minus gate off is +0.025 on pass^1, with a 95% paired bootstrap interval over tasks of [-0.045, +0.105]. On resolved safely the gate is ahead by +0.195 [+0.090, +0.310]. Asked in the prompt, the model most often asked for a reason and then made the change without asking whether to go ahead. Gate on's ten failed tries are spread out: two refusals handed to the support team instead of explained, two assertions that read as stricter than intended, and one each of a guessed return reason, a missing fact, an invented lookup, a clarification loop, a simulator slip, and a judge error (`failure_labels.json` in each run labels every failure).
+
+### Held-out tasks
+
+Every fix was made using the main 50 tasks. Ten more tasks in the same style were written and committed before the first fix and run only once the code was frozen, gate on, 4 tries each.
+
+| Gate on | Main 50 tasks | 10 held-out tasks |
+|---|---|---|
+| Resolved safely | 190 of 200 | 40 of 40 |
+| pass^1 / pass^4 | 0.950 / 0.860 | 1.000 / 1.000 |
+| Writes without a clear yes | 0 | 0 |
+
+Ten tasks is a small sample, so the held-out result says the fixes did not overfit the main 50, not that the agent is perfect.
+
+### What the fixes did
+
+Eleven general fixes followed a gate-on baseline at 2 tries per task (listed with their evidence in [docs/fix-log.md](docs/fix-log.md)). On the same 50 tasks and 2 tries, the overall pass rate did not move beyond noise: 94 of 100 resolved before, 93 of 100 after, a pass^1 difference of -0.010 [-0.060, +0.040]. The failure modes they targeted are gone and write recall rose from 0.895 to 0.974, but other tasks failed some tries instead. The baseline was first graded 89 of 100; two grader fixes, described below, moved it to 94.
+
+### Which parts of the gate matter
+
+On the 32 tasks with a proposed change, 2 tries each, the full gate and gate off come from the headline runs and the other two settings were run on the same code:
+
+| Setting | Resolved | Resolved safely | Writes without a clear yes | Forbidden writes |
+|---|---|---|---|---|
+| Full gate (reflection and confirmation) | 60 of 64 | 60 of 64 | 0 | 0 |
+| Reflection off | 62 of 64 | 62 of 64 | 0 | 0 |
+| Confirmation off | 57 of 64 | 39 of 64 | 20 | 4 |
+| Gate off | 58 of 64 | 40 of 64 | 20 | 4 |
+
+The confirmation step accounts for the safety. The reflection check, a model call that compares the proposed change with what the customer asked for, showed no measurable benefit here, unlike in the SABER paper's setting.
+
+### Haiku 4.5 or Sonnet 5.5
+
+On 20 tasks picked in advance by stratified random sampling, same code and gate setting, 2 tries each (Haiku's are its first two headline tries):
+
+| | Haiku 4.5 | Sonnet 5.5 |
+|---|---|---|
+| Resolved safely | 36 of 40 | 39 of 40 |
+| pass^1 / pass^2 | 0.900 / 0.800 | 0.975 / 0.950 |
+| Agent cost per resolved conversation | $0.0154 | $0.0145 |
+| Turn latency p50 / p95 | 1.78s / 4.38s | 3.58s / 6.75s |
+
+Sonnet resolved more, but on 20 tasks the difference, +0.075 [-0.025, +0.175], is not distinguishable from noise. It is cheaper per resolved conversation only because of prompt caching: the stable instructions and tool definitions are cached, which cut Sonnet's agent cost by 57 percent, while Haiku 4.5 needs a 4,096-token prefix to cache and these prompts are shorter. Haiku remains the configured default; switching is one config value.
+
+### Checking the grader
+
+After the headline, a manual read covered every passing gate-off conversation that made a write plus a random 10 percent of the other passes, 114 conversations in all (`grader_audit.json`). No resolved grade was wrong. 19 of 88 yes-check verdicts were wrong, all flagging writes the customer had agreed to because the agent never mentioned the return fee, which is a consequence of the change rather than part of it. With that fixed and the saved conversations regraded, gate off went from 132 to 151 conversations resolved safely and from 69 to 47 unsafe writes; gate on did not change, and the fixed judge agrees with all 88 manual labels. Reading the failures as well found the judge ignoring an exception an assertion states; with that fixed, gate on went from 189 to 190 resolved and gate off stayed at 185. Known remaining errors: one gate-on conversation the judge still fails wrongly, three failures whose assertions read as stricter than intended (kept as graded rather than reworded after the fact), and two conversations where the simulated customer broke its script.
+
+The 53-case single-turn suite runs 52 of 53 on the v2 code. The miss is real: the order list only says "fulfilled", and the agent sometimes reports that as "delivered".
+
+All runs, with configs, trajectories, regrades, and comparisons, are in `evals/results/sim/`. Each comparison can be rebuilt with `python -m evals.sim.compare_runs`.
+
 ## Project layout
 
 ```
@@ -107,7 +184,7 @@ Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
 - [x] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing, 46/46 live contract checks, Shopify API 2026-10
 - [x] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a switchable confirmation gate, on the simulated store and on the live development store, checked against each other
 - [x] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k, over 50 validated tasks
-- [ ] Phase 4: baseline, then the headline comparison: confirmation enforced in code by the gate versus asked for in the prompt with the gate off; fixes, model comparison, prompt caching
+- [x] Phase 4: baseline, then the headline comparison: confirmation enforced in code by the gate versus asked for in the prompt with the gate off; fixes, held-out tasks, model comparison, prompt caching, grader audit
 - [ ] Phase 5: CI, release manifest, structured logs, public demo sandbox and rate limits
 - [ ] Phase 6: site upgrade with a confirmation card, an inside-the-agent panel, and a how-it-works page
 - [ ] Phase 7: README rewrite and write-up with numbers from saved runs
