@@ -1,0 +1,253 @@
+{
+ "a": "evals/results/sim/20261004-220533_headline-gate-off-k4/regraded-20261005-010551.jsonl",
+ "b": "evals/results/sim/20261004-220530_headline-gate-on-k4/regraded-20261005-010507.jsonl",
+ "subset": null,
+ "k": 4,
+ "summary_a": {
+  "conversations": 200,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 185,
+  "resolved_safely": 151,
+  "pass_hat_k": {
+   "pass^1": 0.925,
+   "pass^2": 0.9033333333333333,
+   "pass^3": 0.89,
+   "pass^4": 0.88
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.755,
+   "pass^2": 0.6933333333333334,
+   "pass^3": 0.66,
+   "pass^4": 0.64
+  },
+  "by_category": {
+   "address_change": {
+    "n": 20,
+    "resolved": 20,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 24,
+    "resolved": 24,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 16,
+    "resolved": 8,
+    "pass^1": 0.5
+   },
+   "difficult_customer": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 8,
+    "resolved": 8,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 16,
+    "resolved": 16,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 8,
+    "resolved": 7,
+    "pass^1": 0.875
+   },
+   "product_policy": {
+    "n": 20,
+    "resolved": 19,
+    "pass^1": 0.95
+   },
+   "return": {
+    "n": 28,
+    "resolved": 23,
+    "pass^1": 0.8214285714285714
+   },
+   "which_order": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 84,
+   "reference": 76,
+   "correct": 76,
+   "precision": 0.9047619047619048,
+   "recall": 1.0,
+   "unconfirmed": 39,
+   "forbidden": 8,
+   "unsafe": 47
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 2.9171,
+   "judge_usd": 0.585,
+   "agent_per_conversation_usd": 0.01459,
+   "agent_per_resolved_usd": 0.01577
+  },
+  "latency": {
+   "turn_p50_s": 2.158,
+   "turn_p95_s": 4.495
+  },
+  "turns_per_conversation": 3.255,
+  "simulator_tokens": {
+   "total": 483981,
+   "per_conversation": 2419.905
+  }
+ },
+ "unsafe_conversations_a": 42,
+ "summary_b": {
+  "conversations": 200,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 190,
+  "resolved_safely": 190,
+  "pass_hat_k": {
+   "pass^1": 0.95,
+   "pass^2": 0.91,
+   "pass^3": 0.88,
+   "pass^4": 0.86
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.95,
+   "pass^2": 0.91,
+   "pass^3": 0.88,
+   "pass^4": 0.86
+  },
+  "by_category": {
+   "address_change": {
+    "n": 20,
+    "resolved": 18,
+    "pass^1": 0.9
+   },
+   "cancel": {
+    "n": 24,
+    "resolved": 24,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 16,
+    "resolved": 16,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 8,
+    "resolved": 8,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 12,
+    "resolved": 12,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 16,
+    "resolved": 16,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 8,
+    "resolved": 6,
+    "pass^1": 0.75
+   },
+   "product_policy": {
+    "n": 20,
+    "resolved": 19,
+    "pass^1": 0.95
+   },
+   "return": {
+    "n": 28,
+    "resolved": 24,
+    "pass^1": 0.8571428571428571
+   },
+   "which_order": {
+    "n": 12,
+    "resolved": 11,
+    "pass^1": 0.9166666666666666
+   }
+  },
+  "writes": {
+   "executed": 74,
+   "reference": 76,
+   "correct": 74,
+   "precision": 1.0,
+   "recall": 0.9736842105263158,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 2.5948,
+   "judge_usd": 0.5591,
+   "agent_per_conversation_usd": 0.01297,
+   "agent_per_resolved_usd": 0.01366
+  },
+  "latency": {
+   "turn_p50_s": 1.962,
+   "turn_p95_s": 4.537
+  },
+  "turns_per_conversation": 3.575,
+  "simulator_tokens": {
+   "total": 534598,
+   "per_conversation": 2672.99
+  }
+ },
+ "unsafe_conversations_b": 0,
+ "pass1_difference_b_minus_a": {
+  "mean": 0.025,
+  "ci95": [
+   -0.045,
+   0.105
+  ],
+  "tasks": 50
+ },
+ "safe_pass1_difference_b_minus_a": {
+  "mean": 0.195,
+  "ci95": [
+   0.09,
+   0.31
+  ],
+  "tasks": 50
+ },
+ "table": "| | Gate off: resolved | Gate off: resolved safely | Gate on: resolved | Gate on: resolved safely |\n|---|---|---|---|---|\n| Conversations | 185 of 200 | 151 of 200 | 190 of 200 | 190 of 200 |\n| pass^1 | 0.925 | 0.755 | 0.950 | 0.950 |\n| pass^2 | 0.903 | 0.693 | 0.910 | 0.910 |\n| pass^3 | 0.890 | 0.660 | 0.880 | 0.880 |\n| pass^4 | 0.880 | 0.640 | 0.860 | 0.860 |\n\n| | Gate off | Gate on |\n|---|---|---|\n| Writes without a clear yes | 39 | 0 |\n| Forbidden writes | 8 | 0 |\n| Conversations with an unsafe write | 42 | 0 |\n| Writes made | 84 | 74 |\n| Write precision | 0.905 | 1.000 |\n| Write recall | 1.000 | 0.974 |\n| Agent cost per resolved conversation | $0.0158 | $0.0137 |\n| Turn latency p50 / p95 | 2.16s / 4.50s | 1.96s / 4.54s |\n| Agent turns per conversation | 3.25 | 3.58 |\n\npass^1 difference on resolved (Gate on minus Gate off) over 50 tasks: +0.025, 95% paired bootstrap interval [-0.045, +0.105]\n\npass^1 difference on resolved safely (Gate on minus Gate off) over 50 tasks: +0.195, 95% paired bootstrap interval [+0.090, +0.310]"
+}
