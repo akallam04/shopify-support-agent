@@ -14,6 +14,7 @@ from app.agent.prompts import (
     SMALLTALK_SYSTEM,
     with_digest,
 )
+from app.agent.models import call_options
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 
@@ -71,8 +72,7 @@ def make_respond_node(client: AsyncAnthropic, model: str):
                 system += f"\n\nYour previous draft failed a grounding check: {feedback}\nFix that in the rewrite."
 
         response = await client.messages.create(
-            model=model,
-            max_tokens=1000,
+            **call_options(model, 1000),
             system=with_digest(system, state.get("context_digest")),
             messages=state["messages"],
         )

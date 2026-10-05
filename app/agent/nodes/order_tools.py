@@ -6,6 +6,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.agent.prompts import ORDER_CONFIRM_RULE, ORDER_SYSTEM, ORDER_WRITE_RULES, SAFE_FALLBACK_RESPONSE, with_digest
+from app.agent.models import call_options
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -33,8 +34,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
 
         for _ in range(MAX_TOOL_ROUNDS):
             response = await client.messages.create(
-                model=model,
-                max_tokens=1000,
+                **call_options(model, 1000),
                 system=system,
                 messages=messages,
                 tools=tools.anthropic_tools,

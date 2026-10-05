@@ -20,6 +20,7 @@ from app.agent.prompts import (
     REFLECTION_SYSTEM,
     with_digest,
 )
+from app.agent.models import call_options
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -79,11 +80,9 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         )
         system = with_digest(REFLECTION_SYSTEM.format(rule=POLICY_RULES[prepared.action]), state.get("context_digest"))
         response = await client.messages.create(
-            model=model,
-            max_tokens=300,
+            **call_options(model, 300, {"type": "json_schema", "schema": REFLECTION_SCHEMA}),
             system=system,
             messages=[{"role": "user", "content": content}],
-            output_config={"format": {"type": "json_schema", "schema": REFLECTION_SCHEMA}},
         )
         verdict = json.loads(next(b.text for b in response.content if b.type == "text"))
         return verdict, _usage(state, "reflect", model, response)
@@ -153,11 +152,9 @@ def make_confirm_node(client: AsyncAnthropic, model: str):
         source = "pattern"
         if label is None:
             response = await client.messages.create(
-                model=model,
-                max_tokens=50,
+                **call_options(model, 50, {"type": "json_schema", "schema": CONFIRM_CLASSIFIER_SCHEMA}),
                 system=CONFIRM_CLASSIFIER_SYSTEM.format(summary=pending["summary"]),
                 messages=[{"role": "user", "content": text}],
-                output_config={"format": {"type": "json_schema", "schema": CONFIRM_CLASSIFIER_SCHEMA}},
             )
             label = json.loads(next(b.text for b in response.content if b.type == "text"))["label"]
             source = "model"

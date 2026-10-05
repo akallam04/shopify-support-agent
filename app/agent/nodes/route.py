@@ -6,6 +6,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.agent.prompts import ROUTER_SCHEMA, ROUTER_SYSTEM, with_digest
+from app.agent.models import call_options
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 
@@ -15,11 +16,9 @@ def make_route_node(client: AsyncAnthropic, model: str):
         # no sampling params: newer models reject them, and the enum schema
         # constrains the output anyway
         response = await client.messages.create(
-            model=model,
-            max_tokens=300,
+            **call_options(model, 300, {"type": "json_schema", "schema": ROUTER_SCHEMA}),
             system=with_digest(ROUTER_SYSTEM, state.get("context_digest")),
             messages=state["messages"],
-            output_config={"format": {"type": "json_schema", "schema": ROUTER_SCHEMA}},
         )
         parsed = json.loads(next(b.text for b in response.content if b.type == "text"))
         usage = list(state.get("usage", []))
