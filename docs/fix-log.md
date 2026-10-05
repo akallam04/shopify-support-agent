@@ -66,3 +66,18 @@ Changes made in Phase 3, before any measured run, so they are part of the baseli
   prompt, not against no confirmation at all.
 - ded78ef: em and en dashes are replaced in code.
 - dfa15a1: Sonnet 5.5 is called at low effort through one shared options helper.
+
+## Phase 5 agent fixes
+
+Made after the Phase 4 freeze and checked on fresh runs only. The frozen headline, held-out,
+model comparison, and gate-parts results were not rerun or regraded.
+
+| Commit | Problem | Change | Fresh check |
+|---|---|---|---|
+| da4d2f8 | The order list showed only Shopify's FULFILLED, and the agent sometimes called such orders delivered (53-case order-007). | Both order tools carry a plain shipping status: not shipped yet, shipped and not delivered yet, delivered on a date, or cancelled. | 53-case suite 53 of 53 (`evals/results/20261005-125454_phase5-fixes.json`); order-007 now reports every status correctly. |
+| 67ea740 | Confirmations ended "within 1 business day..", and return confirmations did not show the reason. | Summaries are complete sentences, templates add no punctuation, return summaries name the reason. | `20261005-125511_phase5-fixcheck-k1`: return tasks resolved with the reason shown. |
+| 7d1ddc0 | "No, change the address instead" dropped the request; a customer asking again for a person got the same paragraph. | Only replies of four words or fewer take the instant no path; a repeated handoff request gets a short follow-up and no second handoff. | Same run: handoff-explicit-human resolved with one handoff and the follow-up text. |
+| 1647982 | Reflection added a model call per proposed change with no measurable benefit in the gate-parts runs. | Off by default, `GATE_REFLECTION=true` turns it on. | Measured from existing runs; see the README. |
+
+Still open: after a customer corrects a detail at confirmation, the model sometimes asks "should I
+go ahead?" itself before the gate asks again (seen in confirm-correct-zip in the run above).
