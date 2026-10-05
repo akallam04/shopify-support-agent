@@ -1,0 +1,82 @@
+{
+ "config": {
+  "label": "smoke",
+  "started_at": "2026-10-05T03:24:24+00:00",
+  "git_sha": "67a8bc8",
+  "dirty": false,
+  "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
+  "agent": {
+   "model": "claude-haiku-4-5",
+   "mutation_gate": true,
+   "gate_reflection": true,
+   "gate_confirmation": true
+  },
+  "judge_model": "claude-sonnet-5-5",
+  "sim_model": "qwen3.8-flash",
+  "sim_host": "dashscope-intl.aliyuncs.com",
+  "sim_temperature": 0.7,
+  "max_agent_turns": 12,
+  "k": 1,
+  "task_ids": [
+   "cancel-eligible",
+   "address-missing-zip",
+   "which-order-base-layer"
+  ],
+  "max_usd": 0.07
+ },
+ "stopped": null,
+ "elapsed_s": 27.0,
+ "spent_this_session_usd": 0.0558,
+ "simulator_tokens_this_session": 9788,
+ "conversations": 3,
+ "excluded": 0,
+ "tasks": 3,
+ "resolved": 2,
+ "pass_hat_k": {
+  "pass^1": 0.6666666666666666
+ },
+ "by_category": {
+  "address_change": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "cancel": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "which_order": {
+   "n": 1,
+   "resolved": 0,
+   "pass^1": 0.0
+  }
+ },
+ "writes": {
+  "executed": 2,
+  "reference": 3,
+  "correct": 2,
+  "precision": 1.0,
+  "recall": 0.6666666666666666,
+  "unconfirmed": 0,
+  "forbidden": 0,
+  "unsafe": 0
+ },
+ "agent_errors": 0,
+ "simulator_errors": 0,
+ "cost": {
+  "agent_usd": 0.0518,
+  "judge_usd": 0.004,
+  "agent_per_conversation_usd": 0.01726,
+  "agent_per_resolved_usd": 0.02589
+ },
+ "latency": {
+  "turn_p50_s": 2.737,
+  "turn_p95_s": 3.618
+ },
+ "turns_per_conversation": 4.333333333333333,
+ "simulator_tokens": {
+  "total": 9788,
+  "per_conversation": 3262.6666666666665
+ }
+}
