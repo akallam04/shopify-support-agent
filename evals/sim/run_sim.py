@@ -32,12 +32,12 @@ from mcp_server.simdb import db_hash
 RESULTS_DIR = Path("evals/results/sim")
 TASK_FILE = Path("evals/sim/tasks.json")
 EST_USD_PER_CONVERSATION = {
-    ("claude-haiku-4-5", True): 0.0126,
-    ("claude-haiku-4-5", False): 0.0150,
+    ("claude-haiku-4-5", True): 0.0136,
+    ("claude-haiku-4-5", False): 0.0163,
     ("claude-sonnet-5-5", True): 0.055,
     ("claude-sonnet-5-5", False): 0.060,
 }
-EST_JUDGE_USD_PER_CONVERSATION = 0.0015
+EST_JUDGE_USD_PER_CONVERSATION = 0.0021
 APPROVAL_THRESHOLD_USD = 1.0
 
 
