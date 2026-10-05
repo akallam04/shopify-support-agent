@@ -197,7 +197,7 @@ def test_gate_off_executes_immediately_but_policy_still_holds(db: SimDB) -> None
 def test_the_prompt_asks_for_a_yes_only_when_the_gate_does_not(db: SimDB, flags: dict, prompt_confirms: bool) -> None:
     script = {"route": [ORDER_ROUTE], "order_tools": ["Which order did you mean?"]}
     _, client, _, _, _ = first_turn(db, script, **flags)
-    system = next(kw["system"] for kind, kw in client.calls if kind == "order_tools")
+    system = " ".join(b["text"] for b in next(kw["system"] for kind, kw in client.calls if kind == "order_tools"))
     assert (ORDER_CONFIRM_RULE in system) is prompt_confirms
 
 
@@ -260,4 +260,5 @@ def test_long_conversations_send_a_digest_instead_of_old_turns(db: SimDB) -> Non
     turn(graph, history)
     route_call = next(kw for kind, kw in client.calls if kind == "route")
     assert len(route_call["messages"]) <= 4
-    assert "#1002" in route_call["system"] and MAYA in route_call["system"]
+    route_system = " ".join(b["text"] for b in route_call["system"])
+    assert "#1002" in route_system and MAYA in route_system
