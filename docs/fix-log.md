@@ -16,7 +16,7 @@ Run ids are directories under `evals/results/sim/`.
 | Commit | Task | Problem | Change |
 |---|---|---|---|
 | bbe3642 | address-unsupported-country | The agent refused correctly, saying only US and Canada addresses are allowed. The assertion demanded the wording "the store ships only to". Seen in `20261004-204210_validate-haiku`. | Assertion reworded to the fact that matters. |
-| (next commit) | 53-case order-007 | The case still required orders #1001 to #1003 in "what orders have I placed recently", written before the Phase 2 reseed gave the customer four newer orders. An answer listing the newest four failed it. Found in `evals/results/20261005-011118_phase4-final-regression.json`. | The expectation now checks the newest order and accepts a short list. |
+| 083f19c | 53-case order-007 | The case still required orders #1001 to #1003 in "what orders have I placed recently", written before the Phase 2 reseed gave the customer four newer orders. An answer listing the newest four failed it. Found in `evals/results/20261005-011118_phase4-final-regression.json`. | The expectation now checks the newest order and accepts a short list. |
 
 ## Grader fixes
 
