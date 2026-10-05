@@ -8,7 +8,7 @@ import pytest
 
 from app.agent.prompts import CONFIRM_CLASSIFIER_SCHEMA, REFLECTION_SCHEMA, ROUTER_SCHEMA
 from app.config import Settings
-from evals.sim import orchestrator, user_sim
+from evals.sim import compare_runs, orchestrator, user_sim
 from evals.sim.config import SimSettings
 from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, effective_change, grade
@@ -322,3 +322,36 @@ def test_the_yes_check_judges_the_change_in_store_terms_not_raw_arguments(seed, 
     assert "1 x Sierra Sun Hoody (M)" in summary and "No return shipping fee" in summary
     refused = effective_change(seed, tasks["cancel-shipped-refused"], "cancel_order", {"order_number": "#1001", "email": MAYA, "reason": "changed_mind"})
     assert refused.startswith("cancel_order with")
+
+
+def test_comparisons_pair_tasks_and_prefer_regraded_files(tmp_path) -> None:
+    def write_run(name: str, rewards: dict[str, list[float]], regraded: dict[str, list[float]] | None = None):
+        run = tmp_path / name
+        run.mkdir()
+
+        def lines(rs: dict[str, list[float]]) -> str:
+            out = []
+            for task, values in rs.items():
+                for trial, reward in enumerate(values):
+                    out.append(json.dumps({
+                        "task_id": task, "category": "cancel", "trial": trial, "stop_reason": "user_stop", "agent_turns": 2,
+                        "turn_latency_s": [1.0], "sim_tokens": {"total": 10}, "excluded": None,
+                        "grade": {"reward": reward, "agent_cost_usd": 0.01, "judge_cost_usd": 0.0,
+                                  "writes": {"executed": [], "reference": [], "unconfirmed": [], "forbidden": []}},
+                    }))
+            return "\n".join(out) + "\n"
+
+        (run / "trajectories.jsonl").write_text(lines(rewards))
+        if regraded:
+            (run / "regraded-20990101-000000.jsonl").write_text(lines(regraded))
+        return run
+
+    a = write_run("a", {"t1": [1.0, 0.0], "t2": [0.0, 0.0]}, regraded={"t1": [1.0, 1.0], "t2": [0.0, 0.0]})
+    b = write_run("b", {"t1": [1.0, 1.0], "t2": [1.0, 1.0]})
+    result = compare_runs.compare(a, b, None, None)
+    assert result["a"].endswith("regraded-20990101-000000.jsonl")
+    assert result["summary_a"]["resolved"] == 2 and result["summary_b"]["resolved"] == 4
+    assert result["pass1_difference_b_minus_a"]["mean"] == pytest.approx(0.5)
+    low, high = result["pass1_difference_b_minus_a"]["ci95"]
+    assert low <= 0.5 <= high
+    assert compare_runs.compare(a, b, None, 1)["k"] == 1
