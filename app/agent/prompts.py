@@ -160,9 +160,9 @@ CONFIRM_CLASSIFIER_SCHEMA = {
     "additionalProperties": False,
 }
 
-CONFIRMATION_TEMPLATE = "Just to confirm, I will {summary}. Should I go ahead? Please reply yes or no."
+CONFIRMATION_TEMPLATE = "Just to confirm, I will {summary} Should I go ahead? Please reply yes or no."
 
-REASK_TEMPLATE = "Sorry, I want to be sure before I change anything. Should I {summary}? Please reply yes or no."
+REASK_TEMPLATE = "Sorry, I want to be sure before I change anything. I will {summary} Should I go ahead? Please reply yes or no."
 
 DECLINED_RESPONSE = "No problem, I have not changed anything. Is there anything else I can help with?"
 

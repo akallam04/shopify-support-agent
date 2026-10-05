@@ -25,6 +25,17 @@ RETURN_REASONS = (
     "color",
     "other",
 )
+RETURN_REASON_LABELS = {
+    "size_too_small": "too small",
+    "size_too_large": "too large",
+    "unwanted": "no longer wanted",
+    "not_as_described": "not as described",
+    "wrong_item": "wrong item received",
+    "defective": "defective",
+    "style": "style",
+    "color": "color",
+    "other": "other",
+}
 FEE_WAIVED_REASONS = frozenset({"defective", "not_as_described", "wrong_item"})
 
 AFTER_SHIPPING = "Once it arrives, you can return it within 30 days of delivery."

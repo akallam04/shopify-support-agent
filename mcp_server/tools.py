@@ -347,7 +347,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         normalized = {"order_number": name, "email": email.lower(), "reason": reason}
         summary = (
             f"cancel order {name} ({_items_text([(li, li.quantity) for li in order.line_items])}, "
-            f"total {order.total} {order.currency}), with any amount paid going back to the original payment method"
+            f"total {order.total} {order.currency}), with any amount paid going back to the original payment method."
         )
     elif action == "update_shipping_address":
         address = _address_from(args, found)
@@ -355,7 +355,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         normalized = {"order_number": name, "email": email.lower(), "address": address.model_dump()}
         summary = (
             f"change the shipping address on order {name} from {format_address(order.shipping_address)} "
-            f"to {format_address(address)}"
+            f"to {format_address(address)}."
         )
     else:
         reason = str(args.get("reason") or "").strip()
@@ -370,7 +370,8 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             "reason": reason,
             "items": sorted([[li.line_item_id, qty] for li, qty in pairs]),
         }
-        summary = f"request a return of {_items_text(pairs)} from order {name}. {terms['fee']} {terms['label']}"
+        reason_label = policy.RETURN_REASON_LABELS.get(reason, reason)
+        summary = f"request a return of {_items_text(pairs)} from order {name} (reason: {reason_label}). {terms['fee']} {terms['label']}"
         facts = {**facts, "return_terms": terms}
 
     if not decision.allowed:

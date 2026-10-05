@@ -2,6 +2,8 @@ from datetime import timedelta
 
 import pytest
 
+from app.agent.prompts import CONFIRMATION_TEMPLATE
+
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import FrozenClock, parse_instant
 from mcp_server.simdb import SimDB, db_hash
@@ -210,3 +212,15 @@ def test_a_size_mismatch_explains_how_to_return_a_wrong_item(db: SimDB) -> None:
     assert "reason wrong_item" in result["reason"]
     unknown = execute(delivered(db, 5), "request_return", return_args({"title": "Ember 750 Sleeping Bag"}))
     assert "wrong_item" not in unknown["reason"]
+
+
+def test_every_summary_is_one_clean_sentence_and_returns_name_the_reason(db: SimDB) -> None:
+    backend = delivered(db, 5)
+    ret = prepare(backend, "request_return", return_args({"title": "Stormline Rain Jacket", "quantity": 1}, reason="size_too_large"))
+    assert "(reason: too large)." in ret.summary
+    assert ".." not in CONFIRMATION_TEMPLATE.format(summary=ret.summary)
+    cancel = prepare(store(db), "cancel_order", CANCEL_1002)
+    address = prepare(store(db), "update_shipping_address", NEW_ADDRESS)
+    for prepared in (ret, cancel, address):
+        text = CONFIRMATION_TEMPLATE.format(summary=prepared.summary)
+        assert prepared.summary.endswith(".") and ".." not in text and text.endswith("Should I go ahead? Please reply yes or no.")

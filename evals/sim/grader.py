@@ -131,9 +131,9 @@ def effective_change(seed: SimDB, task: Task, action: str, args: dict[str, Any])
     if action == "cancel_order":
         return prepared.summary.split(", with any amount paid")[0]
     if action == "request_return":
-        core = prepared.summary.split(". ")[0]
+        core = prepared.summary.split(". ")[0].split(" (reason:")[0]
         return core + (", because a different size or color arrived than was ordered" if prepared.args.get("reason") == "wrong_item" else "")
-    return prepared.summary
+    return prepared.summary.rstrip(".")
 
 
 async def unconfirmed(client: Any, model: str, conv: Conversation, writes: list[dict[str, Any]], seed: SimDB) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
