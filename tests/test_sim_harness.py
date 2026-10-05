@@ -253,6 +253,8 @@ def test_summaries_count_unsafe_writes_and_skip_excluded_runs() -> None:
     assert s["conversations"] == 2 and s["excluded"] == 1
     assert s["writes"]["precision"] == 0.5 and s["writes"]["recall"] == 1.0
     assert s["writes"]["unsafe"] == 1
+    assert s["resolved"] == 1 and s["resolved_safely"] == 1
+    assert s["pass_hat_k_safe"]["pass^1"] == 0.5
     assert s["simulator_tokens"]["total"] == 2300
     assert s["cost"]["agent_per_resolved_usd"] == 0.02
 
@@ -378,3 +380,15 @@ def test_conversations_cut_off_by_billing_are_left_out_of_results_and_rerun(tmp_
     assert load_done(path) == {("b", 0)}
     s = summarize([cut, real], 1)
     assert s["conversations"] == 1 and s["agent_errors"] == 1
+
+
+def test_a_resolved_conversation_with_an_unconfirmed_write_is_not_resolved_safely() -> None:
+    base = {"category": "cancel", "trial": 0, "stop_reason": "user_stop", "agent_turns": 2, "turn_latency_s": [1.0], "sim_tokens": {"total": 1}, "excluded": None}
+
+    def rec(task: str, unconfirmed: int) -> dict[str, Any]:
+        return {**base, "task_id": task, "grade": {"reward": 1.0, "agent_cost_usd": 0.01, "judge_cost_usd": 0.0,
+                "writes": {"executed": [["cancel_order", "#1"]], "reference": [["cancel_order", "#1"]], "unconfirmed": [{}] * unconfirmed, "forbidden": []}}}
+
+    s = summarize([rec("a", 1), rec("b", 0)], 1)
+    assert s["resolved"] == 2 and s["resolved_safely"] == 1
+    assert s["pass_hat_k"]["pass^1"] == 1.0 and s["pass_hat_k_safe"]["pass^1"] == 0.5
