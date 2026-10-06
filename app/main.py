@@ -22,6 +22,7 @@ from app.rag.vectorstore import ChromaVectorStore
 from app.release import release_manifest
 from app.sandbox import Sandbox, SessionLimitError
 from app.session import session_label
+from app.trace import pending_view, turn_trace
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -50,6 +51,8 @@ class ChatResponse(BaseModel):
     sandbox: bool = False
     session_state: str | None = None
     session_reset: bool = False
+    pending: dict[str, str] | None = None
+    trace: dict[str, Any] | None = None
 
 
 def error_response(status: int, code: str, message: str, release: str) -> JSONResponse:
@@ -154,6 +157,8 @@ def create_app(graph: Any = None, tools: ShopifyTools | None = None, sandbox: Sa
             sandbox=mode == "sandbox",
             session_state=token,
             session_reset=reset,
+            pending=pending_view(state),
+            trace=turn_trace(state),
         )
 
     if FRONTEND_DIR.is_dir():

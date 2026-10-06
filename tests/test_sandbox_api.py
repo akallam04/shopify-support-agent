@@ -79,6 +79,23 @@ def test_a_confirmed_cancel_changes_only_this_sessions_sandbox() -> None:
     assert sandbox.backend([]).db.orders["#1023"].cancelled_at is None
 
 
+def test_each_reply_shows_the_pending_change_and_what_happened_inside() -> None:
+    client, _ = client_for(Scripted({"route": [ROUTE], "order_tools": [("cancel_order", CANCEL)]}))
+    ask = [{"role": "user", "content": f"Cancel #1023, {MAYA}, ordered by mistake."}]
+    with client:
+        first = post(client, ask).json()
+        second = post(client, ask + [{"role": "assistant", "content": first["response"]}, {"role": "user", "content": "yes"}], first["session_state"]).json()
+    assert first["pending"]["action"] == "cancel_order"
+    assert first["pending"]["summary"].startswith("cancel order #1023")
+    trace = first["trace"]
+    assert trace["path"][:3] == ["sanitize", "context", "route"] and "gate" in trace["path"]
+    assert [t["kind"] for t in trace["tools"]] == ["policy_check"] and trace["tools"][0]["result"]["allowed"] is True
+    assert [g["step"] for g in trace["gate"]] == ["policy", "confirmation_requested"]
+    assert trace["verify"] == "passed" and trace["tokens"]["input_tokens"] > 0 and trace["cost_usd"] > 0
+    assert second["pending"] is None
+    assert "execute" in second["trace"]["path"] and second["trace"]["gate"][-1]["step"] == "executed"
+
+
 def test_a_tampered_token_resets_the_session_and_cannot_confirm() -> None:
     client, _ = client_for(Scripted({"route": [ROUTE, ROUTE], "order_tools": [("cancel_order", CANCEL), "Which order did you mean?"]}))
     ask = [{"role": "user", "content": f"Cancel #1023, {MAYA}, ordered by mistake."}]
