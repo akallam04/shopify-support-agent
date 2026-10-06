@@ -10,6 +10,10 @@ if [ ! -f deploy/Dockerfile ]; then
   echo "run this from the repo root: sh deploy/deploy.sh" >&2
   exit 1
 fi
+if ! docker info >/dev/null 2>&1; then
+  echo "start Docker first: the image is built locally" >&2
+  exit 1
+fi
 if [ -n "$(git status --porcelain)" ]; then
   echo "commit first: images are tagged with the commit they were built from" >&2
   exit 1
