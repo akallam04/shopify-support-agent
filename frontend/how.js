@@ -60,7 +60,7 @@ function passkChart(container, headline) {
     const ih = h - m.top - m.bottom;
     const x = (k) => m.left + ((k - 1) / 3) * iw;
     const y = (v) => m.top + (1 - (v - 0.5) / 0.5) * ih;
-    let svg = `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true" font-family="Inter, sans-serif" font-size="13">`;
+    let svg = `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true" font-family="Geist, sans-serif" font-size="13">`;
     for (const t of [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]) {
       svg += `<line x1="${m.left}" x2="${m.left + iw}" y1="${y(t)}" y2="${y(t)}" stroke="#dde4ea" />`;
       svg += `<text x="${m.left - 8}" y="${y(t) + 4}" text-anchor="end" fill="#5f6e7a">${t.toFixed(1)}</text>`;
@@ -74,6 +74,7 @@ function passkChart(container, headline) {
       const gap = labelY[order[j]] - labelY[order[j - 1]];
       if (gap < 16) labelY[order[j]] += 16 - gap;
     }
+    svg += '<g class="lines">';
     series.forEach((s, i) => {
       const pts = s.values.map((v, j) => `${x(j + 1)},${y(v)}`).join(" ");
       svg += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-dasharray="${s.dash}" stroke-linejoin="round" stroke-linecap="round" />`;
@@ -88,7 +89,7 @@ function passkChart(container, headline) {
         svg += `<text x="${x(4) + 12}" y="${labelY[i]}" fill="${s.color}" font-weight="600">${s.label}</text>`;
       }
     });
-    svg += "</svg>";
+    svg += "</g></svg>";
     container.innerHTML = svg;
   };
   draw();
@@ -131,7 +132,7 @@ function failureBars(container, failures) {
       el("div", { class: "bar" }, [
         el("span", { class: "bar__label" }, [FAILURE_NAMES[f.label] || f.label, el("span", { class: "tag tag--plain bar__owner", text: OWNER_NAMES[owner] || owner })]),
         el("span", { class: "bar__count", text: String(f.count) }),
-        el("span", { class: "bar__track", "aria-hidden": "true" }, el("span", { class: `bar__fill bar__fill--${owner}`, style: `width:${(f.count / max) * 100}%` })),
+        el("span", { class: "bar__track", "aria-hidden": "true" }, el("span", { class: `bar__fill bar__fill--${owner}`, style: `width:${(f.count / max) * 100}%;--i:${failures.by_label.indexOf(f)}` })),
       ]),
     );
   }
@@ -170,22 +171,114 @@ function flagFor(turn, gate) {
   return null;
 }
 
+const MOTION = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function compareSide(list, ex) {
+  const beats = ex.turns.map((turn) => {
+    const flag = flagFor(turn, ex.gate);
+    const customer = el("li", { class: "mini__customer beat" }, [el("span", { class: "mini__who", text: "Customer" }), el("span", { class: "mini__text", text: turn.user })]);
+    const reply = el("li", { class: "beat" }, [
+      el("span", { class: "mini__who", text: "Assistant" }),
+      el("span", { class: "mini__text", text: turn.agent }),
+      flag ? el("span", { class: `flag flag--${flag[0]}`, text: flag[1] }) : null,
+    ]);
+    list.append(customer, reply);
+    return { customer, reply, hold: Boolean(flag && flag[0] === "amber") };
+  });
+  const end = el("li", { class: "mini__end beat", text: "End of conversation" });
+  list.append(end);
+  return { beats, end };
+}
+
 function renderCompare(examples) {
+  const sides = [];
   for (const list of document.querySelectorAll("[data-example]")) {
     const ex = examples.find((e) => e.id === list.dataset.example);
-    if (!ex) continue;
-    for (const turn of ex.turns) {
-      list.append(el("li", { class: "mini__customer" }, [el("span", { class: "mini__who", text: "Customer" }), el("span", { class: "mini__text", text: turn.user })]));
-      const flag = flagFor(turn, ex.gate);
-      list.append(
-        el("li", {}, [
-          el("span", { class: "mini__who", text: "Assistant" }),
-          el("span", { class: "mini__text", text: turn.agent }),
-          flag ? el("span", { class: `flag flag--${flag[0]}`, text: flag[1] }) : null,
-        ]),
-      );
-    }
+    if (ex) sides.push(compareSide(list, ex));
   }
+  const all = () => sides.flatMap((side) => [...side.beats.flatMap((b) => [b.customer, b.reply]), side.end]);
+  const button = $("replayCompare");
+  if (!MOTION) {
+    all().forEach((node) => node.classList.add("is-shown"));
+    button.hidden = true;
+    return;
+  }
+  let run = 0;
+  async function play() {
+    const mine = ++run;
+    const live = () => mine === run;
+    all().forEach((node) => node.classList.remove("is-shown", "is-live"));
+    button.disabled = true;
+    const turns = Math.max(...sides.map((side) => side.beats.length));
+    for (let t = 0; t <= turns && live(); t++) {
+      for (const side of sides) {
+        const beat = side.beats[t];
+        if (beat) beat.customer.classList.add("is-shown");
+        else if (t === side.beats.length) side.end.classList.add("is-shown");
+      }
+      await wait(650);
+      if (!live()) return;
+      document.querySelectorAll(".flag.is-live").forEach((f) => f.classList.remove("is-live"));
+      let hold = false;
+      for (const side of sides) {
+        const beat = side.beats[t];
+        if (!beat) continue;
+        beat.reply.classList.add("is-shown");
+        if (beat.hold) {
+          hold = true;
+          beat.reply.querySelector(".flag").classList.add("is-live");
+        }
+      }
+      await wait(hold ? 2200 : 1100);
+    }
+    if (live()) button.disabled = false;
+  }
+  button.addEventListener("click", play);
+  onVisible($("compare"), play, 0.35);
+}
+
+function onVisible(node, callback, threshold = 0.3) {
+  if (!node) return;
+  if (!("IntersectionObserver" in window)) {
+    callback();
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting)) {
+      observer.disconnect();
+      callback();
+    }
+  }, { threshold });
+  observer.observe(node);
+}
+
+function countUp(group) {
+  const nums = [...group.querySelectorAll(".kpi__value > [data-num]")];
+  const finals = nums.map((n) => Number(n.textContent));
+  group.setAttribute("aria-busy", "true");
+  const started = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - started) / 900);
+    const eased = 1 - Math.pow(1 - t, 3);
+    nums.forEach((n, i) => {
+      n.textContent = String(Math.round(finals[i] * eased));
+    });
+    if (t < 1) requestAnimationFrame(step);
+    else {
+      nums.forEach((n, i) => {
+        n.textContent = String(finals[i]);
+      });
+      group.removeAttribute("aria-busy");
+    }
+  };
+  requestAnimationFrame(step);
+}
+
+function animateOnView() {
+  if (!MOTION) return;
+  for (const group of document.querySelectorAll(".kpis")) onVisible(group, () => countUp(group), 0.6);
+  for (const figure of document.querySelectorAll(".figure")) onVisible(figure, () => figure.classList.add("is-in"), 0.35);
 }
 
 function gateText(g) {
@@ -345,6 +438,7 @@ async function main() {
   categories($("categories"), h.categories);
   renderCompare(examples);
   viewer(examples);
+  animateOnView();
 }
 
 main().catch((err) => {

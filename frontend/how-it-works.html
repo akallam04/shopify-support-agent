@@ -16,11 +16,13 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="preload" href="./fonts/geist.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./how.css" />
+    <script>
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("motion-ok");
+    </script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -66,7 +68,7 @@
         <div class="wrap">
           <div class="band__head">
             <h2 id="gateTitle">Same request, with and without the gate</h2>
-            <p>Two saved conversations from the headline runs. The customer and the order are the same. With the gate off, the prompt still tells the model to describe the change and wait for a yes; nothing enforces it.</p>
+            <p>Two saved conversations from the headline runs, replayed side by side. The customer and the order are the same. With the gate off, the prompt still tells the model to describe the change and wait for a yes; nothing enforces it.</p>
           </div>
           <div class="compare" id="compare">
             <article class="compare__side" aria-labelledby="offTitle">
@@ -78,6 +80,7 @@
               <ol class="mini" data-example="cancel-gate-on"></ol>
             </article>
           </div>
+          <button class="btn btn--quiet compare__replay" id="replayCompare" type="button">Replay both conversations</button>
         </div>
       </section>
 

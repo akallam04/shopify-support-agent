@@ -10,13 +10,14 @@ const inputEl = $("input");
 const sendEl = $("send");
 const statusEl = $("status");
 const statusTextEl = $("statusText");
-const insideToggleEl = $("insideToggle");
+const hintEl = $("hint");
 
 let history = [];
 let sessionState = null;
 let started = false;
 let warm = false;
 let openCard = null;
+let openBrain = null;
 
 const MOBILE = window.matchMedia("(max-width: 640px)");
 const WIDE = window.matchMedia("(min-width: 1024px)");
@@ -89,19 +90,6 @@ const CART = [
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const CITATION_RE = /\s*\[([a-z0-9][a-z0-9-]*)\]/g;
-
-function el(tag, attrs = {}, children = []) {
-  const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs)) {
-    if (key === "text") node.textContent = value;
-    else if (key === "class") node.className = value;
-    else node.setAttribute(key, value);
-  }
-  for (const child of [].concat(children)) {
-    if (child) node.append(child);
-  }
-  return node;
-}
 
 function store(key, value) {
   try {
@@ -186,7 +174,9 @@ $("cartToggle").addEventListener("click", () => setCart(!drawerEl.classList.cont
 $("cartClose").addEventListener("click", () => setCart(false));
 scrimEl.addEventListener("click", () => setCart(false));
 
-/* warm up */
+/* warm up and first impression */
+const INTRO_KEY = "aurora_intro_seen";
+
 function setStatus(state, text) {
   statusEl.dataset.state = state;
   statusTextEl.textContent = text;
@@ -201,16 +191,47 @@ async function warmUp() {
     if (!res.ok) throw new Error(`health ${res.status}`);
     warm = true;
     setStatus("ready", "Ready");
+    return true;
   } catch {
     setStatus("offline", "Not reachable right now");
+    return false;
   } finally {
     clearTimeout(timer);
   }
 }
 
+function introduce() {
+  if (store(INTRO_KEY) || chatEl.classList.contains("is-open")) return;
+  store(INTRO_KEY, "1");
+  if (WIDE.matches) openChat({ focus: false, entrance: true });
+  else if (MOBILE.matches) showHint();
+}
+
+function showHint() {
+  hintEl.hidden = false;
+  requestAnimationFrame(() => hintEl.classList.add("is-in"));
+}
+
+function hideHint() {
+  hintEl.classList.remove("is-in");
+  hintEl.hidden = true;
+}
+
+$("hintOpen").addEventListener("click", () => {
+  hideHint();
+  openChat({ focus: false });
+  send(STARTERS[1].text);
+});
+$("hintClose").addEventListener("click", () => {
+  hideHint();
+  launcherEl.focus();
+});
+
 /* chat shell */
-function openChat({ focus = true } = {}) {
+function openChat({ focus = true, entrance = false } = {}) {
   setCart(false);
+  hideHint();
+  chatEl.classList.toggle("has-entrance", entrance);
   chatEl.classList.add("is-open");
   launcherEl.setAttribute("aria-expanded", "true");
   document.body.classList.toggle("chat-locked", MOBILE.matches);
@@ -223,8 +244,8 @@ function openChat({ focus = true } = {}) {
 }
 
 function closeChat() {
-  store("aurora_chat_closed", "1");
-  chatEl.classList.remove("is-open");
+  store(INTRO_KEY, "1");
+  chatEl.classList.remove("is-open", "has-entrance");
   launcherEl.setAttribute("aria-expanded", "false");
   document.body.classList.remove("chat-locked");
   setBackgroundInert(false);
@@ -232,23 +253,23 @@ function closeChat() {
 }
 
 function scrollLog() {
-  logEl.scrollTop = logEl.scrollHeight;
+  logEl.scrollTo({ top: logEl.scrollHeight, behavior: REDUCED_MOTION.matches ? "auto" : "smooth" });
 }
 
 function renderStarters(target) {
   const list = el("div", { class: "starters" });
-  for (const s of STARTERS) {
-    const btn = el("button", { class: "starter", type: "button" }, [el("span", { class: "starter__label", text: s.label })]);
+  STARTERS.forEach((s, i) => {
+    const btn = el("button", { class: "starter", type: "button", style: `--i:${i}` }, [el("span", { class: "starter__label", text: s.label })]);
     btn.addEventListener("click", () => send(s.text));
     list.append(btn);
-  }
+  });
   target.append(list);
 }
 
 function renderWelcome() {
   const wrap = el("div", { class: "welcome", id: "welcome" }, [
-    el("h3", { text: "How can I help?" }),
-    el("p", { text: "Pick a starting point or type a question. Every order here is a test order, and changes stay in this chat." }),
+    el("h3", { text: "Hi, I can change orders, safely." }),
+    el("p", { text: "Ask me to track, cancel, change, or return a test order. I show you every change and ask before I make it. Watch each step under my replies." }),
   ]);
   renderStarters(wrap);
   logEl.append(wrap);
@@ -258,6 +279,7 @@ function resetChat() {
   history = [];
   sessionState = null;
   openCard = null;
+  openBrain = null;
   logEl.innerHTML = "";
   renderWelcome();
   inputEl.focus();
@@ -295,8 +317,7 @@ function clearTransient() {
 
 function addUser(text) {
   clearTransient();
-  const bubble = el("div", { class: "bubble", text });
-  logEl.append(el("div", { class: "msg msg--user" }, bubble));
+  logEl.append(el("div", { class: "msg msg--user" }, el("div", { class: "bubble", text })));
   scrollLog();
 }
 
@@ -306,159 +327,47 @@ function addAgentText(text, failed = false) {
   linkify(bubble, clean);
   const msg = el("div", { class: `msg msg--agent${failed ? " msg--failed" : ""}` }, bubble);
   if (ids.length) {
-    msg.append(el("div", { class: "sources", "aria-label": "Sources" }, ids.map((id) => el("span", { class: "source", text: id.replace(/^policy-/, "").replace(/-/g, " ") }))));
+    msg.append(el("div", { class: "sources", "aria-label": "Sources" }, ids.map((id) => el("span", { class: "source", text: prettyDoc(id) }))));
   }
   logEl.append(msg);
   return msg;
 }
 
-const CARD_STATES = {
-  confirmed: "Confirmed",
-  declined: "Not changed",
-  replaced: "Replaced by your next message",
-};
-
-function closeCard(trace) {
-  if (!openCard) return;
+function answerOutcome(trace) {
   const reply = (trace?.gate || []).find((g) => g.step === "confirmation");
-  const state = reply?.label === "confirm" ? "confirmed" : reply?.label === "decline" ? "declined" : "replaced";
-  openCard.dataset.state = state;
-  openCard.querySelector(".confirm__title").textContent = CARD_STATES[state];
+  if (reply?.label === "confirm") return "confirmed";
+  if (reply?.label === "decline") return "declined";
+  return "replaced";
+}
+
+function settlePending(trace) {
+  if (!openCard) return;
+  const outcome = answerOutcome(trace);
+  settleCard(openCard, outcome);
+  settleGate(openBrain, outcome);
   openCard = null;
-}
-
-function addConfirmCard(pending) {
-  const yes = el("button", { class: "btn btn--primary", type: "button", text: "Yes, go ahead" });
-  const no = el("button", { class: "btn btn--quiet", type: "button", text: "No, keep it" });
-  const card = el("div", { class: "confirm", role: "group", "data-state": "open" }, [
-    el("p", { class: "confirm__head" }, [
-      el("span", { class: "confirm__title", text: "Confirm this change" }),
-    ]),
-    el("p", { class: "confirm__summary", text: `I will ${pending.summary}` }),
-    el("div", { class: "confirm__actions" }, [yes, no]),
-    el("p", { class: "confirm__hint", text: "Nothing changes until you answer. You can also type a correction." }),
-  ]);
-  const titleId = `card-${Date.now()}`;
-  card.querySelector(".confirm__title").id = titleId;
-  card.setAttribute("aria-labelledby", titleId);
-  card.querySelector(".confirm__head").prepend(icon('<path d="M12 8v5M12 16h.01" /><circle cx="12" cy="12" r="9" />'));
-  yes.addEventListener("click", () => send("Yes"));
-  no.addEventListener("click", () => send("No"));
-  const msg = el("div", { class: "msg msg--agent" }, card);
-  logEl.append(msg);
-  openCard = card;
-  return msg;
-}
-
-function icon(paths) {
-  const span = document.createElement("span");
-  span.setAttribute("aria-hidden", "true");
-  span.innerHTML = `<svg viewBox="0 0 24 24">${paths}</svg>`;
-  return span.firstChild;
+  openBrain = null;
 }
 
 function addAgent(data) {
-  closeCard(data.trace);
-  const msg = data.pending ? addConfirmCard(data.pending) : addAgentText(data.response);
-  const meta = el("div", { class: "msg__meta" }, [
-    el("span", { text: INTENT_LABELS[data.intent] || "Answer" }),
-    el("span", { text: `${data.latency_s.toFixed(1)}s` }),
-  ]);
-  msg.append(meta);
-  if (data.trace) msg.append(el("div", { class: "inside" }, buildTrace(data)));
+  settlePending(data.trace);
+  let msg;
+  if (data.pending) {
+    const card = buildConfirmCard(data.pending, send);
+    msg = el("div", { class: "msg msg--agent msg--card" }, card);
+    logEl.append(msg);
+    openCard = card;
+  } else {
+    msg = addAgentText(data.response);
+  }
+  msg.append(el("p", { class: "msg__meta", text: `${(INTENT_LABELS[data.intent] || "Answer")}, ${data.latency_s.toFixed(1)}s` }));
+  if (data.trace) {
+    const brain = buildBrain(data);
+    msg.append(brain);
+    if (data.pending) openBrain = brain;
+  }
   scrollLog();
 }
-
-/* inside the agent */
-function gateStep(g) {
-  const action = (g.action || "").replace(/_/g, " ");
-  switch (g.step) {
-    case "policy":
-      return g.allowed ? ["ok", `Policy check passed for ${action}`] : ["stop", `Policy check refused ${action}: ${(g.code || "").replace(/_/g, " ")}`];
-    case "reflection":
-      return [g.verdict === "proceed" ? "ok" : "hold", `Reflection said ${g.verdict}`];
-    case "confirmation_requested":
-      return ["hold", `Held ${action} until the customer says yes`];
-    case "confirmation":
-      return [g.label === "confirm" ? "ok" : "hold", `Customer reply read as ${g.label} (${g.source === "pattern" ? "fixed pattern" : "model"})`];
-    case "executed":
-      return ["ok", `Ran ${action} on the sandbox store`];
-    case "refused":
-      return ["stop", `The store refused ${action}`];
-    case "self_confirm_nudge":
-      return ["hold", "Draft asked for a yes itself, sent back to propose the change through the gate"];
-    case "handoff_recorded":
-      return ["ok", "Handoff recorded for the support team"];
-    default:
-      return ["", g.step];
-  }
-}
-
-function argsText(args) {
-  return Object.entries(args || {})
-    .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
-    .join(", ");
-}
-
-function buildTrace(data) {
-  const t = data.trace;
-  const pathShort = t.path.filter((n) => !["sanitize", "context"].includes(n)).join(" > ");
-  const summary = el("summary", {}, [
-    el("span", { class: "trace__label", text: "Inside this turn" }),
-    el("span", { text: pathShort }),
-  ]);
-  const body = el("div", { class: "trace__body" });
-
-  const path = el("ol", { class: "path", "aria-label": "Graph path" });
-  for (const n of t.nodes) {
-    path.append(el("li", {}, [document.createTextNode(`${n.node} `), el("span", { text: `${Math.round(n.ms)}ms` })]));
-  }
-  body.append(el("div", { class: "trace__row" }, [el("span", { class: "trace__key", text: "Graph path" }), path]));
-
-  if (t.tools.length) {
-    const calls = el("div", { class: "trace__row" }, el("span", { class: "trace__key", text: "Tool calls" }));
-    for (const c of t.tools) {
-      const label = c.kind === "policy_check" ? `policy check: ${c.name}` : `${c.name}(${argsText(c.args)})`;
-      calls.append(
-        el("details", { class: "call" }, [
-          el("summary", { text: label }),
-          el("pre", { text: typeof c.result === "string" ? c.result : JSON.stringify(c.result, null, 2) }),
-        ]),
-      );
-    }
-    body.append(calls);
-  }
-
-  if (t.gate.length) {
-    const steps = el("ul", { class: "steps" });
-    for (const g of t.gate) {
-      const [tone, text] = gateStep(g);
-      steps.append(el("li", { class: tone, text }));
-    }
-    body.append(el("div", { class: "trace__row" }, [el("span", { class: "trace__key", text: "Mutation gate" }), steps]));
-  }
-
-  body.append(el("div", { class: "trace__row" }, [el("span", { class: "trace__key", text: "Grounding check" }), el("span", { text: t.verify })]));
-
-  const tok = t.tokens || {};
-  const cached = (tok.cache_read_input_tokens || 0) + (tok.cache_creation_input_tokens || 0);
-  const numbers = el("div", { class: "numbers" });
-  numbers.innerHTML = `<span><b>${data.latency_s.toFixed(2)}s</b> latency</span>
-    <span><b>${(tok.input_tokens || 0).toLocaleString()}</b> in / <b>${(tok.output_tokens || 0).toLocaleString()}</b> out tokens${cached ? `, <b>${cached.toLocaleString()}</b> cached` : ""}</span>
-    <span><b>$${(t.cost_usd ?? 0).toFixed(4)}</b> model cost</span>
-    <span>release <b>${data.release}</b></span>`;
-  body.append(el("div", { class: "trace__row" }, [el("span", { class: "trace__key", text: "Numbers" }), numbers]));
-
-  return el("details", { class: "trace" }, [summary, body]);
-}
-
-function setInside(on) {
-  chatEl.classList.toggle("show-inside", on);
-  insideToggleEl.setAttribute("aria-checked", String(on));
-  store("aurora_inside", on ? "1" : "0");
-}
-
-insideToggleEl.addEventListener("click", () => setInside(insideToggleEl.getAttribute("aria-checked") !== "true"));
 
 /* sending */
 const BUSY_MESSAGE = "The assistant is busy right now. Try again in a few seconds.";
@@ -488,9 +397,9 @@ function setBusy(busy) {
 }
 
 function showTyping() {
-  const dots = el("div", { class: "bubble typing", "aria-label": "Assistant is typing" }, [el("span"), el("span"), el("span")]);
+  const dots = el("div", { class: "bubble typing" }, [el("span"), el("span"), el("span")]);
   const note = el("p", { class: "waking", hidden: "" });
-  const msg = el("div", { class: "msg msg--agent", id: "typing" }, [dots, note]);
+  const msg = el("div", { class: "msg msg--agent", id: "typing", role: "status", "aria-label": "The assistant is replying" }, [dots, note]);
   logEl.append(msg);
   scrollLog();
   const firstNote = setTimeout(() => {
@@ -550,7 +459,7 @@ function renderActions() {
   const row = el("div", { class: "actions-row", id: "actions" }, [
     actionButton("More things to try", () => {
       row.remove();
-      const wrap = el("div", { class: "welcome", id: "welcome" });
+      const wrap = el("div", { class: "welcome welcome--again", id: "welcome" });
       renderStarters(wrap);
       logEl.append(wrap);
       scrollLog();
@@ -618,6 +527,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (drawerEl.classList.contains("is-open")) setCart(false);
   else if (chatEl.classList.contains("is-open")) closeChat();
+  else if (!hintEl.hidden) hideHint();
 });
 
 MOBILE.addEventListener("change", () => {
@@ -634,14 +544,9 @@ formEl.addEventListener("submit", (e) => {
   send(text);
 });
 
-setInside(store("aurora_inside") === "1");
 renderGrid();
 renderOrders();
 renderCart();
-warmUp();
-
-if (WIDE.matches && !store("aurora_chat_closed")) {
-  setTimeout(() => {
-    if (!chatEl.classList.contains("is-open")) openChat({ focus: false });
-  }, 1200);
-}
+warmUp().then((ok) => {
+  if (ok) introduce();
+});
