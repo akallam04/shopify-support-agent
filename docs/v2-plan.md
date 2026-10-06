@@ -392,18 +392,20 @@ The same outcome must always produce the same hash, whatever order the agent did
       fails unless it gets a proper answer, so a broken demo produces an email. It calls only
       the public endpoint and needs no secrets.
 - [x] Gate reflection off by default, with the switch kept, decided from the gate-parts runs.
-- [ ] Agent issues found by the Phase 4 runs, fixed and measured on fresh runs, never by
+- [x] Agent issues found by the Phase 4 runs, fixed and measured on fresh runs, never by
       changing the frozen headline:
       - [x] The confirmation text ended with a doubled period.
       - [x] A decline that also asks for something else dropped the second request.
       - [x] The canned handoff reply repeated word for word.
       - [x] The return confirmation did not show the return reason.
       - [x] The order list showed only "fulfilled", and the agent sometimes called it delivered.
-      - [ ] Some refusals (an unsupported country, a final-sale item) are handed off instead of
+      - [x] Some refusals (an unsupported country, a final-sale item) are handed off instead of
             explained.
-      - [ ] The agent sometimes calls an order eligible before the policy check refuses it.
-      - [ ] After a corrected detail at confirmation, the model sometimes asks for a yes itself
+      - [x] The agent sometimes calls an order eligible before the policy check refuses it.
+      - [x] After a corrected detail at confirmation, the model sometimes asks for a yes itself
             before the gate asks again.
+      - The last three were fixed during Phase 6 (a96ba10); see the Phase 6 section of
+        `docs/fix-log.md`.
 
 ### Phase 6: website upgrade
 

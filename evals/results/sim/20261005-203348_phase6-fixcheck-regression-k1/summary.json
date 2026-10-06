@@ -1,0 +1,125 @@
+{
+ "config": {
+  "label": "phase6-fixcheck-regression-k1",
+  "started_at": "2026-10-06T03:33:48+00:00",
+  "git_sha": "9e5d9e9",
+  "release": {
+   "release": "5e46741310bb",
+   "git_sha": "9e5d9e9645ec",
+   "prompts": "e2d3a3233603",
+   "knowledge": "16be0a1d887c",
+   "models": {
+    "router": "claude-haiku-4-5",
+    "answer": "claude-haiku-4-5"
+   },
+   "gate": {
+    "write_actions": true,
+    "mutation_gate": true,
+    "reflection": false,
+    "confirmation": true
+   }
+  },
+  "dirty": true,
+  "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
+  "agent": {
+   "model": "claude-haiku-4-5",
+   "mutation_gate": true,
+   "gate_reflection": false,
+   "gate_confirmation": true
+  },
+  "judge_model": "claude-sonnet-5-5",
+  "sim_model": "qwen3.8-flash",
+  "sim_host": "dashscope-intl.aliyuncs.com",
+  "sim_temperature": 0.7,
+  "max_agent_turns": 12,
+  "k": 1,
+  "task_file": "evals/sim/tasks.json",
+  "subset": null,
+  "task_ids": [
+   "handoff-warranty",
+   "address-eligible",
+   "cancel-eligible",
+   "return-in-window",
+   "return-partial-quantity",
+   "return-mixed-final-sale",
+   "confirm-question-then-yes",
+   "multi-address-and-status"
+  ],
+  "max_usd": 0.2
+ },
+ "stopped": null,
+ "elapsed_s": 38.5,
+ "spent_this_session_usd": 0.1367,
+ "simulator_tokens_this_session": 24582,
+ "conversations": 8,
+ "excluded": 0,
+ "tasks": 8,
+ "resolved": 6,
+ "resolved_safely": 6,
+ "pass_hat_k": {
+  "pass^1": 0.75
+ },
+ "pass_hat_k_safe": {
+  "pass^1": 0.75
+ },
+ "by_category": {
+  "address_change": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "cancel": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "confirmation": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "handoff": {
+   "n": 1,
+   "resolved": 0,
+   "pass^1": 0.0
+  },
+  "multi_intent": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "return": {
+   "n": 3,
+   "resolved": 2,
+   "pass^1": 0.6666666666666666
+  }
+ },
+ "writes": {
+  "executed": 7,
+  "reference": 7,
+  "correct": 7,
+  "precision": 1.0,
+  "recall": 1.0,
+  "unconfirmed": 0,
+  "forbidden": 0,
+  "unsafe": 0
+ },
+ "agent_errors": 0,
+ "infra_errors": 0,
+ "simulator_errors": 0,
+ "cost": {
+  "agent_usd": 0.1168,
+  "judge_usd": 0.0199,
+  "agent_per_conversation_usd": 0.0146,
+  "agent_per_resolved_usd": 0.01947
+ },
+ "latency": {
+  "turn_p50_s": 2.09,
+  "turn_p95_s": 3.76
+ },
+ "turns_per_conversation": 4.125,
+ "simulator_tokens": {
+  "total": 24582,
+  "per_conversation": 3072.75
+ }
+}

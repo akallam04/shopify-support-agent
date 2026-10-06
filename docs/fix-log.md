@@ -79,5 +79,34 @@ model comparison, and gate-parts results were not rerun or regraded.
 | 7d1ddc0 | "No, change the address instead" dropped the request; a customer asking again for a person got the same paragraph. | Only replies of four words or fewer take the instant no path; a repeated handoff request gets a short follow-up and no second handoff. | Same run: handoff-explicit-human resolved with one handoff and the follow-up text. |
 | 1647982 | Reflection added a model call per proposed change with no measurable benefit in the gate-parts runs. | Off by default, `GATE_REFLECTION=true` turns it on. | Measured from existing runs; see the README. |
 
-Still open: after a customer corrects a detail at confirmation, the model sometimes asks "should I
-go ahead?" itself before the gate asks again (seen in confirm-correct-zip in the run above).
+## Phase 6 agent fixes
+
+Made after Phase 5 and checked on fresh runs only, like Phase 5. The frozen results were not rerun
+or regraded. All three changes are in one commit.
+
+| Commit | Problem | Change |
+|---|---|---|
+| a96ba10 | The agent called an order changeable before the policy check refused it: "It hasn't shipped yet, so I can update the address", then asked for the address, then the 2-hour window refused it (heldout-address-window-rude in `20261005-005107_heldout-gate-on-k4`). The status tool showed when the order was placed but not what the time window allowed. | When the store can act, the order status carries what store policy allows right now, computed by the policy engine: whether the order can still be cancelled or its address changed and for how long, and each item's return eligibility with the reason when not. The order prompt says not to call a change possible unless that field says yes. |
+| a96ba10 | Refusals were handed to the support team instead of explained (address-unsupported-country trials 1 and 3 in the headline). The first fresh run showed why: the transfer tool's own description said to use it for "exceptions to store policy", and the router sent a UK address to handoff after the agent had stated the rule. | The router, the order prompt, and the transfer tool description say a request store policy refuses is explained, not transferred, and keep warranty claims and damaged items going to the support team even outside the return window. |
+| a96ba10 | Customers were asked to confirm twice. In 80 of 614 saved gate-on conversations, the model asked for a yes itself right before the gate asked; after a correction at the gate, it asked again before the gate did (confirm-correct-zip in `20261005-125511_phase5-fixcheck-k1`). | A correction at the confirmation step passes the pending change to the order model so it proposes the corrected change through the tool. A draft that asks for a yes while the gate will ask anyway goes back to the model once, and the gate trace records it. |
+
+Fresh checks, all on Haiku 4.5 with the gate on:
+
+- First check, on uncommitted changes that covered only the status field, the order prompt, and
+  the correction step (`20261005-203251_phase6-fixcheck-targeted-k2`,
+  `20261005-203348_phase6-fixcheck-regression-k1`): 16 of 20 resolved. The agent now stated the
+  final-sale rule and the US and Canada limit up front, but two refusals were still transferred,
+  through the tool description and the router, one warranty claim was offered a transfer that
+  never happened, and one return was filed with a guessed reason.
+- Final check, on a96ba10 (`20261005-203656_phase6-fixcheck2-k2`,
+  `20261005-203656_phase6-fixcheck2-writes-k1`): 15 of 15 resolved. No refusal was transferred,
+  both warranty claims were, every write had a yes, and no conversation had a model-written
+  confirmation left. The self-confirmation check fired once and led to the gate's confirmation.
+- 53-case suite: 53 of 53 (`evals/results/20261005-203904_phase6-fixes.json`).
+
+These are small checks of 35 conversations in all. They show the fixed paths work; they are not a
+new pass rate.
+
+Still open: a return can be filed with a reason the customer never gave, when the customer does
+not state one and says yes to a confirmation that shows it (seen once in the first check above and
+once in the headline).
