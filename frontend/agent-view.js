@@ -144,9 +144,11 @@ function gateLine(g) {
 }
 
 function argsText(args) {
-  return Object.entries(args || {})
-    .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
-    .join(", ");
+  return maskEmails(
+    Object.entries(args || {})
+      .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+      .join(", "),
+  );
 }
 
 function detailsPanel(data, steps, id) {
@@ -169,7 +171,7 @@ function detailsPanel(data, steps, id) {
     const calls = el("div", { class: "inside__row" }, el("p", { class: "inside__key", text: "Tool calls" }));
     for (const c of t.tools) {
       const label = c.kind === "policy_check" ? `policy check: ${c.name}` : `${c.name}(${argsText(c.args)})`;
-      calls.append(el("details", { class: "call" }, [el("summary", { text: label }), el("pre", { text: typeof c.result === "string" ? c.result : JSON.stringify(c.result, null, 2) })]));
+      calls.append(el("details", { class: "call" }, [el("summary", { text: label }), el("pre", { text: maskEmails(typeof c.result === "string" ? c.result : JSON.stringify(c.result, null, 2)) })]));
     }
     body.append(calls);
   }
@@ -244,18 +246,20 @@ function buildBrain(data) {
   return brain;
 }
 
+const ANSWERS = { confirmed: "you said yes", declined: "you said no", replaced: "you asked for something else" };
+
 function settleGate(brain, outcome) {
   const gate = brain && brain.querySelector('.step[data-step="gate"]');
   if (!gate) return;
   gate.classList.remove("is-wait");
-  gate.classList.add(outcome === "confirmed" ? "is-done" : "is-settled");
+  gate.classList.add("is-hold");
   const chip = brain.querySelector(".chip--wait");
   if (chip) {
-    chip.className = `chip chip--${outcome === "confirmed" ? "done" : "settled"}`;
-    chip.textContent = outcome === "confirmed" ? "Gate: you said yes" : outcome === "declined" ? "Gate: nothing changed" : "Gate: replaced by your next message";
+    chip.className = "chip chip--settled";
+    chip.textContent = `Gate: held, then ${ANSWERS[outcome]}`;
   }
   const rail = brain.querySelector(".rail");
-  rail.setAttribute("aria-label", rail.getAttribute("aria-label").replace("Gate: waiting for your yes", `Gate: ${outcome === "confirmed" ? "you said yes" : "nothing changed"}`));
+  rail.setAttribute("aria-label", rail.getAttribute("aria-label").replace("Gate: waiting for your yes", `Gate: held, then ${ANSWERS[outcome]}`));
 }
 
 const SHIELD = '<path class="shield__body" d="M12 2.8l7.5 3.1v5.6c0 4.6-3.1 8.2-7.5 9.7-4.4-1.5-7.5-5.1-7.5-9.7V5.9z" /><path class="shield__mark" d="M12 7.6v4.6M12 15.4h.01" /><path class="shield__check" d="M8.4 12.3l2.5 2.5 4.8-5.1" />';
@@ -282,13 +286,34 @@ function buildConfirmCard(pending, onAnswer) {
   return card;
 }
 
-const CARD_TITLES = { confirmed: "Confirmed", declined: "Nothing changed", replaced: "Replaced by your next message" };
+const ANSWER_TAGS = { confirmed: "You said yes", declined: "You said no", replaced: "You asked for something else" };
 
 function settleCard(card, outcome) {
   card.dataset.state = outcome;
-  card.querySelector(".confirm__title").textContent = CARD_TITLES[outcome];
-  const summary = card.querySelector(".confirm__summary");
-  const change = summary.dataset.summary;
-  const text = change.charAt(0).toUpperCase() + change.slice(1);
-  summary.textContent = outcome === "confirmed" ? `Done: ${text}` : `Proposed and not done: ${text}`;
+  card.querySelector(".confirm__title").textContent = "Proposed change";
+  card.querySelector(".sandbox-tag").textContent = ANSWER_TAGS[outcome];
+}
+
+function outcomeKind(trace) {
+  const steps = trace.gate || [];
+  if (steps.some((g) => g.step === "executed")) return "done";
+  if (steps.some((g) => g.step === "confirmation" && g.label === "decline")) return "kept";
+  return null;
+}
+
+function buildOutcome(kind, text) {
+  const titleId = `outcome-${++railCount}`;
+  return el("div", { class: `outcome outcome--${kind}`, role: "group", "aria-labelledby": titleId }, [
+    el("div", { class: "outcome__head" }, [
+      el("span", { class: "shield" }, svg(SHIELD)),
+      el("p", { class: "outcome__title", id: titleId, text: kind === "done" ? "Done" : "Nothing changed" }),
+    ]),
+    el("p", { class: "outcome__text", text }),
+  ]);
+}
+
+const EMAIL_RE = /([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+
+function maskEmails(text) {
+  return text.replace(EMAIL_RE, "$1\u2022\u2022\u2022@$2");
 }

@@ -358,7 +358,13 @@ function addAgent(data) {
     logEl.append(msg);
     openCard = card;
   } else {
-    msg = addAgentText(data.response);
+    const kind = data.trace ? outcomeKind(data.trace) : null;
+    if (kind) {
+      msg = el("div", { class: "msg msg--agent msg--card" }, buildOutcome(kind, cleanText(data.response).clean));
+      logEl.append(msg);
+    } else {
+      msg = addAgentText(data.response);
+    }
   }
   msg.append(el("p", { class: "msg__meta", text: `${(INTENT_LABELS[data.intent] || "Answer")}, ${data.latency_s.toFixed(1)}s` }));
   if (data.trace) {

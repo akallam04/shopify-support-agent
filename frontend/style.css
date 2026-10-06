@@ -247,6 +247,10 @@ button { font: inherit; color: inherit; }
   .brand--compact .brand__name { display: none; }
 }
 
+@media (max-width: 350px) {
+  .brand__name { display: none; }
+}
+
 /* hero */
 .hero {
   display: grid;
@@ -682,9 +686,11 @@ button { font: inherit; color: inherit; }
 .starter:hover { border-color: var(--glacier); }
 .starter__label { font-weight: 600; }
 
-.msg { display: flex; flex-direction: column; gap: 6px; max-width: 88%; }
+.msg { display: flex; flex-direction: column; gap: 6px; min-width: 0; max-width: 88%; }
 .msg--user { align-self: flex-end; align-items: flex-end; }
-.msg--agent { align-self: flex-start; }
+.msg--agent { align-self: stretch; align-items: flex-start; max-width: 100%; }
+.msg--agent > .bubble { max-width: 88%; }
+.msg--agent > * { min-width: 0; max-width: 100%; }
 
 .bubble {
   padding: 10px 14px;
@@ -765,30 +771,34 @@ button { font: inherit; color: inherit; }
 .confirm__actions .btn { flex: 1 1 auto; }
 .confirm__hint { padding: 10px 14px 12px; color: var(--ink); font-size: 13px; font-weight: 600; }
 
-.confirm[data-state="confirmed"] { border-color: #9fd3bf; background: var(--pine-soft); box-shadow: none; }
-.confirm[data-state="confirmed"] .confirm__title { color: var(--pine); }
-.confirm[data-state="confirmed"] .shield__body { fill: var(--pine); stroke: var(--pine); }
-.confirm[data-state="confirmed"] .shield__mark { opacity: 0; }
-.confirm[data-state="confirmed"] .shield__check { stroke-dashoffset: 0; }
-.confirm[data-state="declined"],
-.confirm[data-state="replaced"] { border-color: var(--line); background: var(--mist); box-shadow: none; }
-.confirm[data-state="declined"] .confirm__title,
-.confirm[data-state="replaced"] .confirm__title { color: var(--granite); }
-.confirm[data-state="declined"] .shield__body,
-.confirm[data-state="replaced"] .shield__body { fill: var(--paper); stroke: var(--line-strong); }
-.confirm[data-state="declined"] .shield__mark,
-.confirm[data-state="replaced"] .shield__mark { stroke: var(--line-strong); }
+.confirm:not([data-state="open"]) { border-color: var(--line); background: var(--paper); box-shadow: none; }
+.confirm:not([data-state="open"]) .confirm__title { color: var(--granite); }
+.confirm:not([data-state="open"]) .shield__body { fill: var(--paper); stroke: var(--line-strong); }
+.confirm:not([data-state="open"]) .shield__mark { stroke: var(--line-strong); }
+.confirm:not([data-state="open"]) .sandbox-tag { border-color: var(--line); background: var(--mist); color: var(--granite); }
+.confirm[data-state="confirmed"] .sandbox-tag { border-color: #9fd3bf; background: var(--pine-soft); color: var(--pine); }
 .confirm:not([data-state="open"]) .confirm__actions,
-.confirm:not([data-state="open"]) .confirm__hint,
-.confirm:not([data-state="open"]) .sandbox-tag { display: none; }
-.confirm:not([data-state="open"]) .confirm__checks { margin-bottom: 12px; }
+.confirm:not([data-state="open"]) .confirm__hint { display: none; }
+.confirm:not([data-state="open"]) .confirm__checks { margin-bottom: 12px; background: var(--snow); }
 .confirm:not([data-state="open"]):not(:has(.confirm__checks)) .confirm__summary { padding-bottom: 12px; }
+
+.outcome { width: 100%; border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--mist); }
+.outcome__head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 0; }
+.outcome__title { color: var(--granite); font-size: 15px; font-weight: 700; }
+.outcome__text { padding: 6px 14px 12px; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.outcome .shield__mark { opacity: 0; }
+.outcome--done { border-color: #9fd3bf; background: var(--pine-soft); }
+.outcome--done .outcome__title { color: var(--pine); }
+.outcome--done .shield__body { fill: var(--pine); stroke: var(--pine); }
+.outcome--done .shield__check { stroke-dashoffset: 0; }
+.outcome--kept .shield__body { fill: var(--paper); stroke: var(--line-strong); }
 
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 @keyframes card-up { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+@keyframes check-in { from { stroke-dashoffset: 16; } }
 
 /* the agent's steps under each reply */
-.brain { width: 100%; margin-top: 2px; }
+.brain { width: 100%; min-width: 0; margin-top: 2px; }
 
 .rail {
   display: grid;
@@ -807,7 +817,7 @@ button { font: inherit; color: inherit; }
   .rail:hover { border-color: var(--glacier); box-shadow: var(--shadow-lift); }
 }
 
-.rail__track { display: flex; align-items: flex-start; }
+.rail__track { display: flex; align-items: flex-start; min-width: 0; }
 
 .step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; min-width: 34px; }
 .step__dot { position: relative; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--glacier); background: var(--glacier); }
@@ -827,7 +837,7 @@ button { font: inherit; color: inherit; }
 .rail__link { flex: 1; min-width: 4px; height: 2px; margin-top: 6px; background: var(--line); transform-origin: left center; }
 .rail__link.is-on { background: var(--glacier); }
 
-.rail__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rail__chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 
 .chip {
   padding: 2px 8px;
@@ -838,6 +848,8 @@ button { font: inherit; color: inherit; }
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.5;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .chip--wait,
@@ -870,6 +882,9 @@ button { font: inherit; color: inherit; }
 }
 
 .inside[hidden] { display: none; }
+.inside { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.inside .call { min-width: 0; }
+.inside .call > summary { display: block; overflow-wrap: anywhere; word-break: break-word; }
 .inside .table-wrap { overflow-x: auto; }
 .steps-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .steps-table th, .steps-table td { padding: 5px 6px; text-align: left; vertical-align: top; }
@@ -917,6 +932,7 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: no-preference) {
   .msg { animation: rise 0.32s var(--ease-out) both; }
   .msg--card .confirm[data-state="open"] { animation: card-up 0.5s var(--ease-out) both; }
+  .outcome--done .shield__check { animation: check-in 0.5s var(--ease-out) 0.25s both; }
   .chat.has-entrance { animation: chat-in 0.55s var(--ease-out) both; }
   .welcome .starter { animation: rise 0.45s var(--ease-out) both; animation-delay: calc(var(--i) * 60ms + 160ms); }
 
