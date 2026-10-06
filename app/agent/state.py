@@ -44,5 +44,6 @@ class AgentState(TypedDict, total=False):
     executed_actions: list[dict[str, Any]]
     context_digest: str
     gate_feedback: str | None
+    corrected_action: str | None
     gate_retries: int
     timings: list[dict[str, Any]]

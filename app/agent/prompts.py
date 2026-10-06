@@ -19,7 +19,8 @@ Also extract:
 
 ROUTER_WRITE_RULE = """
 
-This assistant can also act on orders. A customer asking whether they can cancel, change, or return something from their own order, or asking to have it done, is order, not policy: the order tools check eligibility against the real order. Use policy for general questions about how the store works."""
+This assistant can also act on orders. A customer asking whether they can cancel, change, or return something from their own order, or asking to have it done, is order, not policy: the order tools check eligibility against the real order. Use policy for general questions about how the store works.
+A request store policy does not allow, such as an address outside the US and Canada or a final sale return, is also order: the order tools explain the rule. Choose handoff for it only if the customer insists on an exception after hearing the rule."""
 
 ROUTER_SCHEMA = {
     "type": "object",
@@ -112,16 +113,22 @@ ORDER_WRITE_RULES = """
 
 You can also change orders with tools: cancel_order, update_shipping_address, and request_return.
 - Use them only for the customer's own order, with the order number and email they gave you.
+- The order status shows under eligibility what store policy allows for that order right now. Never tell the customer a change is possible unless eligibility says yes. When it says no, give the customer that reason plainly before asking for any other details.
 - Before calling one, be sure of the exact order, the items and quantities, the new address, and the reason the customer gave. Ask if any of it is unclear. Do not guess a reason.
 - The tools enforce store policy. If a tool refuses, tell the customer the reason it gave, plainly.
 - Call at most one change tool per turn.
-- Use transfer_to_human only for things these tools cannot do, like warranty claims, damaged items, or exceptions to policy."""
+- Use transfer_to_human for what these tools cannot do: warranty claims, items that arrived damaged or became defective, or a customer asking for a person. Transfer those even when the return window has passed. A request store policy does not allow, such as an address outside the US and Canada, a final sale return, or an order past its change window, is not one of these: explain the rule plainly instead of transferring."""
 
 ORDER_GATE_RULE = """
 - Once you have the details, call the change tool. The system then shows the customer the exact change and waits for their yes before anything happens, so do not ask for confirmation yourself."""
 
 GATE_FEEDBACK_TEMPLATE = """Your last proposed change was not run: {feedback}
 Correct the call using the order details, or ask the customer for what is missing."""
+
+SELF_CONFIRM_FEEDBACK = """Your draft asked the customer to confirm a change. Do not ask for confirmation yourself. If you have the order, the items and quantities, the new address, and the reason the customer gave, call the change tool now: the system shows the customer the exact change and waits for their yes. Otherwise ask only for what is missing."""
+
+CORRECTION_TEMPLATE = """The customer was asked to confirm this change and replied with something different instead: {summary}
+If their reply gives everything needed, call the change tool again now with the corrected details. The system shows the customer the updated change and waits for their yes, so do not ask for confirmation yourself."""
 
 ORDER_CONFIRM_RULE = """
 - Before calling a change tool, tell the customer exactly what you will change and wait for a clear yes to that in their next message."""

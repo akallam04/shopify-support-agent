@@ -187,7 +187,7 @@ def make_confirm_node(client: AsyncAnthropic, model: str):
         elif label == "unclear":
             update["draft"] = REASK_TEMPLATE.format(summary=pending["summary"])
         elif label == "change":
-            update.update({"pending_action": None, "intent": ""})
+            update.update({"pending_action": None, "intent": "", "corrected_action": pending["summary"]})
         return update
 
     return confirm

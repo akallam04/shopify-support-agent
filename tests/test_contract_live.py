@@ -74,7 +74,11 @@ def _owner_email(name: str) -> str:
 
 
 def _without_returns(view: dict) -> dict:
-    return {k: v for k, v in view.items() if k != "returns"}
+    return {k: v for k, v in view.items() if k not in ("returns", "eligibility")}
+
+
+def _without_eligibility(view: dict) -> dict:
+    return {k: v for k, v in view.items() if k != "eligibility"}
 
 
 @pytest.mark.parametrize("name", sorted(SEED.orders))
@@ -88,7 +92,8 @@ def test_order_status_matches(live: ShopifyAdminBackend, sim: SimStoreBackend, n
 @pytest.mark.parametrize("name", sorted(SEED.orders))
 def test_order_status_with_returns_matches(live_with_returns: ShopifyAdminBackend, sim: SimStoreBackend, name: str) -> None:
     email = _owner_email(name)
-    assert tools.get_order_status(live_with_returns, name, email) == tools.get_order_status(sim, name, email)
+    live_view, sim_view = tools.get_order_status(live_with_returns, name, email), tools.get_order_status(sim, name, email)
+    assert _without_eligibility(live_view) == _without_eligibility(sim_view)
 
 
 def test_missing_order_matches(live: ShopifyAdminBackend, sim: SimStoreBackend) -> None:

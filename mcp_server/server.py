@@ -179,8 +179,9 @@ def request_return(order_number: str, email: str, items: list[ReturnItem], reaso
 def transfer_to_human(summary: str, order_number: str = "") -> dict[str, Any]:
     """Hand the conversation to the human support team.
 
-    Use only when the request cannot be handled with the other tools, such as warranty claims,
-    damaged items, or exceptions to store policy.
+    Use only for what the other tools cannot do: warranty claims, damaged or defective items, or a
+    customer asking for a person. Do not use it for a request store policy refuses, such as a final
+    sale return or an address the store does not ship to; tell the customer the rule instead.
 
     Args:
         summary: A short summary of what the customer needs, for the support team.

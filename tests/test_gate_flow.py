@@ -154,6 +154,50 @@ def test_a_change_of_mind_drops_the_pending_action(db: SimDB) -> None:
     assert db.orders["#1002"].cancelled_at is None
 
 
+def test_a_correction_at_confirmation_sends_the_order_model_back_to_the_tool(db: SimDB) -> None:
+    corrected = {**CANCEL_ARGS, "reason": "ordered_by_mistake"}
+    script = {
+        "route": [ORDER_ROUTE, ORDER_ROUTE],
+        "order_tools": [("cancel_order", CANCEL_ARGS), ("cancel_order", corrected)],
+        "confirm": ["change"],
+    }
+    graph, client, _, history, state = first_turn(db, script)
+    after = turn(graph, history + [{"role": "user", "content": "Actually the reason is that I ordered it by mistake"}], carry(state))
+    first, second = [" ".join(b["text"] for b in kw["system"]) for kind, kw in client.calls if kind == "order_tools"]
+    assert "replied with something different" not in first
+    assert "replied with something different instead: cancel order #1002" in second
+    assert after["pending_action"]["args"]["reason"] == "ordered_by_mistake"
+    assert after["response"].startswith("Just to confirm, I will cancel order #1002")
+    assert db.orders["#1002"].cancelled_at is None
+
+
+def test_a_draft_that_asks_for_a_yes_is_sent_back_to_call_the_tool(db: SimDB) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": ["Cancel order #1002, is that correct?", ("cancel_order", CANCEL_ARGS)]}
+    _, client, _, _, state = first_turn(db, script)
+    first, second = [" ".join(b["text"] for b in kw["system"]) for kind, kw in client.calls if kind == "order_tools"]
+    assert "Do not ask for confirmation yourself" not in first
+    assert "Do not ask for confirmation yourself" in second
+    assert {"step": "self_confirm_nudge"} in state["gate_trace"]
+    assert state["response"].startswith("Just to confirm, I will cancel order #1002")
+    assert db.orders["#1002"].cancelled_at is None
+
+
+@pytest.mark.parametrize(
+    ("draft", "flags", "nudged"),
+    [
+        ("Which order would you like to cancel?", {}, False),
+        ("Cancel order #1002, is that correct?", {"mutation_gate": False}, False),
+        ("Cancel order #1002, is that correct?", {"gate_confirmation": False}, False),
+    ],
+)
+def test_the_nudge_fires_only_when_the_gate_will_ask(db: SimDB, draft: str, flags: dict, nudged: bool) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": [draft, "(second draft)"]}
+    _, client, _, _, state = first_turn(db, script, **flags)
+    assert client.count("order_tools") == (2 if nudged else 1)
+    assert ({"step": "self_confirm_nudge"} in state.get("gate_trace", [])) is nudged
+    assert state["response"] == draft
+
+
 def test_policy_refuses_before_reflection_or_confirmation(db: SimDB) -> None:
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}
     graph, client, _, _, state = first_turn(db, script, after_placed=timedelta(days=2))

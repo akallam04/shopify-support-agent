@@ -63,7 +63,7 @@ def has_shipped(order: Order) -> bool:
     return order.fulfillment_status != "UNFULFILLED" or bool(order.fulfillments)
 
 
-def _order_change(order: Order, now: datetime, verb: str) -> Decision:
+def order_change(order: Order, now: datetime, verb: str) -> Decision:
     if order.cancelled_at:
         return refuse("already_cancelled", f"Order {order.name} is already cancelled.")
     if has_shipped(order):
@@ -83,11 +83,11 @@ def _order_change(order: Order, now: datetime, verb: str) -> Decision:
 def can_cancel(order: Order, reason: str, now: datetime) -> Decision:
     if reason not in CANCEL_REASONS:
         return refuse("invalid_reason", f"The cancellation reason must be one of: {', '.join(CANCEL_REASONS)}.")
-    return _order_change(order, now, "cancelled")
+    return order_change(order, now, "cancelled")
 
 
 def can_change_address(order: Order, address: Address, now: datetime) -> Decision:
-    decision = _order_change(order, now, "changed")
+    decision = order_change(order, now, "changed")
     if not decision.allowed:
         return decision
     if (address.country_code or "").upper() not in SHIP_TO_COUNTRIES:

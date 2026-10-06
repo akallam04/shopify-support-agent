@@ -18,6 +18,7 @@ from mcp_server.tools import (
 class RecordingBackend:
     name = "recording"
     reads_returns = True
+    supports_writes = False
 
     def __init__(self, inner: SimStoreBackend) -> None:
         self.inner = inner
@@ -264,6 +265,23 @@ def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_the
         reads_returns = False
 
     assert "returns" not in get_order_status(ReadOnly(SimStoreBackend(seed)), "#1017", "jordan.lee@example.com")
+
+
+@pytest.mark.parametrize(
+    ("order", "email", "changes", "returns"),
+    [
+        ("#1023", "maya.thompson@example.com", "yes, for 60 more minutes; a new address must be in the US or Canada", "not been delivered yet"),
+        ("#1011", "priya.patel@example.com", "no: Order #1011 was placed more than 2 hours ago", "not been delivered yet"),
+        ("#1018", "sofia.ramirez@example.com", "no: Order #1018 has already shipped", "FINAL SALE"),
+        ("#1016", "maya.thompson@example.com", "no: Order #1016 has already shipped", "outside our 30-day return window"),
+        ("#1017", "jordan.lee@example.com", "no: Order #1017 has already shipped", "nothing left to return"),
+        ("#1022", "jordan.lee@example.com", "no: Order #1022 has already shipped", "yes, 1 until October 29, 2026"),
+    ],
+)
+def test_order_status_shows_what_policy_allows_when_the_store_can_act(order: str, email: str, changes: str, returns: str) -> None:
+    view = get_order_status(SimStoreBackend(load_db("data/sim/seed.json")), order, email)["eligibility"]
+    assert view["cancel_or_change_address"].startswith(changes)
+    assert view["returns"] and all(returns in r["can_return"] for r in view["returns"])
 
 
 @pytest.mark.parametrize(

@@ -121,6 +121,32 @@ def _order_status_view(order: Order, include_returns: bool = False) -> dict[str,
     return view
 
 
+def _minutes(n: int) -> str:
+    return f"{n} more minute" + ("" if n == 1 else "s")
+
+
+def eligibility_view(backend: StoreBackend, order: Order) -> dict[str, Any]:
+    now = backend.clock.now()
+    change = policy.order_change(order, now, "cancelled or changed")
+    if change.allowed:
+        left = int((policy.placed_at(order) + policy.ORDER_CHANGE_WINDOW - now).total_seconds() // 60)
+        changes = f"yes, for {_minutes(max(left, 1))}; a new address must be in the US or Canada"
+    else:
+        changes = f"no: {change.reason}"
+    products = backend.products_by_id({li.product_id for li in order.line_items if li.product_id})
+    returns = []
+    for line in order.line_items:
+        left = line.quantity - policy.already_requested(order, line)
+        decision = policy.can_return(order, [(line, max(left, 1))], products, "other", now)
+        delivered = policy.delivered_at(order, line)
+        if decision.allowed and delivered is not None:
+            status = f"yes, {left} until {delivered + policy.RETURN_WINDOW:%B %-d, %Y}"
+        else:
+            status = f"no: {decision.reason}"
+        returns.append({"title": line.title, "variant": line.variant_title, "can_return": status})
+    return {"cancel_or_change_address": changes, "returns": returns}
+
+
 def _product_view(product: Product) -> dict[str, Any]:
     return {
         "title": product.title,
@@ -143,7 +169,10 @@ def get_order_status(backend: StoreBackend, order_number: str, email: str) -> di
     found = backend.find_order(name)
     if found is None or not owns_order(found, email):
         return dict(ORDER_NOT_FOUND)
-    return _order_status_view(found.order, backend.reads_returns)
+    view = _order_status_view(found.order, backend.reads_returns)
+    if backend.supports_writes:
+        view["eligibility"] = eligibility_view(backend, found.order)
+    return view
 
 
 def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
