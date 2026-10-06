@@ -88,8 +88,7 @@ export LAMBDA_ROLE_NAME=aurora-support-lambda
      -d '{"messages":[{"role":"user","content":"do you have waterproof jackets?"}]}'
    ```
 
-To ship a new build later: repeat step 2, then deploy by the commit tag, never by a moving tag:
-`aws lambda update-function-code --function-name aurora-support --image-uri $ECR:$SHA --region $AWS_REGION`.
+To ship a new build later, commit, then run `sh deploy/deploy.sh` from the repo root. It builds and pushes the image tagged with the commit, points the function at that tag (never a moving tag), waits for the update, and then calls `/health` until the new image answers, so the slow first cold start on a new image happens during the deploy instead of on a visitor's first message. It retries because API Gateway gives up after 30 seconds while the function keeps starting.
 
 ### Sandbox mode settings
 

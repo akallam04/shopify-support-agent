@@ -58,3 +58,30 @@ shown:
 
 Checked in a desktop browser with phone emulation; not yet checked with a screen reader on a real
 phone.
+
+## Second round
+
+The first round made the site correct; the second makes the agent's work visible. Each item
+below shows only what the reply's trace or a saved run says happened.
+
+- **Step rail.** Under every reply, six steps (Guard, Route, Look up, Gate, Verify, Reply). The
+  steps the turn took light up in order; skipped steps stay dim with a dashed outline. A blocked
+  injection flashes the Guard step, a verify rewrite shows a loop, and the Gate step pulses
+  while it waits for the customer. Tool calls appear as chips. The rail is a button: it opens a
+  table of each step's time and model cost, the tool calls with their results, and the gate's
+  decisions. Its accessible name reads the whole path, for example "Gate: waiting for your yes".
+- **Confirmation card.** It slides up with a shield, the exact change, and the policy checks the
+  change passed, from the store code. "Nothing changes until you say yes." A yes turns the
+  shield into a check and settles the card on "Confirmed"; a no settles it on "Nothing changed".
+  A sandbox badge sits in the chat header and on the card.
+- **First impression.** On desktop the chat opens after the warm-up call answers, with a local
+  greeting and no API call. On phones a small hint bubble appears instead; tapping it starts the
+  cancel scenario. Either happens once per visitor, and neither moves keyboard focus.
+- **How it works.** The gate off and gate on conversations replay side by side when they scroll
+  into view: gate off runs the cancellation without a yes while gate on pauses on its
+  confirmation. Headline numbers count up to their real values and the charts draw in.
+- **Type and motion.** Body text in Geist, code in Geist Mono, headings in Plus Jakarta Sans, all
+  self-hosted (about 80KB). Buttons and cards press in slightly when tapped, and hover effects
+  apply only on devices that hover. Every animation uses transform or opacity and is off when the
+  visitor prefers reduced motion; the replay then shows both conversations in full.
+

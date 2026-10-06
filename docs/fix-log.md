@@ -107,6 +107,19 @@ Fresh checks, all on Haiku 4.5 with the gate on:
 These are small checks of 35 conversations in all. They show the fixed paths work; they are not a
 new pass rate.
 
-Still open: a return can be filed with a reason the customer never gave, when the customer does
-not state one and says yes to a confirmation that shows it (seen once in the first check above and
-once in the headline).
+That round left one issue open, fixed below: a return could be filed with a reason the customer never gave.
+
+### Guessed reasons
+
+| Commit | Problem | Change |
+|---|---|---|
+| ada3edb | A return could be filed with a reason the customer never gave, and the customer then said yes to a confirmation that showed it (which-order-second-jacket trial 1 in the headline; return-partial-quantity in `20261005-203348_phase6-fixcheck-regression-k1`). | `cancel_order` and `request_return` take `reason_quote`, the customer's own words for the reason. The gate checks that those words appear in what the customer wrote. If they do not, the model gets one corrected attempt, then the customer is asked why. The gate trace records the check. |
+
+Fresh check on ada3edb, every task with a cancellation or a return
+(`20261006-004710_phase6b-reason-k2`, `20261006-004710_phase6b-reason-writes-k1`): 14 of 14
+resolved, including 2 of 2 on each of the two tasks that had guessed a reason. Every reason sent
+to the store was quoted from the customer; the model asked when the customer had not said why,
+so the check never had to stop a guess in these runs. 53-case suite: 53 of 53
+(`evals/results/20261006-004921_phase6b-reason.json`).
+
+No agent issue from the Phase 4 and Phase 6 lists is open.

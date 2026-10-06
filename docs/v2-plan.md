@@ -426,6 +426,14 @@ The same outcome must always produce the same hash, whatever order the agent did
       image.
 - [x] Vercel Web Analytics snippet (free on Hobby, no cookies); collection starts once it is
       enabled in the Vercel project.
+- [x] Second design round: a step rail under every reply (Guard, Route, Look up, Gate, Verify,
+      Reply) that lights only the steps the turn took, with tool calls as chips and the full
+      details on tap; a confirmation card with a shield, the exact change, and the policy checks
+      it passed; a warm-up-gated entrance on desktop and a hint bubble on phones; the gate off
+      and gate on conversations replayed side by side; numbers that count up and charts that
+      draw in on scroll; self-hosted fonts. Motion is off under reduced motion.
+- [x] The last open agent issue: a missing reason is asked for instead of guessed.
+- [x] `deploy/deploy.sh` builds, pushes by commit tag, updates the function, and warms `/health`.
 
 ### Phase 7: documentation
 
