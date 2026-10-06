@@ -437,11 +437,11 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 7: documentation
 
-- [ ] README rewrite led by what the agent does and the headline simulation numbers, with
-      the updated architecture diagram, the eval method and its limitations, the before and
-      after log, and a cost and latency table.
-- [ ] A short write-up in `docs/` covering what was built, what broke, and what the numbers
-      say.
+- [x] README rewrite led by what the agent does and the headline simulation numbers, with
+      the updated architecture diagram, the eval method and its limitations, the honesty
+      notes, cost and latency, how to run it with budget caps, and what is next.
+- [x] A short write-up in `docs/write-up.md` covering what was built, what broke, and what
+      the numbers say.
 
 ## Working principles
 

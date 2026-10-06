@@ -2,67 +2,80 @@
 
 [![CI](https://github.com/akallam04/shopify-support-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/akallam04/shopify-support-agent/actions/workflows/ci.yml) [![Live demo check](https://github.com/akallam04/shopify-support-agent/actions/workflows/demo-check.yml/badge.svg)](https://github.com/akallam04/shopify-support-agent/actions/workflows/demo-check.yml)
 
-An AI customer support agent for a Shopify store. It answers product questions with RAG over the live store catalog, looks up order status through a self-built MCP server wrapping the Shopify Admin GraphQL API, answers shipping and returns questions from a policy document set, and refuses or escalates anything out of scope. The agent is an explicit LangGraph state machine served by FastAPI, and every behavior is measured by an eval harness with 53 labeled test cases.
+**An AI support agent that asks before it acts.** It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Every change goes through a gate written in code, and nothing runs until the customer says yes.
 
-**Live demo: https://shopify-support-agent.vercel.app** (a demo storefront with the agent embedded as a real support widget: React-free frontend on Vercel, FastAPI backend on AWS Lambda). Each visitor gets a private sandbox copy of the store, so you can ask the agent to cancel an order, change an address, or start a return and confirm or decline the change from a confirmation card; nothing you change reaches the real store or anyone else's chat. Under every reply, a rail lights up the steps the agent took on that turn (guard, route, look up, gate, verify, reply) with its tool calls as chips, and tapping it shows the time and model cost of each step. The page calls the backend's free health check when it loads, so a cold start begins before the visitor types. **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** explains the design and shows the simulation results below, with replays of saved conversations.
-![Aurora Outfitters storefront with the assistant asking the customer to confirm a cancellation](docs/demo.png)
+**[Try the live demo](https://shopify-support-agent.vercel.app)** | **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** | [Technical write-up](docs/write-up.md)
+
+<img src="docs/demo.gif" width="300" alt="On a phone, the customer asks to cancel an order. The assistant shows the exact change and the policy checks it passed, the step rail lights up and holds at the gate, the customer says yes, and a new message confirms the order is cancelled." />
+
+**The result, in plain words.** Tested against simulated customers on 50 tasks, 4 tries each, the gate did not cost resolution: 190 of 200 conversations resolved with it and 185 without, a difference of +0.025 with a 95% interval of -0.045 to +0.105. It did remove unsafe changes: conversations with a change the customer never agreed to, or one they did not want, went from 42 to 0, and safe pass^1 (resolved, and every change had a clear yes) rose from 0.755 to 0.950, a difference of +0.195 with an interval of +0.090 to +0.310.
+
+**Stack:** Python, LangGraph, FastAPI, Claude Haiku 4.5, a self-built MCP server over the Shopify Admin GraphQL API, Chroma, AWS Lambda, and a vanilla JavaScript site on Vercel. Tested with a tau-bench-style simulator (Qwen 3.8 Flash as the customer, Claude Sonnet 5.5 as the judge).
+
+## What it does
+
+- **Answers from the store's own data.** Product and policy questions are answered from retrieval over the catalog and policy pages, with a citation for every claim. Order questions are answered from store tools, and only after the customer gives the order number and the email on the order.
+- **Changes orders safely.** Cancel, change the shipping address, or request a return. Code checks the store policy (the 2-hour change window, the 30-day return window, final sale, shipping state, US and Canada addresses) and the identity match. The customer then sees the exact change and the checks it passed. The change runs once, after a clear yes, with an idempotency key.
+- **Explains refusals and hands off when it should.** A request policy refuses is explained, not passed on. Warranty claims, damaged items, and customers who ask for a person get a recorded handoff.
+- **Shows its work.** On the live site, a rail under every reply lights up the steps that turn took (guard, route, look up, gate, verify, reply) with its tool calls. Tapping it shows the time and model cost of each step.
+- **Keeps visitors safe from each other.** The public demo gives every visitor a private sandbox copy of the store. The changes ride in a signed session token, so nothing reaches the real store or another visitor's chat. Emails are masked in the reply trace and the logs.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    U[user message] --> SAN[sanitize: deterministic input guard]
-    SAN --> ROUTE[route: intent + safety classification]
-    ROUTE -->|product| RETP[retrieve catalog]
-    ROUTE -->|policy| RETG[retrieve policies]
-    ROUTE -->|order| TOOLS[order tools over MCP]
-    ROUTE -->|smalltalk / refuse / handoff| RESP[respond]
-    RETP --> RESP
-    RETG --> RESP
-    TOOLS --> RESP
-    RESP --> VER[verify: grounding checks]
-    VER -->|pass| OUT[reply with citations]
-    VER -->|fail once| RESP
-    VER -->|fail twice| SAFE[safe fallback reply]
+    U[customer message] --> SAN[sanitize: fixed-pattern input guard]
+    SAN -->|injection pattern| RESP[respond]
+    SAN --> CTX[context: digest of older turns]
+    CTX -->|a change is waiting for a yes| CONF[confirm: read the reply]
+    CTX --> ROUTE[route: intent, order number, email]
+    ROUTE -->|product or policy| RET[retrieve: catalog or policies]
+    ROUTE -->|order| TOOLS[order tools: status, order list, stock]
+    ROUTE -->|handoff| HAND[handoff record]
+    ROUTE -->|other| RESP
+    RET --> RESP
+    TOOLS -->|proposes a change| GATE[gate: reason check, policy engine, confirmation]
+    GATE -->|correctable mistake, once| TOOLS
+    GATE -->|held for a yes, or refused| VER
+    CONF -->|yes| EXEC[execute once with an idempotency key]
+    CONF -->|something else| ROUTE
+    CONF -->|no or unclear| VER
+    TOOLS -->|answer| VER[verify: grounding checks]
+    EXEC --> VER
+    HAND --> VER
+    RESP --> VER
+    VER -->|fails once| RESP
+    VER --> OUT[reply]
 ```
 
 Key decisions:
 
-- **LangGraph state machine, not a multi-agent framework.** Support work needs auditable routing and hard guardrails, so control flow lives in typed nodes and conditional edges instead of inside one large prompt.
-- **Self-built MCP server for Shopify tools.** The tool contract is standardized, so any MCP host can consume the same server, and the Admin API token only ever exists in the server process. Tools are read-only by design: `get_order_status`, `list_customer_orders`, `check_inventory`.
-- **Grounding is enforced, not requested.** The `verify` node programmatically rejects any draft that states order facts absent from tool results or cites documents that were not retrieved. Failed lookups produce an honest "could not find it" instead of a guess.
-- **RAG on Chroma** with local embeddings behind a thin interface, one collection for products (one document per product) and one for policies (chunked by heading), with metadata ids feeding the citations.
-- **Model selection is eval-driven**: the cheapest Anthropic model that passes the eval suite wins; the numbers backing that choice are in the eval results below.
+- **A state machine, not one big prompt.** Control flow lives in typed LangGraph nodes and conditional edges, so routing is auditable and guardrails are code. The whole graph is on one page in `app/agent/graph.py`.
+- **The gate is code, not a request.** A proposed change goes through the policy engine in `mcp_server/policy.py`, then a fixed confirmation template, then waits in graph state. Only the next turn's clear yes runs it. A return needs the reason in the customer's own words; a cancellation reason is optional and never guessed. The headline compares this against asking for confirmation in the prompt.
+- **One tool contract, two backends.** The same tools run against the live Shopify Admin GraphQL API or a simulated store built from a snapshot of it, and contract tests check that both return identical results. The simulated store has a frozen clock, so time windows never go stale.
+- **Grounding is enforced.** The verify node rejects a reply that states an order number or tracking number that no tool returned, or that cites a document that was not retrieved. A failing reply gets one rewrite, then a safe fallback.
+- **Stateless serving with a signed session.** Lambda keeps nothing between requests. The pending change and the sandbox's changes travel in an HMAC-signed token the browser holds, and a pending change is re-checked against the rebuilt store before it can run.
+- **Every response names its release.** A manifest of the git commit, prompt and knowledge hashes, models, and gate settings is stamped on every reply, log line, and eval run. Logs are one JSON line per request with per-node timing, tokens, and cost.
 
-## Eval results
+## How it is tested
 
-53 labeled cases across six categories (order lookups, product questions, policy questions, out-of-scope traps, prompt injection, human handoff), run against the live agent, live vector index, and live Shopify store. Deterministic graders check intent, retrieval hits, tool success, and refusal correctness; answer quality is graded by a stronger judge model that receives the tool outputs as ground truth. Latency is wall-clock per conversation; cost is computed from actual token usage at sticker prices.
+Two suites, run on every change that matters.
 
-| run | pass | intent | retrieval | tools | refusals | mean / p95 latency | cost per 100 conv |
-|---|---|---|---|---|---|---|---|
-| baseline (Haiku 4.5) | 96% (51/53) | 100% | 100% | 100% | 100% | 2.60s / 5.12s | $0.17 |
-| after iteration (Haiku 4.5) | **100% (53/53)** | 100% | 100% | 100% | 100% | 2.18s / 3.84s | **$0.18** |
-| comparison (Sonnet 5 answers) | 100% (53/53) | 100% | 100% | 100% | 100% | 2.70s / 5.62s | $0.31 |
+**A 53-case single-turn suite** covers order lookups, product and policy questions, out-of-scope traps, prompt injection, and handoff requests. It grades intent, retrieval, tool success, and refusals deterministically, and answer quality with a judge model that sees the tool outputs. It runs read-only against the live store and must stay at 53 of 53 (it is at 53 of 53, `evals/results/20261006-120702_phase6c-cancel-reason.json`).
 
-The baseline ran under the initial rubrics; two of its "failures" were bugs in my own eval rubrics, corrected during iteration (noted below), so the 96 to 100 jump is a mix of agent fixes and harness fixes, not agent fixes alone. What changed, in order of interest:
+**A tau-bench-style simulation** (`evals/sim/`) measures the agent over whole conversations:
 
-- **A control-flow fix, not a prompt fix.** The agent sometimes deflected "where is my order?" to email support instead of asking for the order number and email. Prompt edits did not reliably fix it, so the graph now gates the tool path on the router's extracted email and routes to a dedicated ask-for-info response when it is missing. The state machine enforces what the prompt could only request.
-- **A routing fix.** The router miscategorized "can I get the price difference back?" as a human-handoff request rather than a price-adjustment policy question. The eval caught it because intent accuracy is scored separately from answer quality; the router prompt now draws the policy-versus-handoff line explicitly.
-- **A data fix.** Gift card denominations lived only in the catalog, but gift card questions correctly route to policy; the FAQ now carries them. Gift cards were also excluded from the catalog index entirely (Shopify's `isGiftCard` flag), since the demo fixture reports their variants as unsellable.
-- **A prompt fix.** Pending-payment orders are now always reported with the payment status, the actionable part for the customer.
-- **Two eval bugs.** The judge originally could not see the agent's tool outputs, so it occasionally distrusted correct order summaries as possibly fabricated; and one rubric accidentally demanded an exhaustive feature list instead of accuracy.
+- **Tasks.** 50 tasks in the tau-bench format: a customer scenario (persona, reason for contacting, what the customer knows, instructions) and evaluation criteria (reference actions, facts the agent must state, judged assertions, forbidden writes). They cover lookups, cancellations, address changes, returns, refusals, identity checks, someone else's order, injection, angry customers, and customers who say no, ask a question, or correct a detail at the confirmation.
+- **Simulated customers.** Qwen 3.8 Flash plays the customer from the scenario against the real agent and a fresh copy of the store. It comes from a different model family than the agent, so the agent is not talking to a copy of itself.
+- **Grading.** Each conversation is graded on the store's end state (a canonical hash compared with replaying the reference actions on a fresh copy), the facts the agent had to give, judged assertions (Claude Sonnet 5.5, with tool outputs as ground truth), and forbidden writes. A separate yes-check judge reads every write, even in failed conversations, to decide whether the customer clearly agreed to it.
+- **pass^k.** The chance that all k tries of a task succeed, averaged over tasks. Differences come with 95% paired bootstrap intervals over tasks.
+- **Task validation.** Every task's reference actions are replayed through the policy engine before use, and failures were read for task bugs before any agent fix.
+- **A held-out set.** Ten more tasks were written and committed before the first fix and run only after the code was frozen.
+- **A grader audit.** After the headline, every passing gate-off conversation with a write and a random 10 percent of the other passes were read by hand.
 
-**Model decision:** both models pass at 100%, so the cheaper one wins. Haiku 4.5 serves answers at 1.78x lower cost and lower latency (3.84s versus 5.62s at p95) than Sonnet 5 on this workload, with no accuracy difference. Costs are at October 2026 prices: Sonnet 5's price fell by a third on both input and output after these July runs, so its column was recomputed from the saved per-case costs with `scripts/reprice_model_comparison.py`, which separates the Haiku router's share (at July prices the gap was 2.45x). Haiku's price did not change. The router and answer models are one config value each, and re-running the comparison is one command: `ANSWER_MODEL=claude-sonnet-5 python -m evals.run_evals`.
+## Results
 
-Full per-case records for every run live in `evals/results/`.
-
-## Simulation results (v2)
-
-v2 lets the agent change orders: cancel, change the shipping address, request a return, and hand off. It is measured the way [tau-bench](https://github.com/sierra-research/tau2-bench) measures agents: a simulated customer (Qwen 3.8 Flash) plays a scripted scenario against the real agent (Claude Haiku 4.5) and a simulated copy of the store, and each conversation is graded on the store's end state, the facts the agent had to tell the customer, judged assertions (Claude Sonnet 5.5 as judge, with the tool outputs as ground truth), and whether every write had a clear yes. pass^k is the chance that all k tries of a task succeed.
-
-**The headline compares enforcing confirmation in code against asking for it in the prompt.** The headline ran the full gate: the graph holds every proposed change, checks it against policy, has a second model call compare it with what the customer asked for (reflection), and shows the customer the exact change until they say yes. With the gate off, the same prompt tells the model to describe the change and wait for a yes, and nothing enforces it. Same agent code, same 50 tasks, 4 tries each, 200 conversations per arm.
-
-"Resolved" counts a conversation as solved when the end state and required facts are right, whether or not the customer agreed to the change. "Resolved safely" also requires that every write had a clear yes and none was forbidden. This combined view was added after the partial headline was seen, and it is built only from the yes-check and forbidden-write checks that were already part of grading.
+Same agent code, same 50 tasks, 4 tries each, 200 conversations per setting. Gate on is the full gate as run in the headline; gate off asks for confirmation in the prompt and nothing enforces it.
 
 | | Gate off: resolved | Gate off: resolved safely | Gate on: resolved | Gate on: resolved safely |
 |---|---|---|---|---|
@@ -75,128 +88,79 @@ v2 lets the agent change orders: cancel, change the shipping address, request a 
 | | Gate off | Gate on |
 |---|---|---|
 | Writes without a clear yes | 39 | 0 |
-| Forbidden writes (for example, cancelling an order the customer was about to keep) | 8 | 0 |
+| Forbidden writes, such as cancelling an order the customer wanted to keep | 8 | 0 |
 | Conversations with an unsafe write | 42 | 0 |
 | Write precision / recall | 0.905 / 1.000 | 1.000 / 0.974 |
-| Agent cost per resolved conversation | $0.0158 | $0.0137 |
-| Turn latency p50 / p95 | 2.16s / 4.50s | 1.96s / 4.54s |
 
-On resolved alone the two arms are level: gate on minus gate off is +0.025 on pass^1, with a 95% paired bootstrap interval over tasks of [-0.045, +0.105]. On resolved safely the gate is ahead by +0.195 [+0.090, +0.310]. Asked in the prompt, the model most often asked for a reason and then made the change without asking whether to go ahead. Gate on's ten failed tries are spread out: two refusals handed to the support team instead of explained, two assertions that read as stricter than intended, and one each of a guessed return reason, a missing fact, an invented lookup, a clarification loop, a simulator slip, and a judge error (`failure_labels.json` in each run labels every failure). Since then, refusals are explained instead of handed off, checked on fresh runs without rerunning these numbers ([docs/fix-log.md](docs/fix-log.md)).
+- **Held-out tasks:** 40 of 40 resolved safely, gate on. Ten tasks is a small sample: this says the fixes did not overfit the main 50, not that the agent is perfect.
+- **Which parts of the gate matter:** on the 32 tasks with a proposed change, 2 tries each, turning off confirmation gave 20 writes without a yes and 4 forbidden writes, while turning off the reflection check changed nothing measurable. Reflection is now off by default, which saves an average of 0.57 model calls per conversation.
+- **Haiku 4.5 or Sonnet 5.5:** on 20 tasks, 2 tries each, Sonnet resolved 39 of 40 safely and Haiku 36 of 40, a difference of +0.075 [-0.025, +0.175] that is not distinguishable from noise. Sonnet was cheaper per resolved conversation ($0.0145 against $0.0154) only because its prompts are cached, and its median turn took twice as long. The demo uses Haiku.
 
-### Held-out tasks
+### Honesty notes
 
-Every fix was made using the main 50 tasks. Ten more tasks in the same style were written and committed before the first fix and run only once the code was frozen, gate on, 4 tries each.
+- **Resolved safely was added after the partial headline was seen.** It is built only from the yes-check and forbidden-write checks that were already part of grading.
+- **The fixes did not move the overall pass rate.** Eleven general fixes after the baseline took the same 50 tasks from 94 to 93 of 100 resolved at 2 tries each, a difference of -0.010 [-0.060, +0.040]. The failures they targeted went away and write recall rose from 0.895 to 0.974, but other tasks failed some tries instead.
+- **Fixing the judge shrank the gate's lead.** The audit read 114 conversations and found no resolved grade wrong, but the yes-check judge was wrong on 19 of 88 verdicts: it flagged gate-off returns the customer had agreed to because the return fee was never mentioned. With that fixed and the saved conversations regraded, gate off went from 132 to 151 resolved safely, and the gate's lead fell from +0.285 [+0.160, +0.420] to +0.195 [+0.090, +0.310].
+- **Grader and task fixes are listed apart from agent fixes,** with the run and task that showed each problem, in [docs/fix-log.md](docs/fix-log.md). Later agent fixes were checked on small fresh runs; the headline numbers above were never rerun or regraded for them.
 
-| Gate on | Main 50 tasks | 10 held-out tasks |
-|---|---|---|
-| Resolved safely | 190 of 200 | 40 of 40 |
-| pass^1 / pass^4 | 0.950 / 0.860 | 1.000 / 1.000 |
-| Writes without a clear yes | 0 | 0 |
+Every run, with its config, every conversation, and every regrade, is in `evals/results/sim/`. The How it works page reads its numbers from those runs through `scripts/export_site_data.py`, and a test checks the page against that export.
 
-Ten tasks is a small sample, so the held-out result says the fixes did not overfit the main 50, not that the agent is perfect.
+## Cost and latency
 
-### What the fixes did
+- **Per conversation (headline, Haiku 4.5, gate on):** $0.0130 of agent model cost on average, $0.0137 per resolved conversation, 3.6 agent turns. Turn latency p50 1.96s, p95 4.54s.
+- **Single-turn questions (53-case suite):** $0.18 per 100 conversations, mean 2.25s, p95 4.28s.
+- **Hosting:** AWS Lambda behind API Gateway and a static site on Vercel, close to free at demo scale. A cold start takes about 3 to 5.5 seconds; the page calls the free health check on load so it starts before the visitor types, and `deploy/deploy.sh` warms each new image right after deploying it. Details in [deploy/README.md](deploy/README.md).
+- **Prompt caching:** the stable instructions and tool definitions sit in a cached block. Haiku 4.5 needs a 4,096-token prefix to cache, longer than these prompts, so only Sonnet benefits.
 
-Eleven general fixes followed a gate-on baseline at 2 tries per task (listed with their evidence in [docs/fix-log.md](docs/fix-log.md)). On the same 50 tasks and 2 tries, the overall pass rate did not move beyond noise: 94 of 100 resolved before, 93 of 100 after, a pass^1 difference of -0.010 [-0.060, +0.040]. The failure modes they targeted are gone and write recall rose from 0.895 to 0.974, but other tasks failed some tries instead. The baseline was first graded 89 of 100; two grader fixes, described below, moved it to 94.
+## Run it
 
-### Which parts of the gate matter
+Requires Python 3.11 and [gitleaks](https://github.com/gitleaks/gitleaks) on the PATH for the pre-commit hook.
 
-On the 32 tasks with a proposed change, 2 tries each, the full gate and gate off come from the headline runs and the other two settings were run on the same code:
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+cp .env.example .env
+git config core.hooksPath .githooks
+.venv/bin/python -m app.rag.index
+.venv/bin/python -m pytest -q
+```
 
-| Setting | Resolved | Resolved safely | Writes without a clear yes | Forbidden writes |
-|---|---|---|---|---|
-| Full gate (reflection and confirmation) | 60 of 64 | 60 of 64 | 0 | 0 |
-| Reflection off | 62 of 64 | 62 of 64 | 0 | 0 |
-| Confirmation off | 57 of 64 | 39 of 64 | 20 | 4 |
-| Gate off | 58 of 64 | 40 of 64 | 20 | 4 |
+Fill in `.env` before anything that calls a model or the store: `ANTHROPIC_API_KEY`, and `SHOPIFY_STORE_DOMAIN` with a read-only `SHOPIFY_ADMIN_TOKEN` for the live store. The simulator needs `SIM_USER_BASE_URL`, `SIM_USER_MODEL`, and `SIM_USER_API_KEY` for any OpenAI-compatible endpoint.
 
-The confirmation step accounts for the safety. The reflection check showed no measurable benefit on these tasks, so **reflection is now off by default**, with `GATE_REFLECTION=true` turning it back on. The cost it saves, measured from runs already made:
+- **The demo locally, on a sandbox store:** set `SESSION_SIGNING_KEY` in `.env`, then `API_MODE=sandbox WRITE_ACTIONS=true .venv/bin/uvicorn app.main:app --port 8077` and open http://localhost:8077.
+- **The 53-case suite:** `.venv/bin/python -m evals.run_evals --label my-run` (about $0.17 a run).
+- **Simulations, with a budget cap:** every paid run prints an estimate and stops at `--max-usd`. Preview first, then run:
 
-| | Full gate | Reflection off |
-|---|---|---|
-| Reflection calls per conversation (headline, 200 conversations) | 0.57 | 0 |
-| Share of agent cost spent on reflection (headline) | 4.3% | 0 |
-| Latency of the turn that proposes a change, p50 / p95 (32 tasks) | 3.09s / 4.54s | 2.08s / 3.18s |
-| Agent cost per conversation (32 tasks) | $0.0164 | $0.0147 |
-| Turns per conversation (32 tasks) | 4.23 | 4.00 |
+```bash
+.venv/bin/python -m evals.sim.run_sim --label check --tasks cancel-eligible,return-in-window --k 2 --max-usd 0.20 --estimate-only
+```
 
-The 32-task rows compare two separate runs on the same tasks, so they are observed differences, not a controlled timing of one call. In the headline run, reflection approved 84 proposed changes and stopped 30 to ask the customer a question, and those questions did not show up as better outcomes. The SABER paper found reflection helped in its retail setting. A likely reason it does not help here is that the policy engine already blocks ineligible changes before reflection runs, and the confirmation step shows the customer the exact change, which leaves reflection little to catch. The headline numbers above are for the full gate, as run.
+- **Compare two runs:** `.venv/bin/python -m evals.sim.compare_runs --a <run-dir> --b <run-dir>` prints resolved and resolved safely side by side with paired intervals.
+- **Deploy:** `sh deploy/deploy.sh` builds the image tagged with the commit, updates the Lambda function, and warms it. The function holds only a read-only Shopify token.
 
-### Haiku 4.5 or Sonnet 5.5
+## Limitations
 
-On 20 tasks picked in advance by stratified random sampling, same code and gate setting, 2 tries each (Haiku's are its first two headline tries):
+- **Small task sets.** 50 main tasks and 10 held-out tasks are enough to show the gate removes unsafe writes, not to rank small differences; most intervals between agent versions cross zero.
+- **A simulated customer is not a real one.** The simulator broke its script in a few conversations, and it never improvises the way people do.
+- **A judge model grades part of each conversation.** The audit found it right on every resolved grade it read, but one known judge error remains in the headline, and three failures rest on assertions that read stricter than intended.
+- **One store, one policy set.** The policy engine encodes this demo store's rules; another store needs its own.
+- **The live store is a development store.** Live writes were checked against it, but the public demo only ever writes to sandbox copies.
 
-| | Haiku 4.5 | Sonnet 5.5 |
-|---|---|---|
-| Resolved safely | 36 of 40 | 39 of 40 |
-| pass^1 / pass^2 | 0.900 / 0.800 | 0.975 / 0.950 |
-| Agent cost per resolved conversation | $0.0154 | $0.0145 |
-| Turn latency p50 / p95 | 1.78s / 4.38s | 3.58s / 6.75s |
+## What's next
 
-Sonnet resolved more, but on 20 tasks the difference, +0.075 [-0.025, +0.175], is not distinguishable from noise. It is cheaper per resolved conversation only because of prompt caching: the stable instructions and tool definitions are cached, which cut Sonnet's agent cost by 57 percent, while Haiku 4.5 needs a 4,096-token prefix to cache and these prompts are shorter. Haiku remains the configured default; switching is one config value.
-
-### Checking the grader
-
-After the headline, a manual read covered every passing gate-off conversation that made a write plus a random 10 percent of the other passes, 114 conversations in all (`grader_audit.json`). No resolved grade was wrong. 19 of 88 yes-check verdicts were wrong, all flagging writes the customer had agreed to because the agent never mentioned the return fee, which is a consequence of the change rather than part of it. With that fixed and the saved conversations regraded, gate off went from 132 to 151 conversations resolved safely and from 69 to 47 unsafe writes; gate on did not change, and the fixed judge agrees with all 88 manual labels. Reading the failures as well found the judge ignoring an exception an assertion states; with that fixed, gate on went from 189 to 190 resolved and gate off stayed at 185. Known remaining errors: one gate-on conversation the judge still fails wrongly, three failures whose assertions read as stricter than intended (kept as graded rather than reworded after the fact), and two conversations where the simulated customer broke its script.
-
-The 53-case single-turn suite ran 52 of 53 on the frozen v2 code. The miss was real: the order list only said "fulfilled", and the agent sometimes reported that as "delivered". Once the order tools carried a plain shipping status it ran 53 of 53 (`evals/results/20261005-125454_phase5-fixes.json`), and again after the later agent fixes (`evals/results/20261005-203904_phase6-fixes.json`).
-
-All runs, with configs, trajectories, regrades, and comparisons, are in `evals/results/sim/`. Each comparison can be rebuilt with `python -m evals.sim.compare_runs`.
+- Run a small simulation on every pull request with a budget cap, and turn real chat logs into regression tasks the way `evals/sim/make_regression_task.py` already does for saved simulation runs.
+- Add tasks for multi-item partial returns and address changes on orders with more than one shipment.
+- Try a second store's policy to see how much of the policy engine generalizes.
 
 ## Project layout
 
 ```
-app/                 FastAPI service + agent (graph, nodes, prompts, RAG)
-mcp_server/          self-built MCP server exposing Shopify Admin API tools
-data/policies/       demo store policy documents
-evals/               53-case dataset, graders, run script, results history
-frontend/            demo storefront with the embedded chat widget (Vercel)
-tests/               unit tests
-deploy/              container + AWS deployment
+app/                 FastAPI service and agent: graph, nodes, prompts, gate, sandbox, release manifest
+mcp_server/          tool contract, policy engine, live Shopify and simulated store backends, MCP server
+evals/               53-case suite; evals/sim holds the simulator, tasks, grader, and every saved run
+frontend/            the demo store, chat, and How it works page
+scripts/             snapshot export, site data export, live demo check
+deploy/              container, deploy script, AWS notes
+docs/                write-up, fix log, design plan, site audit
+tests/               unit and contract tests
 ```
-
-Later-phase directories appear as their phase lands.
-
-## Local setup
-
-Requires Python 3.11+ and [gitleaks](https://github.com/gitleaks/gitleaks) on the PATH for the pre-commit hook.
-
-```
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env                       # then fill in the values
-git config core.hooksPath .githooks        # gitleaks scans every commit for secrets
-.venv/bin/python -m app.rag.index          # build the vector index
-.venv/bin/uvicorn app.main:app --reload    # chat UI at http://127.0.0.1:8000
-.venv/bin/pytest
-```
-
-Other entry points: `python -m scripts.chat_repl` (terminal chat), `python -m evals.run_evals --label run` (eval suite), `python -m scripts.check_mcp` (drive the MCP server directly).
-
-Simulated store: `python -m scripts.export_store_snapshot` snapshots the development store to `data/sim/seed.json`, `STORE_BACKEND=sim` serves the tools from that snapshot instead of the live API, and `SHOPIFY_LIVE_TESTS=1 pytest tests/test_contract_live.py` checks that both backends return identical tool output.
-
-## Roadmap
-
-- [x] Scaffold: package layout, pinned dependencies, health endpoint, smoke test
-- [x] Store data: audited demo data, seeded a realistic catalog (30 products) and 15 orders across fulfillment states, catalog ingestion
-- [x] RAG pipeline: Chroma index over catalog + policies, heading-scoped policy chunks, 8/8 retrieval smoke checks at rank 1
-- [x] MCP server: three read-only Shopify tools over stdio, email-match authorization, verified with a live protocol session
-- [x] LangGraph agent end to end: all seven intents verified live from a terminal REPL, hard injection refused with zero model calls
-- [x] Guardrails hardening, folded into eval-driven iteration (graph-level gating beat prompt-level rules)
-- [x] Eval harness: 53 cases, baseline 96%, iterated to 100%, model decision documented above
-- [x] FastAPI `/chat` backend (one MCP session per app via a lifespan handler) and a polished vanilla-JS chat UI
-- [x] Deploy: container on AWS Lambda behind API Gateway, frontend on Vercel, live demo link above
-- [x] Final eval numbers and cost report (see Eval results above)
-
-### v2: an agent that takes actions, measured by simulation
-
-Design and decisions in [docs/v2-plan.md](docs/v2-plan.md).
-
-- [x] Phase 0: audit, baseline re-confirmed at 53/53, write mutations and scopes verified, session state design
-- [x] Phase 1: one tool contract with a live Shopify backend and a simulated store backend, frozen clock, canonical state hashing, 46/46 live contract checks, Shopify API 2026-10
-- [x] Phase 2: write actions (cancel, change address, request return, hand off) behind a deterministic policy engine and a switchable confirmation gate, on the simulated store and on the live development store, checked against each other
-- [x] Phase 3: tau-bench-style simulation harness with a simulated customer, end-state grading, and pass^k, over 50 validated tasks
-- [x] Phase 4: baseline, then the headline comparison: confirmation enforced in code by the gate versus asked for in the prompt with the gate off; fixes, held-out tasks, model comparison, prompt caching, grader audit
-- [x] Phase 5: CI, release manifest, structured logs, a per-session sandbox for the public demo with signed session state and usage caps, friendly outage messages, a daily live demo check, and a measured cold start fix
-- [x] Phase 6: three agent issues fixed and checked on fresh runs (no more calling an order changeable before the policy check, refusals explained instead of handed off, one confirmation per change); site upgrade with scenario buttons, a confirmation card, an inside-the-agent view of each turn, a warm-up on load, a phone layout, and a How it works page whose numbers are read from saved runs and checked by a test ([docs/site-audit.md](docs/site-audit.md))
-- [ ] Phase 7: README rewrite and write-up with numbers from saved runs

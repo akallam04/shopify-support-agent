@@ -85,3 +85,17 @@ below shows only what the reply's trace or a saved run says happened.
   apply only on devices that hover. Every animation uses transform or opacity and is off when the
   visitor prefers reduced motion; the replay then shows both conversations in full.
 
+## Fixes from testing on a phone
+
+- **Time order at the gate.** Tapping Yes used to rewrite the proposal card above to "Confirmed"
+  while the customer's "Yes" landed below it, so the agent seemed to act before the yes. The card
+  now keeps its proposal with a small "You said yes" or "You said no", and the result arrives as a
+  new message after the reply: "Done" with the shield turning into a check, or "Nothing changed".
+  The proposal turn's rail and details say the gate held, then the answer.
+- **Width.** The details panel could grow wider than the screen on long tool calls. Long lines now
+  wrap inside the panel, agent messages and their children cannot grow past the chat, and the store
+  header drops the brand name below 350px. Checked at 375 and 320 pixels with a long email and a
+  long tool call: nothing wider than the screen.
+- **Emails.** iOS no longer turns emails and phone numbers into links (`format-detection`), and
+  emails are masked in the details panel, in the API's trace, and in the server logs.
+
