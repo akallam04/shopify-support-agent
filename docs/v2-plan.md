@@ -409,16 +409,23 @@ The same outcome must always produce the same hash, whatever order the agent did
 
 ### Phase 6: website upgrade
 
-- [ ] Audit the live site first: desktop and mobile screenshots, design critique, and an
+- [x] Audit the live site first: desktop and mobile screenshots, design critique, and an
       accessibility review, with the issue list recorded in `docs/site-audit.md`.
-- [ ] Scenario chips, sandbox banner, confirmation card with working Confirm and Cancel,
-      clear loading and retry states.
-- [ ] "Inside the agent" panel: graph path, tool calls, gate and policy decisions, verify
-      outcome, latency, tokens, cost, release hash.
-- [ ] "How it works" page: headline numbers, pass^k curve, category breakdown, failure
-      taxonomy, gate ablation, architecture diagram, step-by-step transcript viewer reading
-      static JSON from the eval results.
-- [ ] Responsive, keyboard accessible, WCAG AA contrast, meta tags and an OG image.
+- [x] Scenario buttons, a sandbox note in the chat, a confirmation card with working Confirm and
+      Cancel, and clear loading, waking, and retry states. The page calls `/health` on load so
+      the function starts before the visitor types.
+- [x] "Inside the agent" view for each turn: graph path with timings, tool calls and results,
+      gate and policy decisions, grounding check, latency, tokens, cost, release hash. The API
+      returns this as `trace`, and the pending change as `pending`.
+- [x] "How it works" page: the gate side by side, the graph, resolved and resolved safely with
+      intervals, pass^k chart, held-out tasks, the fixes, the grader audit, failure causes,
+      category breakdown, gate parts, model comparison, and a step-by-step replay of saved
+      conversations. `scripts/export_site_data.py` builds its data from saved runs, and
+      `tests/test_site_data.py` checks every number on the page against that export.
+- [x] Phone layout (full-screen chat), keyboard access, WCAG AA contrast, meta tags, and an OG
+      image.
+- [x] Vercel Web Analytics snippet (free on Hobby, no cookies); collection starts once it is
+      enabled in the Vercel project.
 
 ### Phase 7: documentation
 

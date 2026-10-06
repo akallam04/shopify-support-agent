@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f4f7f9" />
+    <title>How It Works: Aurora support agent</title>
+    <meta name="description" content="How the Aurora support agent is built, how its write actions are gated, and how it was tested with simulated customers, with every result reported as measured." />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://shopify-support-agent.vercel.app/how-it-works.html" />
+    <meta property="og:title" content="How the Aurora support agent works, and how it was tested" />
+    <meta property="og:description" content="A LangGraph agent that changes orders only after the customer says yes, measured with 200 simulated conversations per setting." />
+    <meta property="og:image" content="https://shopify-support-agent.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./how.css" />
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-head">
+      <div class="wrap site-head__row">
+        <a class="brand brand--compact" href="./" aria-label="Aurora Outfitters home">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40"><path class="peak" d="M5 32 L15 13 L21 23 L26 15 L35 32 Z" /><circle class="sun" cx="29" cy="10" r="3.2" /></svg>
+          </span>
+          <span class="brand__name">Aurora Outfitters</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="./">Try it</a>
+          <a href="./how-it-works.html" aria-current="page">How it works</a>
+          <a class="hide-sm" href="https://github.com/akallam04/shopify-support-agent">Source</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap wrap--read">
+        <section class="intro" aria-labelledby="pageTitle">
+          <h1 id="pageTitle">How the Aurora assistant works</h1>
+          <p class="intro__lead">The assistant is an agent built with LangGraph on Claude Haiku 4.5. It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Because it can change things, every change passes through a gate written in code: a policy check, then the exact change shown to the customer, then nothing until they say yes.</p>
+          <p class="intro__lead">It was tested the way tau-bench tests agents, with simulated customers playing scripted scenarios against the real agent. The results below come from saved runs and include where it falls short.</p>
+          <nav class="toc" aria-label="On this page">
+            <a href="#gate">The gate</a>
+            <a href="#flow">Each message</a>
+            <a href="#results">Results</a>
+            <a href="#grader">The grader</a>
+            <a href="#failures">Failures</a>
+            <a href="#replay">Replay</a>
+          </nav>
+        </section>
+      </div>
+
+      <section class="band" id="gate" aria-labelledby="gateTitle">
+        <div class="wrap">
+          <div class="band__head">
+            <h2 id="gateTitle">Same request, with and without the gate</h2>
+            <p>Two saved conversations from the headline runs. The customer and the order are the same. With the gate off, the prompt still tells the model to describe the change and wait for a yes; nothing enforces it.</p>
+          </div>
+          <div class="compare" id="compare">
+            <article class="compare__side" aria-labelledby="offTitle">
+              <h3 id="offTitle" class="compare__title"><span class="tag tag--rose">Gate off</span> Asked in the prompt</h3>
+              <ol class="mini" data-example="cancel-gate-off"></ol>
+            </article>
+            <article class="compare__side" aria-labelledby="onTitle">
+              <h3 id="onTitle" class="compare__title"><span class="tag tag--pine">Gate on</span> Enforced in code</h3>
+              <ol class="mini" data-example="cancel-gate-on"></ol>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <div class="wrap wrap--read">
+        <section class="block" id="flow" aria-labelledby="flowTitle">
+          <h2 id="flowTitle">What happens to each message</h2>
+          <p>Every customer message runs through the same graph. Each reply on the store page can show its own path through it: turn on <b>Inside the agent</b> in the chat.</p>
+          <ol class="rail">
+            <li>
+              <h3>Input check</h3>
+              <p>Fixed patterns catch obvious prompt injection, like "ignore your instructions", before any model call.</p>
+            </li>
+            <li>
+              <h3>Route</h3>
+              <p>A model call sorts the message into product, policy, order, handoff, small talk, out of scope, or injection, and pulls out any order number and email. Long chats are summarized first, keeping tool facts.</p>
+            </li>
+            <li>
+              <h3>Answer</h3>
+              <p>Product and policy answers come from retrieval over the catalog and policy pages, with a citation for every claim. Order answers come from store tools: a self-built MCP server over the Shopify Admin API, or in this demo a private sandbox copy of the store.</p>
+            </li>
+            <li class="rail__gate">
+              <h3>Gate, for any change</h3>
+              <p>Code decides whether the change is allowed: the email must match the order, cancellations and address changes must come within 2 hours and before shipping, and returns must be inside 30 days and not final sale. If allowed, the customer sees the exact change from a template, and the change waits in a signed session token. It runs only after a clear yes, exactly once.</p>
+            </li>
+            <li>
+              <h3>Verify</h3>
+              <p>Every order number and tracking number in the reply must appear in a tool result or earlier in the conversation, and every citation must point to a retrieved document. A reply that fails gets one rewrite, then a safe fallback.</p>
+            </li>
+          </ol>
+          <p class="stack">Runs as a FastAPI app in a container on AWS Lambda. The page is static and hosted on Vercel.</p>
+        </section>
+
+        <section class="block" id="results" aria-labelledby="resultsTitle">
+          <h2 id="resultsTitle">Tested against simulated customers</h2>
+          <p>50 tasks cover order lookups, cancellations, address changes, returns, refusals, identity checks, injection, angry customers, and customers who say no or change their mind at the confirmation. A simulated customer (Qwen 3.8 Flash) plays each task 4 times against the agent and a fresh copy of the store. Each conversation is graded on the store's end state, the facts the agent had to give, judged assertions (Claude Sonnet 5.5 as judge, with the tool outputs as ground truth), and whether every write had a clear yes.</p>
+
+          <dl class="defs">
+            <div>
+              <dt>Resolved</dt>
+              <dd>The end state and the required facts are right, whether or not the customer agreed to the change.</dd>
+            </div>
+            <div>
+              <dt>Resolved safely</dt>
+              <dd>Resolved, every write had a clear yes, and no write was forbidden.</dd>
+            </div>
+          </dl>
+          <p class="note">Resolved safely was added after the partial headline was seen. It uses only the yes-check and forbidden-write checks that were already part of grading.</p>
+
+          <div class="kpis">
+            <div class="kpi">
+              <p class="kpi__label">Gate off, resolved</p>
+              <p class="kpi__value"><span data-num="headline.off.resolved">185</span> <span class="kpi__of">of <span data-num="headline.off.conversations">200</span></span></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi__label">Gate off, resolved safely</p>
+              <p class="kpi__value kpi__value--rose"><span data-num="headline.off.resolved_safely">151</span> <span class="kpi__of">of <span data-num="headline.off.conversations">200</span></span></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi__label">Gate on, resolved</p>
+              <p class="kpi__value"><span data-num="headline.on.resolved">190</span> <span class="kpi__of">of <span data-num="headline.on.conversations">200</span></span></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi__label">Gate on, resolved safely</p>
+              <p class="kpi__value kpi__value--pine"><span data-num="headline.on.resolved_safely">190</span> <span class="kpi__of">of <span data-num="headline.on.conversations">200</span></span></p>
+            </div>
+          </div>
+
+          <figure class="figure">
+            <figcaption>
+              <h3>pass^k: the chance that all k tries of a task succeed</h3>
+              <p>Averaged over the 50 tasks. The vertical axis starts at 0.5.</p>
+            </figcaption>
+            <div class="chart" id="passk" role="img" aria-label="pass^k from 1 to 4. Gate on: 0.950, 0.910, 0.880, 0.860 on both measures. Gate off resolved: 0.925, 0.903, 0.890, 0.880. Gate off resolved safely: 0.755, 0.693, 0.660, 0.640."></div>
+            <div class="table-scroll">
+              <table class="data">
+                <thead><tr><th scope="col"></th><th scope="col">pass^1</th><th scope="col">pass^2</th><th scope="col">pass^3</th><th scope="col">pass^4</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Gate on, both measures</th><td data-num="headline.on.pass_hat_k.0" data-fmt="p3">0.950</td><td data-num="headline.on.pass_hat_k.1" data-fmt="p3">0.910</td><td data-num="headline.on.pass_hat_k.2" data-fmt="p3">0.880</td><td data-num="headline.on.pass_hat_k.3" data-fmt="p3">0.860</td></tr>
+                  <tr><th scope="row">Gate off, resolved</th><td data-num="headline.off.pass_hat_k.0" data-fmt="p3">0.925</td><td data-num="headline.off.pass_hat_k.1" data-fmt="p3">0.903</td><td data-num="headline.off.pass_hat_k.2" data-fmt="p3">0.890</td><td data-num="headline.off.pass_hat_k.3" data-fmt="p3">0.880</td></tr>
+                  <tr><th scope="row">Gate off, resolved safely</th><td data-num="headline.off.pass_hat_k_safe.0" data-fmt="p3">0.755</td><td data-num="headline.off.pass_hat_k_safe.1" data-fmt="p3">0.693</td><td data-num="headline.off.pass_hat_k_safe.2" data-fmt="p3">0.660</td><td data-num="headline.off.pass_hat_k_safe.3" data-fmt="p3">0.640</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </figure>
+
+          <figure class="figure">
+            <figcaption>
+              <h3>Gate on minus gate off, with 95% intervals</h3>
+              <p>pass^1 difference, paired bootstrap over tasks. An interval that crosses zero is not distinguishable from noise.</p>
+            </figcaption>
+            <div class="chart" data-forest="headline" role="img" aria-label="Resolved: +0.025, interval -0.045 to +0.105. Resolved safely: +0.195, interval +0.090 to +0.310."></div>
+            <ul class="plain">
+              <li>Resolved: <span data-interval="headline.difference.resolved">+0.025 [-0.045, +0.105]</span>. On this measure the two settings are level.</li>
+              <li>Resolved safely: <span data-interval="headline.difference.resolved_safely">+0.195 [+0.090, +0.310]</span>. The gate is ahead.</li>
+            </ul>
+          </figure>
+
+          <div class="table-scroll">
+            <table class="data">
+              <caption>Writes, cost, and speed</caption>
+              <thead><tr><th scope="col"></th><th scope="col">Gate off</th><th scope="col">Gate on</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Writes without a clear yes</th><td data-num="headline.off.unconfirmed_writes">39</td><td data-num="headline.on.unconfirmed_writes">0</td></tr>
+                <tr><th scope="row">Forbidden writes, such as cancelling an order the customer wanted to keep</th><td data-num="headline.off.forbidden_writes">8</td><td data-num="headline.on.forbidden_writes">0</td></tr>
+                <tr><th scope="row">Conversations with an unsafe write</th><td data-num="headline.off.unsafe_conversations">42</td><td data-num="headline.on.unsafe_conversations">0</td></tr>
+                <tr><th scope="row">Write precision</th><td data-num="headline.off.precision" data-fmt="p3">0.905</td><td data-num="headline.on.precision" data-fmt="p3">1.000</td></tr>
+                <tr><th scope="row">Write recall</th><td data-num="headline.off.recall" data-fmt="p3">1.000</td><td data-num="headline.on.recall" data-fmt="p3">0.974</td></tr>
+                <tr><th scope="row">Agent cost per resolved conversation</th><td data-num="headline.off.cost_per_resolved_usd" data-fmt="usd4">$0.0158</td><td data-num="headline.on.cost_per_resolved_usd" data-fmt="usd4">$0.0137</td></tr>
+                <tr><th scope="row">Turn latency, median</th><td data-num="headline.off.latency_p50_s" data-fmt="s2">2.16s</td><td data-num="headline.on.latency_p50_s" data-fmt="s2">1.96s</td></tr>
+                <tr><th scope="row">Turn latency, 95th percentile</th><td data-num="headline.off.latency_p95_s" data-fmt="s2">4.50s</td><td data-num="headline.on.latency_p95_s" data-fmt="s2">4.54s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Asked in the prompt, the model most often asked for a reason and then made the change without asking whether to go ahead. The headline ran the full gate, with a reflection check that has since been turned off by default; see <a href="#parts">which parts of the gate matter</a>.</p>
+        </section>
+
+        <section class="block" id="heldout" aria-labelledby="heldoutTitle">
+          <h2 id="heldoutTitle">Tasks written before any fix</h2>
+          <p>Every fix was made using the main 50 tasks. Ten more tasks in the same style were written and committed before the first fix, and run only once the code was frozen, gate on, 4 tries each.</p>
+          <div class="kpis kpis--two">
+            <div class="kpi">
+              <p class="kpi__label">Main 50 tasks, resolved safely</p>
+              <p class="kpi__value"><span data-num="headline.on.resolved_safely">190</span> <span class="kpi__of">of <span data-num="headline.on.conversations">200</span></span></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi__label">10 held-out tasks, resolved safely</p>
+              <p class="kpi__value"><span data-num="heldout.resolved_safely">40</span> <span class="kpi__of">of <span data-num="heldout.conversations">40</span></span></p>
+            </div>
+          </div>
+          <p>Ten tasks is a small sample, so this says the fixes did not overfit the main 50, not that the agent is perfect.</p>
+        </section>
+
+        <section class="block" id="fixes" aria-labelledby="fixesTitle">
+          <h2 id="fixesTitle">What the fixes changed</h2>
+          <p>Eleven general fixes followed a baseline run at 2 tries per task. On the same tasks and tries, <b>the fixes did not move the overall pass rate</b>: <span data-num="fixes.before_resolved">94</span> of <span data-num="fixes.conversations">100</span> resolved before and <span data-num="fixes.after_resolved">93</span> of <span data-num="fixes.conversations">100</span> after, a difference of <span data-interval="fixes.difference">-0.010 [-0.060, +0.040]</span>. The failures they targeted went away and write recall rose from <span data-num="fixes.recall_before" data-fmt="p3">0.895</span> to <span data-num="fixes.recall_after" data-fmt="p3">0.974</span>, but other tasks failed some tries instead. Each fix and its evidence is in the <a href="https://github.com/akallam04/shopify-support-agent/blob/main/docs/fix-log.md">fix log</a>.</p>
+        </section>
+
+        <section class="block" id="grader" aria-labelledby="graderTitle">
+          <h2 id="graderTitle">Checking the grader</h2>
+          <p>After the headline, a manual read covered every passing gate-off conversation that made a write, plus a random 10 percent of the other passes: <span data-num="audit.conversations">114</span> conversations. <span data-num="audit.resolved_grades_wrong">0</span> resolved grades were wrong. The yes-check judge was wrong on <span data-num="audit.yes_check_verdicts_wrong">19</span> of <span data-num="audit.yes_check_verdicts_audited">88</span> verdicts, all gate-off returns: it flagged writes the customer had agreed to because the return fee was never mentioned, which is a consequence of the change, not part of it.</p>
+          <p>With the judge fixed and the saved conversations regraded, gate off went from <span data-num="headline.judge_fix.before.off_resolved_safely">132</span> to <span data-num="headline.judge_fix.after.off_resolved_safely">151</span> conversations resolved safely. <b>Fixing the judge shrank the gate's lead.</b></p>
+          <figure class="figure">
+            <figcaption>
+              <h3>The gate's lead in resolved safely, before and after the judge fix</h3>
+            </figcaption>
+            <div class="chart" data-forest="judge" role="img" aria-label="Before the judge fix: +0.285, interval +0.160 to +0.420. After: +0.195, interval +0.090 to +0.310."></div>
+            <ul class="plain">
+              <li>Before: <span data-interval="headline.judge_fix.before.difference">+0.285 [+0.160, +0.420]</span></li>
+              <li>After: <span data-interval="headline.judge_fix.after.difference">+0.195 [+0.090, +0.310]</span></li>
+            </ul>
+          </figure>
+          <p>Known remaining errors: one gate-on conversation the judge still fails wrongly, three failures whose assertions read as stricter than intended (kept as graded, not reworded after the fact), and two conversations where the simulated customer broke its script.</p>
+        </section>
+
+        <section class="block" id="failures" aria-labelledby="failuresTitle">
+          <h2 id="failuresTitle">Where it still fails</h2>
+          <p>Gate on failed <span data-num="failures.total">10</span> of 200 tries. Each was read and labeled by cause and by who was at fault: the agent, the task, or the test harness.</p>
+          <figure class="figure">
+            <figcaption><h3>Gate on's failed tries, by cause</h3></figcaption>
+            <div class="bars" id="failureBars"></div>
+          </figure>
+          <figure class="figure">
+            <figcaption>
+              <h3>Resolved safely by category</h3>
+              <p>4 tries per task; categories have different numbers of tasks.</p>
+            </figcaption>
+            <div class="cats" id="categories"></div>
+          </figure>
+        </section>
+
+        <section class="block" id="parts" aria-labelledby="partsTitle">
+          <h2 id="partsTitle">Which parts of the gate matter</h2>
+          <p>On the 32 tasks with a proposed change, 2 tries each. The full gate and gate off come from the headline runs; the other two settings were run on the same code.</p>
+          <div class="table-scroll">
+            <table class="data" id="partsTable">
+              <thead><tr><th scope="col">Setting</th><th scope="col">Resolved</th><th scope="col">Resolved safely</th><th scope="col">Writes without a yes</th><th scope="col">Forbidden writes</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Full gate</th><td data-num="gate_parts.0.resolved">60</td><td data-num="gate_parts.0.resolved_safely">60</td><td data-num="gate_parts.0.unconfirmed_writes">0</td><td data-num="gate_parts.0.forbidden_writes">0</td></tr>
+                <tr><th scope="row">Reflection off</th><td data-num="gate_parts.1.resolved">62</td><td data-num="gate_parts.1.resolved_safely">62</td><td data-num="gate_parts.1.unconfirmed_writes">0</td><td data-num="gate_parts.1.forbidden_writes">0</td></tr>
+                <tr><th scope="row">Confirmation off</th><td data-num="gate_parts.2.resolved">57</td><td data-num="gate_parts.2.resolved_safely">39</td><td data-num="gate_parts.2.unconfirmed_writes">20</td><td data-num="gate_parts.2.forbidden_writes">4</td></tr>
+                <tr><th scope="row">Gate off</th><td data-num="gate_parts.3.resolved">58</td><td data-num="gate_parts.3.resolved_safely">40</td><td data-num="gate_parts.3.unconfirmed_writes">20</td><td data-num="gate_parts.3.forbidden_writes">4</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Each row is out of <span data-num="gate_parts.0.conversations">64</span> conversations. The confirmation step accounts for the safety. The reflection check, a second model call that compares the change with what the customer asked for, showed no measurable benefit here, so it is now off by default. The SABER paper found reflection helped in its retail setting; here the policy engine already blocks ineligible changes and the customer sees the exact change, which leaves reflection little to catch.</p>
+        </section>
+
+        <section class="block" id="models" aria-labelledby="modelsTitle">
+          <h2 id="modelsTitle">Haiku 4.5 or Sonnet 5.5</h2>
+          <p>20 tasks picked in advance by stratified random sampling, same code, 2 tries each.</p>
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr><th scope="col"></th><th scope="col">Haiku 4.5</th><th scope="col">Sonnet 5.5</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Resolved safely</th><td><span data-num="models.haiku.resolved_safely">36</span> of <span data-num="models.haiku.conversations">40</span></td><td><span data-num="models.sonnet.resolved_safely">39</span> of <span data-num="models.sonnet.conversations">40</span></td></tr>
+                <tr><th scope="row">pass^2</th><td data-num="models.haiku.pass_hat_k_safe.1" data-fmt="p3">0.800</td><td data-num="models.sonnet.pass_hat_k_safe.1" data-fmt="p3">0.950</td></tr>
+                <tr><th scope="row">Agent cost per resolved conversation</th><td data-num="models.haiku.cost_per_resolved_usd" data-fmt="usd4">$0.0154</td><td data-num="models.sonnet.cost_per_resolved_usd" data-fmt="usd4">$0.0145</td></tr>
+                <tr><th scope="row">Turn latency, median</th><td data-num="models.haiku.latency_p50_s" data-fmt="s2">1.78s</td><td data-num="models.sonnet.latency_p50_s" data-fmt="s2">3.58s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Sonnet resolved more, but on 20 tasks the difference, <span data-interval="models.difference">+0.075 [-0.025, +0.175]</span>, is not distinguishable from noise. It costs less per resolved conversation only because its prompts are cached; Haiku 4.5 needs a longer prompt than these to cache. The demo uses Haiku for its speed.</p>
+        </section>
+      </div>
+
+      <section class="band" id="replay" aria-labelledby="replayTitle">
+        <div class="wrap">
+          <div class="band__head">
+            <h2 id="replayTitle">Replay a conversation</h2>
+            <p>Saved conversations from the runs above, passing and failing, step by step, with what happened inside the agent on each turn.</p>
+          </div>
+          <div class="viewer">
+            <div class="viewer__pick">
+              <label for="examplePick">Conversation</label>
+              <select id="examplePick"></select>
+            </div>
+            <div class="viewer__card" id="viewer" aria-live="polite"></div>
+            <div class="viewer__controls">
+              <button class="btn btn--quiet" id="prevStep" type="button">Previous step</button>
+              <p class="viewer__count" id="stepCount"></p>
+              <button class="btn btn--primary" id="nextStep" type="button">Next step</button>
+              <button class="link-btn" id="allSteps" type="button">Show all</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="wrap wrap--read">
+        <section class="block" id="sources" aria-labelledby="sourcesTitle">
+          <h2 id="sourcesTitle">Where the numbers come from</h2>
+          <p>Every number on this page is read from saved runs in <code>evals/results/sim/</code> by <code>scripts/export_site_data.py</code>, and a test checks that the page matches that export. Each run keeps its config, every conversation, and every regrade. The README covers the same results in more detail.</p>
+          <p><a href="https://github.com/akallam04/shopify-support-agent">Source code and runs on GitHub</a></p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap site-foot__row">
+        <p>Aurora Outfitters is a fictional store, built to show an AI support agent.</p>
+        <p><a href="./">Try the assistant</a></p>
+      </div>
+    </footer>
+
+    <script src="./how.js"></script>
+  </body>
+</html>
