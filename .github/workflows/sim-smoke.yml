@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       SIM_USER_API_KEY: ${{ secrets.SIM_USER_API_KEY }}
