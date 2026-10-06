@@ -258,6 +258,8 @@ function settleGate(brain, outcome) {
     chip.className = "chip chip--settled";
     chip.textContent = `Gate: held, then ${ANSWERS[outcome]}`;
   }
+  const row = brain.querySelector(".steps-table tr.is-wait td");
+  if (row) row.textContent = `held, then ${ANSWERS[outcome]}`;
   const rail = brain.querySelector(".rail");
   rail.setAttribute("aria-label", rail.getAttribute("aria-label").replace("Gate: waiting for your yes", `Gate: held, then ${ANSWERS[outcome]}`));
 }
