@@ -95,7 +95,7 @@ def check_inventory(product_query: str) -> dict[str, Any]:
     return tools.check_inventory(_store(), product_query)
 
 
-def cancel_order(order_number: str, email: str, reason: CancelReason) -> dict[str, Any]:
+def cancel_order(order_number: str, email: str, reason: CancelReason, reason_quote: str) -> dict[str, Any]:
     """Cancel an order that has not shipped yet.
 
     Store policy allows cancelling only within 2 hours of the order being placed and before it
@@ -106,8 +106,11 @@ def cancel_order(order_number: str, email: str, reason: CancelReason) -> dict[st
         order_number: The customer's order number, for example #1001.
         email: The email address the order was placed with.
         reason: Why the customer is cancelling.
+        reason_quote: The customer's own words that give the reason, copied exactly from their
+            messages. If the customer has not said why, ask them instead of calling this tool.
     """
-    return tools.execute(_store(), "cancel_order", {"order_number": order_number, "email": email, "reason": reason})
+    args = {"order_number": order_number, "email": email, "reason": reason, "reason_quote": reason_quote}
+    return tools.execute(_store(), "cancel_order", args)
 
 
 def update_shipping_address(
@@ -154,7 +157,9 @@ def update_shipping_address(
     return tools.execute(_store(), "update_shipping_address", args)
 
 
-def request_return(order_number: str, email: str, items: list[ReturnItem], reason: ReturnReason) -> dict[str, Any]:
+def request_return(
+    order_number: str, email: str, items: list[ReturnItem], reason: ReturnReason, reason_quote: str
+) -> dict[str, Any]:
     """Request a return for delivered items, for the store to approve.
 
     Store policy allows returns within 30 days of delivery, never for final sale items or gift
@@ -166,12 +171,15 @@ def request_return(order_number: str, email: str, items: list[ReturnItem], reaso
         email: The email address the order was placed with.
         items: The items to return, each with its title, variant if needed, and quantity.
         reason: Why the customer is returning the items.
+        reason_quote: The customer's own words that give the reason, copied exactly from their
+            messages. If the customer has not said why, ask them instead of calling this tool.
     """
     args = {
         "order_number": order_number,
         "email": email,
         "items": [i.model_dump() if isinstance(i, BaseModel) else i for i in items],
         "reason": reason,
+        "reason_quote": reason_quote,
     }
     return tools.execute(_store(), "request_return", args)
 

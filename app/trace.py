@@ -38,13 +38,29 @@ def turn_trace(state: dict[str, Any]) -> dict[str, Any]:
         "tools": [tool_view(c) for c in state.get("tool_results", []) if c["name"] not in HIDDEN_CALLS],
         "gate": state.get("gate_trace", []),
         "verify": verify_outcome(state),
+        "rewrites": int(state.get("retry_count") or 0),
+        "blocked": bool(state.get("hard_injection")),
+        "retrieved": [d["id"] for d in state.get("retrieved", [])][:5],
         "tokens": token_counts(usage),
         "cost_usd": request_cost(usage),
+        "node_costs": node_costs(usage),
     }
 
 
-def pending_view(state: dict[str, Any]) -> dict[str, str] | None:
+def node_costs(usage: list[dict[str, Any]]) -> dict[str, float]:
+    by_node: dict[str, list[dict[str, Any]]] = {}
+    for record in usage:
+        by_node.setdefault(record.get("node", ""), []).append(record)
+    costs = {}
+    for node, records in by_node.items():
+        cost = request_cost(records)
+        if cost is not None:
+            costs[node] = cost
+    return costs
+
+
+def pending_view(state: dict[str, Any]) -> dict[str, Any] | None:
     pending = state.get("pending_action")
     if not pending:
         return None
-    return {"action": pending["action"], "summary": pending["summary"]}
+    return {"action": pending["action"], "summary": pending["summary"], "checks": pending.get("checks", [])}

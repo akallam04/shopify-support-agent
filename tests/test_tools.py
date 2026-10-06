@@ -298,3 +298,20 @@ def test_shipping_status_never_calls_a_fulfilled_order_delivered(order: str, ema
     assert get_order_status(backend, order, email)["shipping"] == expected
     listed = {o["order_number"]: o["shipping"] for o in list_customer_orders(backend, email)["orders"]}
     assert listed[order] == expected
+
+
+def test_an_allowed_return_lists_the_checks_it_passed() -> None:
+    from mcp_server.tools import prepare
+
+    backend = SimStoreBackend(load_db("data/sim/seed.json"))
+    args = {"order_number": "#1022", "email": "jordan.lee@example.com", "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large"}
+    assert prepare(backend, "request_return", args).checks == [
+        "The email matches the order",
+        "Delivered September 29, inside the 30-day return window",
+        "Not a final sale item",
+        "Those items are still available to return",
+    ]
+    cancel = prepare(backend, "cancel_order", {"order_number": "#1023", "email": "maya.thompson@example.com", "reason": "changed_mind"})
+    assert cancel.checks == ["The email matches the order", "Not shipped yet", "Inside the 2-hour change window, 60 minutes left"]
+    assert prepare(backend, "cancel_order", {"order_number": "#1016", "email": "maya.thompson@example.com", "reason": "changed_mind"}).checks == []
+

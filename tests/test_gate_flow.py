@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from app.agent.graph import build_graph
-from app.agent.nodes.gate import classify_fast
+from app.agent.nodes.gate import classify_fast, reason_from_customer
 from app.agent.prompts import (
     HANDOFF_FOLLOWUP,
     ORDER_CONFIRM_RULE,
@@ -16,6 +16,7 @@ from app.agent.prompts import (
     CONFIRM_CLASSIFIER_SCHEMA,
     DECLINED_RESPONSE,
     HANDOFF_RESPONSE,
+    REASON_ASK,
     REFLECTION_SCHEMA,
     ROUTER_SCHEMA,
 )
@@ -28,7 +29,7 @@ from tests.conftest import make_db
 
 PLACED_1002 = parse_instant("2026-07-07T00:26:36Z")
 MAYA = "maya.thompson@example.com"
-CANCEL_ARGS = {"order_number": "#1002", "email": MAYA, "reason": "changed_mind"}
+CANCEL_ARGS = {"order_number": "#1002", "email": MAYA, "reason": "changed_mind", "reason_quote": "I changed my mind"}
 ASK = f"Please cancel order #1002, my email is {MAYA}. I changed my mind."
 
 
@@ -155,7 +156,7 @@ def test_a_change_of_mind_drops_the_pending_action(db: SimDB) -> None:
 
 
 def test_a_correction_at_confirmation_sends_the_order_model_back_to_the_tool(db: SimDB) -> None:
-    corrected = {**CANCEL_ARGS, "reason": "ordered_by_mistake"}
+    corrected = {**CANCEL_ARGS, "reason": "ordered_by_mistake", "reason_quote": "I ordered it by mistake"}
     script = {
         "route": [ORDER_ROUTE, ORDER_ROUTE],
         "order_tools": [("cancel_order", CANCEL_ARGS), ("cancel_order", corrected)],
@@ -198,13 +199,49 @@ def test_the_nudge_fires_only_when_the_gate_will_ask(db: SimDB, draft: str, flag
     assert state["response"] == draft
 
 
+def test_a_guessed_reason_goes_back_to_the_model_and_then_the_customer_is_asked(db: SimDB) -> None:
+    guessed = {**CANCEL_ARGS, "reason_quote": "it arrived too late"}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", guessed), ("cancel_order", guessed)]}
+    _, client, _, _, state = first_turn(db, script)
+    assert client.count("order_tools") == 2
+    retry_system = " ".join(b["text"] for b in [kw for kind, kw in client.calls if kind == "order_tools"][1]["system"])
+    assert "not something the customer wrote" in retry_system
+    assert state["response"] == REASON_ASK["cancel_order"]
+    assert [t["found"] for t in state["gate_trace"] if t["step"] == "reason_check"] == [False, False]
+    assert not state.get("pending_action") and db.orders["#1002"].cancelled_at is None
+
+
+def test_a_model_that_asks_after_the_feedback_gets_its_question_through(db: SimDB) -> None:
+    unsaid = {**CANCEL_ARGS, "reason_quote": ""}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", unsaid), "Could you tell me why you would like to cancel?"]}
+    _, _, _, _, state = first_turn(db, script)
+    assert state["response"] == "Could you tell me why you would like to cancel?"
+    assert not state.get("pending_action")
+
+
+@pytest.mark.parametrize(
+    ("quote", "said", "digest", "found"),
+    [
+        ("I changed my mind!", "Cancel #1002. I changed my mind.", "", True),
+        ("changed  my MIND", "cancel it, changed my mind", "", True),
+        ("too small", "please cancel #1002", "Customer said: the jacket is too small", True),
+        ("it is too big", "I want to return the jacket", "", False),
+        ("ok", "ok, cancel it", "", False),
+    ],
+)
+def test_the_reason_must_be_words_the_customer_wrote(quote: str, said: str, digest: str, found: bool) -> None:
+    state = {"messages": [{"role": "user", "content": said}, {"role": "assistant", "content": "it is too big?"}], "context_digest": digest}
+    assert reason_from_customer(quote, state) is found
+
+
 def test_policy_refuses_before_reflection_or_confirmation(db: SimDB) -> None:
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}
     graph, client, _, _, state = first_turn(db, script, after_placed=timedelta(days=2))
     assert "more than 2 hours ago" in state["response"]
     assert not state.get("pending_action")
     assert client.count("reflect") == 0
-    assert [t["code"] for t in state["gate_trace"]] == ["change_window_passed"]
+    assert [t["step"] for t in state["gate_trace"]] == ["reason_check", "policy"]
+    assert state["gate_trace"][0]["found"] and state["gate_trace"][1]["code"] == "change_window_passed"
 
 
 def test_a_wrong_email_gets_the_not_found_answer(db: SimDB) -> None:

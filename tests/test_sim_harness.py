@@ -89,7 +89,7 @@ def converse(seed, task: Task, client: FakeAnthropic, agent: AgentConfig | None 
     return asyncio.run(go())
 
 
-CANCEL_1023 = {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake"}
+CANCEL_1023 = {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake", "reason_quote": "I ordered it by mistake"}
 ROUTE_1023 = {"intent": "order", "search_query": "", "order_number": "#1023", "email": MAYA}
 PROCEED = {"verdict": "proceed", "issues": [], "question": ""}
 

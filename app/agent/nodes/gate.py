@@ -17,6 +17,8 @@ from app.agent.prompts import (
     NOT_FOUND_HINT,
     POLICY_RULES,
     REASK_TEMPLATE,
+    REASON_ASK,
+    REASON_FEEDBACK,
     REFLECTION_SCHEMA,
     REFLECTION_SYSTEM,
     with_digest,
@@ -64,6 +66,24 @@ def result_message(result: dict[str, Any]) -> str:
     return f"That is already done. {text}" if result.get("duplicate") else text
 
 
+REASON_ACTIONS = frozenset({"cancel_order", "request_return"})
+REASON_CHECK = "The reason came from the customer"
+WORD_RE = re.compile(r"[a-z0-9']+")
+
+
+def _words(text: str) -> str:
+    return " ".join(WORD_RE.findall(text.lower()))
+
+
+def reason_from_customer(quote: str, state: AgentState) -> bool:
+    wanted = _words(quote)
+    if len(wanted) < 3:
+        return False
+    said = [_words(str(m["content"])) for m in state["messages"] if m["role"] == "user"]
+    said.append(_words(state.get("context_digest") or ""))
+    return any(wanted in text for text in said)
+
+
 CORRECTABLE_CODES = frozenset({"invalid_input", "item_not_found", "no_items", "invalid_reason"})
 MAX_GATE_RETRIES = 1
 
@@ -106,6 +126,15 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         candidate = state["candidate_action"]
         name, args = candidate["name"], candidate["args"]
         trace = list(state.get("gate_trace", []))
+        if name in REASON_ACTIONS:
+            quote = str(args.get("reason_quote") or "")
+            found = reason_from_customer(quote, state)
+            trace.append({"step": "reason_check", "action": name, "found": found})
+            if not found:
+                retry = _retry(state, name, REASON_FEEDBACK.format(name=name, quote=quote))
+                if retry is not None:
+                    return {**retry, "candidate_action": None, "gate_trace": trace}
+                return {"draft": REASON_ASK[name], "candidate_action": None, "gate_trace": trace}
         try:
             prepared = tools.prepare(name, args)
         except ToolInputError as e:
@@ -137,11 +166,13 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         key = idempotency_key(name, prepared.args)
         if settings.gate_confirmation:
             trace.append({"step": "confirmation_requested", "action": name, "key": key})
+            checks = prepared.checks + ([REASON_CHECK] if name in REASON_ACTIONS else [])
             pending = {
                 "action": name,
                 "args": args,
                 "order_number": prepared.order_name,
                 "summary": prepared.summary,
+                "checks": checks,
                 "key": key,
             }
             return {

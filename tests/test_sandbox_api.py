@@ -17,7 +17,7 @@ from mcp_server.tools import idempotency_key
 
 MAYA = "maya.thompson@example.com"
 KEY = "test-signing-key"
-CANCEL = {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake"}
+CANCEL = {"order_number": "#1023", "email": MAYA, "reason": "ordered_by_mistake", "reason_quote": "ordered by mistake"}
 ROUTE = {"intent": "order", "search_query": "", "order_number": "#1023", "email": MAYA}
 
 
@@ -90,7 +90,11 @@ def test_each_reply_shows_the_pending_change_and_what_happened_inside() -> None:
     trace = first["trace"]
     assert trace["path"][:3] == ["sanitize", "context", "route"] and "gate" in trace["path"]
     assert [t["kind"] for t in trace["tools"]] == ["policy_check"] and trace["tools"][0]["result"]["allowed"] is True
-    assert [g["step"] for g in trace["gate"]] == ["policy", "confirmation_requested"]
+    assert [g["step"] for g in trace["gate"]] == ["reason_check", "policy", "confirmation_requested"]
+    assert first["pending"]["checks"][0] == "The email matches the order"
+    assert first["pending"]["checks"][-1] == "The reason came from the customer"
+    assert any(c.startswith("Inside the 2-hour change window") for c in first["pending"]["checks"])
+    assert set(trace["node_costs"]) == {"route", "order_tools"} and trace["blocked"] is False
     assert trace["verify"] == "passed" and trace["tokens"]["input_tokens"] > 0 and trace["cost_usd"] > 0
     assert second["pending"] is None
     assert "execute" in second["trace"]["path"] and second["trace"]["gate"][-1]["step"] == "executed"

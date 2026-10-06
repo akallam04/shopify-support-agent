@@ -51,7 +51,7 @@ class ChatResponse(BaseModel):
     sandbox: bool = False
     session_state: str | None = None
     session_reset: bool = False
-    pending: dict[str, str] | None = None
+    pending: dict[str, Any] | None = None
     trace: dict[str, Any] | None = None
 
 

@@ -227,6 +227,7 @@ class Prepared:
     order_name: str | None = None
     summary: str = ""
     facts: dict[str, Any] = field(default_factory=dict)
+    checks: list[str] = field(default_factory=list)
 
     def view(self) -> dict[str, Any]:
         return {
@@ -237,6 +238,7 @@ class Prepared:
             "order_number": self.order_name,
             "summary": self.summary,
             "facts": self.facts,
+            "checks": self.checks,
         }
 
 
@@ -273,6 +275,28 @@ def _order_facts(order: Order) -> dict[str, Any]:
         ],
         "deliveries": [f.delivered_at for f in order.fulfillments if f.delivered_at],
     }
+
+
+def _window_check(order: Order, now: Any) -> str:
+    left = max(int((policy.placed_at(order) + policy.ORDER_CHANGE_WINDOW - now).total_seconds() // 60), 1)
+    return f"Inside the 2-hour change window, {left} minute{'' if left == 1 else 's'} left"
+
+
+def passed_checks(action: str, order: Order, pairs: list[tuple[LineItem, int]], now: Any) -> list[str]:
+    checks = ["The email matches the order"]
+    if action in ("cancel_order", "update_shipping_address"):
+        checks += ["Not shipped yet", _window_check(order, now)]
+    if action == "update_shipping_address":
+        checks += ["The new address is in the US or Canada", "The address is complete"]
+    if action == "request_return":
+        delivered = [policy.delivered_at(order, line) for line, _ in pairs]
+        first = min(d for d in delivered if d is not None)
+        checks += [
+            f"Delivered {first:%B %-d}, inside the 30-day return window",
+            "Not a final sale item",
+            "Those items are still available to return",
+        ]
+    return checks
 
 
 def _not_found(action: str) -> Prepared:
@@ -370,6 +394,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
     now = backend.clock.now()
     facts = _order_facts(order)
 
+    pairs: list[tuple[LineItem, int]] = []
     if action == "cancel_order":
         reason = str(args.get("reason") or "").strip()
         decision = policy.can_cancel(order, reason, now)
@@ -405,7 +430,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
 
     if not decision.allowed:
         return Prepared(action, False, decision.code, decision.reason, normalized, name, "", facts)
-    return Prepared(action, True, "ok", "", normalized, name, summary, facts)
+    return Prepared(action, True, "ok", "", normalized, name, summary, facts, passed_checks(action, order, pairs, now))
 
 
 def _audit(backend: WritableStore, action: str, prepared: Prepared, outcome: str, key: str) -> None:
