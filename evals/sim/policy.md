@@ -18,7 +18,7 @@ for behavior the store's own documents do not support.
   placed, and only before it ships. A cancelled order cannot be changed.
 - The store ships only to the United States and Canada. A new address needs a street, city,
   state or province, postal code, and country.
-- A cancellation needs a reason from the customer. The agent does not guess one.
+- A cancellation reason is optional. The agent records one the customer gives, never guesses one, and does not ask for one.
 
 ## Returns
 

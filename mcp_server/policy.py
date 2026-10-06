@@ -81,8 +81,8 @@ def order_change(order: Order, now: datetime, verb: str) -> Decision:
 
 
 def can_cancel(order: Order, reason: str, now: datetime) -> Decision:
-    if reason not in CANCEL_REASONS:
-        return refuse("invalid_reason", f"The cancellation reason must be one of: {', '.join(CANCEL_REASONS)}.")
+    if reason and reason not in CANCEL_REASONS:
+        return refuse("invalid_reason", f"The cancellation reason, if given, must be one of: {', '.join(CANCEL_REASONS)}.")
     return order_change(order, now, "cancelled")
 
 

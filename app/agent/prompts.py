@@ -114,7 +114,9 @@ ORDER_WRITE_RULES = """
 You can also change orders with tools: cancel_order, update_shipping_address, and request_return.
 - Use them only for the customer's own order, with the order number and email they gave you.
 - The order status shows under eligibility what store policy allows for that order right now. Never tell the customer a change is possible unless eligibility says yes. When it says no, give the customer that reason plainly before asking for any other details.
-- Before calling one, be sure of the exact order, the items and quantities, the new address, and the reason the customer gave. Ask if any of it is unclear. Do not guess a reason: put the customer's own words that give it in reason_quote, and if they have not said why, ask them.
+- Before calling one, be sure of the exact order, the items and quantities, and the new address. Ask if any of it is unclear.
+- A return needs the reason the customer gave: put their own words in reason_quote, and if they have not said why, ask them. Never guess a reason.
+- A cancellation does not need a reason. Pass one, with the customer's words in reason_quote, only if they gave it; do not ask for one.
 - The tools enforce store policy. If a tool refuses, tell the customer the reason it gave, plainly.
 - Call at most one change tool per turn.
 - Use transfer_to_human for what these tools cannot do: warranty claims, items that arrived damaged or became defective, or a customer asking for a person. Transfer those even when the return window has passed. A request store policy does not allow, such as an address outside the US and Canada, a final sale return, or an order past its change window, is not one of these: explain the rule plainly instead of transferring."""
@@ -129,10 +131,7 @@ SELF_CONFIRM_FEEDBACK = """Your draft asked the customer to confirm a change. Do
 
 REASON_FEEDBACK = "{name} needs the reason in the customer's own words, and reason_quote ({quote!r}) is not something the customer wrote. If the customer has said why, copy their words into reason_quote exactly. If not, ask them why instead of calling the tool."
 
-REASON_ASK = {
-    "cancel_order": "Before I cancel it, could you tell me why you would like to cancel?",
-    "request_return": "Before I set up the return, could you tell me why you are returning it? For example, it does not fit, it arrived damaged, or you no longer need it.",
-}
+REASON_ASK = "Before I set up the return, could you tell me why you are returning it? For example, it does not fit, it arrived damaged, or you no longer need it."
 
 CORRECTION_TEMPLATE = """The customer was asked to confirm this change and replied with something different instead: {summary}
 If their reply gives everything needed, call the change tool again now with the corrected details. The system shows the customer the updated change and waits for their yes, so do not ask for confirmation yourself."""
@@ -141,7 +140,7 @@ ORDER_CONFIRM_RULE = """
 - Before calling a change tool, tell the customer exactly what you will change and wait for a clear yes to that in their next message."""
 
 POLICY_RULES = {
-    "cancel_order": "Orders can be cancelled only within 2 hours of being placed and before they ship. The customer must give a reason.",
+    "cancel_order": "Orders can be cancelled only within 2 hours of being placed and before they ship. A reason is optional and must come from the customer if given.",
     "update_shipping_address": "A shipping address can be changed only within 2 hours of the order being placed and before it ships. The store ships only to the United States and Canada.",
     "request_return": "Items can be returned within 30 days of delivery. Final sale items and gift cards cannot be returned. Only the items and quantities the customer named should be returned, for the reason the customer gave.",
 }

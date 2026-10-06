@@ -24,7 +24,7 @@ from app.agent.tool_executor import InProcessTools
 from app.config import Settings
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import FrozenClock, parse_instant
-from mcp_server.simdb import SimDB, db_hash
+from mcp_server.simdb import SimDB, db_hash, load_db
 from tests.conftest import make_db
 
 PLACED_1002 = parse_instant("2026-07-07T00:26:36Z")
@@ -199,24 +199,56 @@ def test_the_nudge_fires_only_when_the_gate_will_ask(db: SimDB, draft: str, flag
     assert state["response"] == draft
 
 
-def test_a_guessed_reason_goes_back_to_the_model_and_then_the_customer_is_asked(db: SimDB) -> None:
-    guessed = {**CANCEL_ARGS, "reason_quote": "it arrived too late"}
-    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", guessed), ("cancel_order", guessed)]}
-    _, client, _, _, state = first_turn(db, script)
+JORDAN = "jordan.lee@example.com"
+RETURN_ASK = f"I want to return the rain jacket from order #1022. My email is {JORDAN}."
+RETURN_ROUTE = {"intent": "order", "search_query": "", "order_number": "#1022", "email": JORDAN}
+
+
+def seed_turn(script: dict, text: str):
+    backend = SimStoreBackend(load_db("data/sim/seed.json"))
+    tools = InProcessTools(backend, include_writes=True)
+    asyncio.run(tools.start())
+    client = ScriptedClient(script)
+    graph = build_graph(Settings(_env_file=None, anthropic_api_key="test", write_actions=True), object(), tools, client=client)
+    return client, turn(graph, [{"role": "user", "content": text}])
+
+
+def test_a_guessed_return_reason_goes_back_to_the_model_and_then_the_customer_is_asked() -> None:
+    guessed = {"order_number": "#1022", "email": JORDAN, "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large", "reason_quote": "it is too big"}
+    client, state = seed_turn({"route": [RETURN_ROUTE], "order_tools": [("request_return", guessed), ("request_return", guessed)]}, RETURN_ASK)
     assert client.count("order_tools") == 2
     retry_system = " ".join(b["text"] for b in [kw for kind, kw in client.calls if kind == "order_tools"][1]["system"])
     assert "not something the customer wrote" in retry_system
-    assert state["response"] == REASON_ASK["cancel_order"]
+    assert state["response"] == REASON_ASK
     assert [t["found"] for t in state["gate_trace"] if t["step"] == "reason_check"] == [False, False]
-    assert not state.get("pending_action") and db.orders["#1002"].cancelled_at is None
-
-
-def test_a_model_that_asks_after_the_feedback_gets_its_question_through(db: SimDB) -> None:
-    unsaid = {**CANCEL_ARGS, "reason_quote": ""}
-    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", unsaid), "Could you tell me why you would like to cancel?"]}
-    _, _, _, _, state = first_turn(db, script)
-    assert state["response"] == "Could you tell me why you would like to cancel?"
     assert not state.get("pending_action")
+
+
+def test_a_quoted_return_reason_reaches_the_confirmation_with_its_check() -> None:
+    said = {"order_number": "#1022", "email": JORDAN, "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large", "reason_quote": "It is too big"}
+    _, state = seed_turn({"route": [RETURN_ROUTE], "order_tools": [("request_return", said)]}, RETURN_ASK.replace("#1022.", "#1022. It is too big."))
+    assert state["pending_action"]["checks"][-1] == "The reason came from the customer"
+
+
+def test_a_cancel_needs_no_reason_and_never_asks_for_one(db: SimDB) -> None:
+    unsaid = {"order_number": "#1002", "email": MAYA}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", unsaid)]}
+    graph, client, _ = make(db, script)
+    state = turn(graph, [{"role": "user", "content": f"Please cancel order #1002, my email is {MAYA}."}])
+    assert client.count("order_tools") == 1
+    assert state["pending_action"]["action"] == "cancel_order"
+    assert "The reason came from the customer" not in state["pending_action"]["checks"]
+    assert not [t for t in state["gate_trace"] if t["step"] == "reason_check"]
+
+
+def test_a_guessed_cancel_reason_is_dropped_instead_of_asked(db: SimDB) -> None:
+    guessed = {**CANCEL_ARGS, "reason_quote": "it arrived too late"}
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", guessed)]}
+    _, client, _, _, state = first_turn(db, script)
+    assert client.count("order_tools") == 1
+    assert state["pending_action"]["args"]["reason"] == "" and state["pending_action"]["args"]["reason_quote"] == ""
+    assert [(t["found"], t.get("optional")) for t in state["gate_trace"] if t["step"] == "reason_check"] == [(False, True)]
+    assert db.orders["#1002"].cancelled_at is None
 
 
 @pytest.mark.parametrize(
@@ -366,7 +398,7 @@ def test_a_repeated_input_mistake_reaches_the_customer_after_one_retry(db: SimDB
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", bad), ("cancel_order", bad)]}
     _, client, _, _, state = first_turn(db, script)
     assert client.count("order_tools") == 2
-    assert "reason must be one of" in state["response"]
+    assert "must be one of" in state["response"]
     assert not state.get("pending_action")
 
 

@@ -44,7 +44,9 @@ def test_read_schemas_match_what_the_mcp_server_serves() -> None:
 
 def test_reason_enums_come_from_the_policy(db: SimDB) -> None:
     specs = specs_by_name(started(db))
-    assert tuple(specs["cancel_order"]["input_schema"]["properties"]["reason"]["enum"]) == policy.CANCEL_REASONS
+    cancel = specs["cancel_order"]["input_schema"]
+    assert tuple(cancel["properties"]["reason"]["anyOf"][0]["enum"]) == policy.CANCEL_REASONS
+    assert "reason" not in cancel["required"] and "reason_quote" not in cancel["required"]
     schema = specs["request_return"]["input_schema"]
     assert tuple(schema["properties"]["reason"]["enum"]) == policy.RETURN_REASONS
     assert "items" in schema["required"]

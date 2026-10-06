@@ -95,19 +95,21 @@ def check_inventory(product_query: str) -> dict[str, Any]:
     return tools.check_inventory(_store(), product_query)
 
 
-def cancel_order(order_number: str, email: str, reason: CancelReason, reason_quote: str) -> dict[str, Any]:
+def cancel_order(
+    order_number: str, email: str, reason: CancelReason | Literal[""] = "", reason_quote: str = ""
+) -> dict[str, Any]:
     """Cancel an order that has not shipped yet.
 
     Store policy allows cancelling only within 2 hours of the order being placed and before it
-    ships; the tool refuses with a reason otherwise. Needs the order number, the email on the
-    order, and the customer's reason.
+    ships; the tool refuses with a reason otherwise. Needs the order number and the email on the
+    order. A reason is optional: pass one only if the customer gave it, and do not ask for one.
 
     Args:
         order_number: The customer's order number, for example #1001.
         email: The email address the order was placed with.
-        reason: Why the customer is cancelling.
+        reason: Why the customer is cancelling, only if they said so; otherwise leave it empty.
         reason_quote: The customer's own words that give the reason, copied exactly from their
-            messages. If the customer has not said why, ask them instead of calling this tool.
+            messages, when a reason is given.
     """
     args = {"order_number": order_number, "email": email, "reason": reason, "reason_quote": reason_quote}
     return tools.execute(_store(), "cancel_order", args)

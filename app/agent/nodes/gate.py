@@ -66,7 +66,8 @@ def result_message(result: dict[str, Any]) -> str:
     return f"That is already done. {text}" if result.get("duplicate") else text
 
 
-REASON_ACTIONS = frozenset({"cancel_order", "request_return"})
+REASON_REQUIRED = frozenset({"request_return"})
+REASON_OPTIONAL = frozenset({"cancel_order"})
 REASON_CHECK = "The reason came from the customer"
 WORD_RE = re.compile(r"[a-z0-9']+")
 
@@ -126,7 +127,8 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         candidate = state["candidate_action"]
         name, args = candidate["name"], candidate["args"]
         trace = list(state.get("gate_trace", []))
-        if name in REASON_ACTIONS:
+        reason_given = False
+        if name in REASON_REQUIRED:
             quote = str(args.get("reason_quote") or "")
             found = reason_from_customer(quote, state)
             trace.append({"step": "reason_check", "action": name, "found": found})
@@ -134,7 +136,13 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
                 retry = _retry(state, name, REASON_FEEDBACK.format(name=name, quote=quote))
                 if retry is not None:
                     return {**retry, "candidate_action": None, "gate_trace": trace}
-                return {"draft": REASON_ASK[name], "candidate_action": None, "gate_trace": trace}
+                return {"draft": REASON_ASK, "candidate_action": None, "gate_trace": trace}
+            reason_given = True
+        elif name in REASON_OPTIONAL and args.get("reason"):
+            reason_given = reason_from_customer(str(args.get("reason_quote") or ""), state)
+            trace.append({"step": "reason_check", "action": name, "found": reason_given, "optional": True})
+            if not reason_given:
+                args = {**args, "reason": "", "reason_quote": ""}
         try:
             prepared = tools.prepare(name, args)
         except ToolInputError as e:
@@ -166,7 +174,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         key = idempotency_key(name, prepared.args)
         if settings.gate_confirmation:
             trace.append({"step": "confirmation_requested", "action": name, "key": key})
-            checks = prepared.checks + ([REASON_CHECK] if name in REASON_ACTIONS else [])
+            checks = prepared.checks + ([REASON_CHECK] if reason_given else [])
             pending = {
                 "action": name,
                 "args": args,

@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 from app.costs import usage_cost
+from app.privacy import masked
 
 
 def request_cost(usage: list[dict[str, Any]]) -> float | None:
@@ -20,5 +21,5 @@ def token_counts(usage: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def log_event(**fields: Any) -> None:
-    sys.stdout.write(json.dumps(fields, separators=(",", ":"), default=str) + "\n")
+    sys.stdout.write(json.dumps(masked(fields), separators=(",", ":"), default=str) + "\n")
     sys.stdout.flush()

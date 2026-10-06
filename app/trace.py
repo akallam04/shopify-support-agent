@@ -6,6 +6,7 @@ from typing import Any
 from app.agent.nodes.verify import UNCHECKED_INTENTS
 from app.agent.prompts import SAFE_FALLBACK_RESPONSE
 from app.logs import request_cost, token_counts
+from app.privacy import masked
 
 MAX_RESULT_CHARS = 2500
 HIDDEN_CALLS = ("pending_action",)
@@ -19,7 +20,7 @@ def tool_view(call: dict[str, Any]) -> dict[str, Any]:
         result = raw[:MAX_RESULT_CHARS]
     name = call["name"]
     kind = "policy_check" if name.startswith("prepare:") else "tool"
-    return {"kind": kind, "name": name.removeprefix("prepare:"), "args": call.get("args", {}), "result": result}
+    return {"kind": kind, "name": name.removeprefix("prepare:"), "args": masked(call.get("args", {})), "result": masked(result)}
 
 
 def verify_outcome(state: dict[str, Any]) -> str:
