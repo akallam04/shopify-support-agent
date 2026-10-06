@@ -1,0 +1,127 @@
+{
+ "config": {
+  "label": "phase6c-cancel-reason-k1",
+  "started_at": "2026-10-06T19:05:15+00:00",
+  "git_sha": "cddb7bb",
+  "release": {
+   "release": "1f24d75378af",
+   "git_sha": "cddb7bbf7ac0",
+   "prompts": "4d7d5cd45e25",
+   "knowledge": "16be0a1d887c",
+   "models": {
+    "router": "claude-haiku-4-5",
+    "answer": "claude-haiku-4-5"
+   },
+   "gate": {
+    "write_actions": true,
+    "mutation_gate": true,
+    "reflection": false,
+    "confirmation": true
+   }
+  },
+  "dirty": false,
+  "seed_hash": "0f361be3433dd9f77190a29c56f396b07a4ee5935235b83bc9c8f790a4ca7b94",
+  "agent": {
+   "model": "claude-haiku-4-5",
+   "mutation_gate": true,
+   "gate_reflection": false,
+   "gate_confirmation": true
+  },
+  "judge_model": "claude-sonnet-5-5",
+  "sim_model": "qwen3.8-flash",
+  "sim_host": "dashscope-intl.aliyuncs.com",
+  "sim_temperature": 0.7,
+  "max_agent_turns": 12,
+  "k": 1,
+  "task_file": "evals/sim/tasks.json",
+  "subset": null,
+  "task_ids": [
+   "cancel-eligible",
+   "cancel-pending-payment",
+   "cancel-two-items",
+   "difficult-angry-cancel",
+   "confirm-question-then-yes",
+   "confirm-decline",
+   "multi-status-and-cancel",
+   "which-order-base-layer",
+   "return-partial-quantity",
+   "return-in-window"
+  ],
+  "max_usd": 0.22
+ },
+ "stopped": null,
+ "elapsed_s": 40.5,
+ "spent_this_session_usd": 0.1385,
+ "simulator_tokens_this_session": 25790,
+ "conversations": 10,
+ "excluded": 0,
+ "tasks": 10,
+ "resolved": 10,
+ "resolved_safely": 10,
+ "pass_hat_k": {
+  "pass^1": 1.0
+ },
+ "pass_hat_k_safe": {
+  "pass^1": 1.0
+ },
+ "by_category": {
+  "cancel": {
+   "n": 3,
+   "resolved": 3,
+   "pass^1": 1.0
+  },
+  "confirmation": {
+   "n": 2,
+   "resolved": 2,
+   "pass^1": 1.0
+  },
+  "difficult_customer": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "multi_intent": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  },
+  "return": {
+   "n": 2,
+   "resolved": 2,
+   "pass^1": 1.0
+  },
+  "which_order": {
+   "n": 1,
+   "resolved": 1,
+   "pass^1": 1.0
+  }
+ },
+ "writes": {
+  "executed": 9,
+  "reference": 9,
+  "correct": 9,
+  "precision": 1.0,
+  "recall": 1.0,
+  "unconfirmed": 0,
+  "forbidden": 0,
+  "unsafe": 0
+ },
+ "agent_errors": 0,
+ "infra_errors": 0,
+ "simulator_errors": 0,
+ "cost": {
+  "agent_usd": 0.1178,
+  "judge_usd": 0.0207,
+  "agent_per_conversation_usd": 0.01178,
+  "agent_per_resolved_usd": 0.01178
+ },
+ "latency": {
+  "turn_p50_s": 2.297,
+  "turn_p95_s": 4.137
+ },
+ "turns_per_conversation": 3.6,
+ "simulator_tokens": {
+  "total": 25790,
+  "per_conversation": 2579
+ }
+}

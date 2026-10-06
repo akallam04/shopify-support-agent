@@ -122,4 +122,15 @@ to the store was quoted from the customer; the model asked when the customer had
 so the check never had to stop a guess in these runs. 53-case suite: 53 of 53
 (`evals/results/20261006-004921_phase6b-reason.json`).
 
+### Optional cancel reasons
+
+| Commit | Problem | Change |
+|---|---|---|
+| 52d3b1c | After the reason check, the agent asked every customer why they were cancelling, an extra question the store does not need: the published policy asks for no reason, and Shopify's cancel takes a fixed reason code. In `20261006-004710_phase6b-reason-writes-k1` it asked in 5 of 5 cancellations. | A cancellation reason is optional. The agent passes one only if the customer gave it, a reason not found in the customer's words is dropped instead of asked for, and returns still need the customer's reason. |
+
+Fresh check on 52d3b1c (`20261006-120515_phase6c-cancel-reason-k1`): 10 of 10 resolved. The agent
+asked why in 0 of 8 cancellations, recorded the one reason a customer volunteered, and still asked
+in 2 of 2 returns. On the five cancel tasks in both runs, conversations went from 4.2 to 3.2
+turns on average. 53-case suite: 53 of 53 (`evals/results/20261006-120702_phase6c-cancel-reason.json`).
+
 No agent issue from the Phase 4 and Phase 6 lists is open.
