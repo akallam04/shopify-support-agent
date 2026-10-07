@@ -2,7 +2,7 @@
 
 from typing import Any
 
-ADAPTIVE_THINKING_MODELS = frozenset({"claude-sonnet-5-5"})
+ADAPTIVE_THINKING_MODELS = frozenset({"claude-sonnet-5-5", "claude-haiku-5-5"})
 THINKING_MIN_MAX_TOKENS = 4000
 
 
@@ -29,3 +29,20 @@ def call_options(model: str, max_tokens: int, output_format: dict[str, Any] | No
     if output_config:
         options["output_config"] = output_config
     return options
+
+
+def response_text(response: Any) -> str | None:
+    if getattr(response, "stop_reason", None) == "refusal":
+        return None
+    texts = [b.text for b in response.content if b.type == "text"]
+    return "".join(texts) if texts else None
+
+
+def carries_thinking(messages: list[Any]) -> bool:
+    return any(
+        getattr(block, "type", None) in ("thinking", "redacted_thinking")
+        for m in messages
+        if m["role"] == "assistant" and isinstance(m["content"], list)
+        for block in m["content"]
+    )
+

@@ -16,12 +16,13 @@ from app.agent.prompts import (
     SAFE_FALLBACK_RESPONSE,
     SELF_CONFIRM_FEEDBACK,
 )
-from app.agent.models import call_options, system_blocks
+from app.agent.models import call_options, carries_thinking, system_blocks
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
 
 MAX_TOOL_ROUNDS = 3
+NUDGE_ROUNDS = 2
 
 SELF_CONFIRM_RE = re.compile(
     r"\b(should i (go ahead|proceed)|shall i (go ahead|proceed)|would you like me to (go ahead|proceed)|"
@@ -64,8 +65,10 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
         trace = list(state.get("gate_trace", []))
         draft = ""
         nudged = False
+        rounds, limit = 0, MAX_TOOL_ROUNDS
 
-        for round_number in range(1, MAX_TOOL_ROUNDS + 1):
+        while rounds < limit:
+            rounds += 1
             response = await client.messages.create(
                 **call_options(model, 1000),
                 system=system,
@@ -76,11 +79,15 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
             tool_uses = [b for b in response.content if b.type == "tool_use"]
             if not tool_uses:
                 draft = "".join(b.text for b in response.content if b.type == "text").strip()
-                if can_nudge and not nudged and round_number < MAX_TOOL_ROUNDS and asks_for_yes(draft):
-                    nudged = True
-                    trace.append({"step": "self_confirm_nudge"})
-                    system = system_blocks(base_system, state.get("context_digest"), system_extra(state, nudged))
-                    continue
+                if can_nudge and not nudged and asks_for_yes(draft):
+                    if carries_thinking(messages):
+                        messages = list(state["messages"])
+                        limit = rounds + NUDGE_ROUNDS
+                    if rounds < limit:
+                        nudged = True
+                        trace.append({"step": "self_confirm_nudge"})
+                        system = system_blocks(base_system, state.get("context_digest"), system_extra(state, nudged))
+                        continue
                 break
 
             gated = next((tu for tu in tool_uses if tu.name in tools.gated_tool_names), None)

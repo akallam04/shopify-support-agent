@@ -14,4 +14,4 @@ ln -sfn /opt/apphome/.cache/chroma /tmp/apphome/.cache/chroma
 
 (find /opt/apphome/.cache/chroma /usr/local/lib/python3.11/site-packages/onnxruntime -type f -exec cat {} + > /dev/null 2>&1 &)
 
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8080}"
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8080}" --no-access-log

@@ -183,6 +183,34 @@ def test_a_draft_that_asks_for_a_yes_is_sent_back_to_call_the_tool(db: SimDB) ->
     assert db.orders["#1002"].cancelled_at is None
 
 
+class ThinkingClient(ScriptedClient):
+    async def create(self, **kwargs: Any) -> SimpleNamespace:
+        if "tools" in kwargs and self.script.get("thinking_first"):
+            self.script["thinking_first"] = False
+            self.calls.append(("order_tools", {**kwargs, "messages": list(kwargs["messages"])}))
+            step = self.script["order_tools"].pop(0)
+            return reply(SimpleNamespace(type="thinking", thinking="", signature="sig"), tool_use(*step))
+        if "tools" in kwargs:
+            kwargs = {**kwargs, "messages": list(kwargs["messages"])}
+        return await super().create(**kwargs)
+
+
+def test_the_nudge_restarts_the_loop_when_thinking_blocks_would_be_sent_back(db: SimDB) -> None:
+    status = ("get_order_status", {"order_number": "#1002", "email": MAYA})
+    script = {"route": [ORDER_ROUTE], "thinking_first": True, "order_tools": [status, "Cancel order #1002, is that correct?", status, ("cancel_order", CANCEL_ARGS)]}
+    backend = SimStoreBackend(db, FrozenClock(PLACED_1002 + timedelta(hours=1)))
+    tools = InProcessTools(backend, include_writes=True)
+    asyncio.run(tools.start())
+    client = ThinkingClient(script)
+    graph = build_graph(Settings(_env_file=None, anthropic_api_key="test", write_actions=True), object(), tools, client=client)
+    state = turn(graph, [{"role": "user", "content": ASK}])
+    calls = [kw for kind, kw in client.calls if kind == "order_tools"]
+    assert len(calls) == 4
+    assert len(calls[2]["messages"]) == 1
+    assert {"step": "self_confirm_nudge"} in state["gate_trace"]
+    assert state["response"].startswith("Just to confirm, I will cancel order #1002")
+
+
 @pytest.mark.parametrize(
     ("draft", "flags", "nudged"),
     [
@@ -228,6 +256,23 @@ def test_a_quoted_return_reason_reaches_the_confirmation_with_its_check() -> Non
     said = {"order_number": "#1022", "email": JORDAN, "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large", "reason_quote": "It is too big"}
     _, state = seed_turn({"route": [RETURN_ROUTE], "order_tools": [("request_return", said)]}, RETURN_ASK.replace("#1022.", "#1022. It is too big."))
     assert state["pending_action"]["checks"][-1] == "The reason came from the customer"
+
+
+def test_a_declined_router_call_is_treated_as_out_of_scope(db: SimDB) -> None:
+    class Declines(ScriptedClient):
+        async def create(self, **kwargs: Any) -> SimpleNamespace:
+            response = await super().create(**kwargs)
+            return SimpleNamespace(content=[], usage=response.usage, stop_reason="refusal")
+
+    graph_declines = build_graph(Settings(_env_file=None, anthropic_api_key="test", write_actions=True), object(), graph_tools(db), client=Declines({"route": [ORDER_ROUTE]}))
+    state = turn(graph_declines, [{"role": "user", "content": ASK}])
+    assert state["intent"] == "out_of_scope" and not state.get("pending_action")
+
+
+def graph_tools(db: SimDB) -> InProcessTools:
+    tools = InProcessTools(SimStoreBackend(db, FrozenClock(PLACED_1002 + timedelta(hours=1))), include_writes=True)
+    asyncio.run(tools.start())
+    return tools
 
 
 def test_a_cancel_needs_no_reason_and_never_asks_for_one(db: SimDB) -> None:

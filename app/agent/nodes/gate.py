@@ -23,7 +23,7 @@ from app.agent.prompts import (
     REFLECTION_SYSTEM,
     with_digest,
 )
-from app.agent.models import call_options
+from app.agent.models import call_options, response_text
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -85,6 +85,8 @@ def reason_from_customer(quote: str, state: AgentState) -> bool:
     return any(wanted in text for text in said)
 
 
+DECLINED_REFLECTION = {"verdict": "ask", "issues": ["the check declined"], "question": "Could you tell me exactly what you would like me to change?"}
+
 CORRECTABLE_CODES = frozenset({"invalid_input", "item_not_found", "no_items", "invalid_reason"})
 MAX_GATE_RETRIES = 1
 
@@ -120,7 +122,8 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             system=system,
             messages=[{"role": "user", "content": content}],
         )
-        verdict = json.loads(next(b.text for b in response.content if b.type == "text"))
+        text = response_text(response)
+        verdict = json.loads(text) if text else DECLINED_REFLECTION
         return verdict, _usage(state, "reflect", model, response)
 
     async def gate(state: AgentState) -> dict[str, Any]:
@@ -216,7 +219,8 @@ def make_confirm_node(client: AsyncAnthropic, model: str):
                 system=CONFIRM_CLASSIFIER_SYSTEM.format(summary=pending["summary"]),
                 messages=[{"role": "user", "content": text}],
             )
-            label = json.loads(next(b.text for b in response.content if b.type == "text"))["label"]
+            text = response_text(response)
+            label = json.loads(text)["label"] if text else "unclear"
             source = "model"
             update["usage"] = _usage(state, "confirm", model, response)
         trace.append({"step": "confirmation", "label": label, "source": source, "action": pending["action"]})
