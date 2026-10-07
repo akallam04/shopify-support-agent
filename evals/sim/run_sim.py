@@ -37,6 +37,8 @@ SUBSETS = Path("evals/sim/subsets.json")
 EST_USD_PER_CONVERSATION = {
     ("claude-haiku-4-5", True): 0.0136,
     ("claude-haiku-4-5", False): 0.0163,
+    ("claude-haiku-5-5", True): 0.004,
+    ("claude-haiku-5-5", False): 0.0045,
     ("claude-sonnet-5-5", True): 0.055,
     ("claude-sonnet-5-5", False): 0.060,
 }
