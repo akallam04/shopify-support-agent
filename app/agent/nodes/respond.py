@@ -35,7 +35,7 @@ def _context_block(docs: list[dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
-def make_respond_node(client: AsyncAnthropic, model: str):
+def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True):
     async def respond(state: AgentState) -> dict[str, Any]:
         if state.get("hard_injection"):
             return {"draft": INJECTION_RESPONSE}
@@ -72,7 +72,7 @@ def make_respond_node(client: AsyncAnthropic, model: str):
                 system += f"\n\nYour previous draft failed a grounding check: {feedback}\nFix that in the rewrite."
 
         response = await client.messages.create(
-            **call_options(model, 1000),
+            **call_options(model, 1000, thinking=thinking),
             system=with_digest(system, state.get("context_digest")),
             messages=state["messages"],
         )

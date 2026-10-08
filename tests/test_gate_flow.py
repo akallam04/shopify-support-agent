@@ -427,6 +427,14 @@ def test_long_conversations_send_a_digest_instead_of_old_turns(db: SimDB) -> Non
     assert "#1002" in route_system and MAYA in route_system
 
 
+def test_the_thinking_switch_reaches_every_model_call(db: SimDB) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", CANCEL_ARGS)], "confirm": ["confirm"]}
+    graph, client, _, messages, state = first_turn(db, script, router_model="claude-haiku-5-5", answer_model="claude-haiku-5-5", model_thinking=False)
+    turn(graph, messages + [{"role": "user", "content": "hmm I guess that works for me"}], carry(state))
+    assert client.count("route") == 1 and client.count("order_tools") == 1 and client.count("confirm") == 1
+    assert all(kw["thinking"] == {"type": "disabled"} for _, kw in client.calls)
+
+
 def test_a_correctable_input_mistake_goes_back_to_the_model_once(db: SimDB) -> None:
     bad = {**CANCEL_ARGS, "reason": "because"}
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", bad), ("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}

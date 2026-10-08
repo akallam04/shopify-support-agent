@@ -60,3 +60,9 @@ def test_usage_records_keep_thinking_tokens_when_the_model_reports_them() -> Non
     without = SimpleNamespace(usage=SimpleNamespace(input_tokens=10, output_tokens=40))
     assert usage_record("route", "claude-haiku-5-5", with_details)["thinking_tokens"] == 25
     assert usage_record("route", "claude-haiku-4-5", without)["thinking_tokens"] == 0
+
+
+def test_the_thinking_switch_turns_thinking_off_only_where_the_model_allows_it() -> None:
+    assert call_options("claude-haiku-5-5", 300, thinking=False)["thinking"] == {"type": "disabled"}
+    assert "thinking" not in call_options("claude-haiku-5-5", 300)
+    assert "thinking" not in call_options("claude-haiku-4-5", 300, thinking=False)

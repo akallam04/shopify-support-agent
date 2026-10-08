@@ -46,6 +46,7 @@ def release_manifest(settings: Settings) -> dict[str, Any]:
         "prompts": _digest(PROMPT_FILES),
         "knowledge": _digest(KNOWLEDGE_FILES),
         "models": {"router": settings.router_model, "answer": settings.answer_model},
+        "thinking": settings.model_thinking,
         "gate": {
             "write_actions": settings.write_actions,
             "mutation_gate": settings.mutation_gate,

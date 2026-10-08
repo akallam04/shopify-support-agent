@@ -4,6 +4,7 @@ from typing import Any
 
 ADAPTIVE_THINKING_MODELS = frozenset({"claude-sonnet-5-5", "claude-haiku-5-5"})
 THINKING_MIN_MAX_TOKENS = 4000
+THINKING_OFF = {"claude-haiku-5-5": {"type": "disabled"}}
 
 
 DIGEST_HEADER = "Earlier in this conversation (summarized):"
@@ -18,7 +19,9 @@ def system_blocks(stable: str, digest: str | None = None, extra: str | None = No
     return blocks
 
 
-def call_options(model: str, max_tokens: int, output_format: dict[str, Any] | None = None) -> dict[str, Any]:
+def call_options(
+    model: str, max_tokens: int, output_format: dict[str, Any] | None = None, thinking: bool = True
+) -> dict[str, Any]:
     output_config: dict[str, Any] = {}
     if output_format is not None:
         output_config["format"] = output_format
@@ -28,6 +31,8 @@ def call_options(model: str, max_tokens: int, output_format: dict[str, Any] | No
     options: dict[str, Any] = {"model": model, "max_tokens": max_tokens}
     if output_config:
         options["output_config"] = output_config
+    if not thinking and model in THINKING_OFF:
+        options["thinking"] = THINKING_OFF[model]
     return options
 
 

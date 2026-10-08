@@ -190,6 +190,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-gate", action="store_true")
     p.add_argument("--reflection", action="store_true")
     p.add_argument("--no-confirmation", action="store_true")
+    p.add_argument("--no-thinking", action="store_true")
     p.add_argument("--max-usd", type=float, required=True)
     p.add_argument("--est-per-conversation", type=float, default=None)
     p.add_argument("--approved-over-1", action="store_true")
@@ -205,7 +206,7 @@ async def main() -> None:
     sim_settings = get_sim_settings()
     if not (sim_settings.sim_user_api_key and sim_settings.sim_user_base_url and sim_settings.sim_user_model):
         raise SystemExit("set SIM_USER_BASE_URL, SIM_USER_MODEL and SIM_USER_API_KEY in .env")
-    agent = AgentConfig(args.agent_model, not args.no_gate, args.reflection, not args.no_confirmation)
+    agent = AgentConfig(args.agent_model, not args.no_gate, args.reflection, not args.no_confirmation, not args.no_thinking)
     if args.subset:
         args.tasks = ",".join(json.loads(SUBSETS.read_text())[args.subset]["task_ids"])
     tasks = select_tasks(load_tasks(args.task_file), args.tasks, args.categories, args.limit)
@@ -215,7 +216,8 @@ async def main() -> None:
     if args.resume:
         run_dir = Path(args.resume)
         config = json.loads((run_dir / "config.json").read_text())
-        if config["sim_model"] != sim_settings.sim_user_model or config["agent"] != asdict(agent):
+        recorded_agent = {**asdict(AgentConfig(config["agent"]["model"])), **config["agent"]}
+        if config["sim_model"] != sim_settings.sim_user_model or recorded_agent != asdict(agent):
             raise SystemExit("resume must keep the same simulator model and agent settings")
         tasks = select_tasks(load_tasks(config.get("task_file", TASK_FILE)), ",".join(config["task_ids"]), "", 0)
         args.k = config["k"]

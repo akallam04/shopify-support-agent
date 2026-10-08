@@ -118,7 +118,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         )
         system = with_digest(REFLECTION_SYSTEM.format(rule=POLICY_RULES[prepared.action]), state.get("context_digest"))
         response = await client.messages.create(
-            **call_options(model, 300, {"type": "json_schema", "schema": REFLECTION_SCHEMA}),
+            **call_options(model, 300, {"type": "json_schema", "schema": REFLECTION_SCHEMA}, thinking=settings.model_thinking),
             system=system,
             messages=[{"role": "user", "content": content}],
         )
@@ -201,7 +201,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
     return gate
 
 
-def make_confirm_node(client: AsyncAnthropic, model: str):
+def make_confirm_node(client: AsyncAnthropic, model: str, thinking: bool = True):
     async def confirm(state: AgentState) -> dict[str, Any]:
         pending = state["pending_action"]
         text = _last_user_text(state)
@@ -215,7 +215,7 @@ def make_confirm_node(client: AsyncAnthropic, model: str):
         source = "pattern"
         if label is None:
             response = await client.messages.create(
-                **call_options(model, 50, {"type": "json_schema", "schema": CONFIRM_CLASSIFIER_SCHEMA}),
+                **call_options(model, 50, {"type": "json_schema", "schema": CONFIRM_CLASSIFIER_SCHEMA}, thinking=thinking),
                 system=CONFIRM_CLASSIFIER_SYSTEM.format(summary=pending["summary"]),
                 messages=[{"role": "user", "content": text}],
             )
