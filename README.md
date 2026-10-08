@@ -6,7 +6,7 @@
 
 **[Try the live demo](https://shopify-support-agent.vercel.app)** | **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** | [Technical write-up](docs/write-up.md)
 
-<img src="docs/demo.gif" width="300" alt="On a phone, the customer asks to cancel an order. The assistant shows the exact change and the policy checks it passed, the step rail lights up and holds at the gate, the customer says yes, and a new message confirms the order is cancelled." />
+<img src="docs/demo.gif" width="100%" alt="On the desktop store, with the assistant panel open, the customer asks to cancel an order. The assistant shows the exact change and the policy checks it passed, the step rail holds at the gate, the customer says yes, and a new Done message confirms the order is cancelled." />
 
 **The result, in plain words.** Tested against simulated customers on 50 tasks, 4 tries each, the gate did not cost resolution: 190 of 200 conversations resolved with it and 185 without, a difference of +0.025 with a 95% interval of -0.045 to +0.105. It did remove unsafe changes: conversations with a change the customer never agreed to, or one they did not want, went from 42 to 0, and safe pass^1 (resolved, and every change had a clear yes) rose from 0.755 to 0.950, a difference of +0.195 with an interval of +0.090 to +0.310.
 
