@@ -118,6 +118,11 @@ def record(conv: Conversation, graded: dict[str, Any] | None, excluded: str | No
     }
 
 
+def resume_config(config: dict[str, Any], k: int, sha: str, dirty: bool) -> dict[str, Any]:
+    entry = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_sha": sha, "dirty": dirty, "k": max(k, config["k"])}
+    return {**config, "k": entry["k"], "resumed": [*config.get("resumed", []), entry]}
+
+
 def load_done(path: Path) -> set[tuple[str, int]]:
     if not path.exists():
         return set()
@@ -220,7 +225,7 @@ async def main() -> None:
         if config["sim_model"] != sim_settings.sim_user_model or recorded_agent != asdict(agent):
             raise SystemExit("resume must keep the same simulator model and agent settings")
         tasks = select_tasks(load_tasks(config.get("task_file", TASK_FILE)), ",".join(config["task_ids"]), "", 0)
-        args.k = config["k"]
+        args.k = max(args.k, config["k"])
     else:
         run_dir = RESULTS_DIR / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{args.label}"
     out = run_dir / "trajectories.jsonl"
@@ -239,7 +244,7 @@ async def main() -> None:
 
     run_dir.mkdir(parents=True, exist_ok=True)
     if args.resume:
-        config.setdefault("resumed", []).append({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_sha": sha, "dirty": dirty})
+        config = resume_config(config, args.k, sha, dirty)
         (run_dir / "config.json").write_text(json.dumps(config, indent=1) + "\n")
     else:
         config = {

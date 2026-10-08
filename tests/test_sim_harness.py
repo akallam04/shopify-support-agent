@@ -14,7 +14,7 @@ from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, effective_change, grade
 from evals.sim.make_regression_task import regression_task
 from evals.sim.regrade import rebuild
-from evals.sim.run_sim import Budget, load_done, record
+from evals.sim.run_sim import Budget, load_done, record, resume_config
 from evals.sim.metrics import pass_hat_k, summarize, token_totals
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
@@ -269,6 +269,13 @@ def test_token_totals_report_thinking_and_the_cache_hit_rate() -> None:
     assert t["thinking_tokens"] == 30 and t["output_tokens"] == 70
     assert t["cache_hit_rate"] == round(700 / 1100, 4)
     assert token_totals([])["cache_hit_rate"] is None
+
+
+def test_a_resumed_run_can_add_trials_but_never_drops_them() -> None:
+    config = {"k": 1, "label": "x"}
+    extended = resume_config(config, 2, "abc1234", False)
+    assert extended["k"] == 2 and extended["resumed"][-1]["git_sha"] == "abc1234" and extended["resumed"][-1]["k"] == 2
+    assert resume_config(extended, 1, "def5678", True)["k"] == 2 and config == {"k": 1, "label": "x"}
 
 
 def test_infra_errors_after_retries_count_as_failures(monkeypatch, seed, tasks) -> None:
