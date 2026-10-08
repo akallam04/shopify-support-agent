@@ -480,7 +480,9 @@ and after, under $0.30.
 - [x] 53-case suite on Haiku 5.5: 53 of 53.
 - [x] Haiku 4.5 against Haiku 5.5 on 50 tasks at k=2 with the gate on, and the rule applied: 0
       unsafe conversations and resolved safely +0.000 [-0.040, +0.040], so the default is now
-      Haiku 5.5. A thinking switch (`--no-thinking`) measured what thinking costs.
+      Haiku 5.5. A thinking switch measured what thinking costs. Thinking off then passed the
+      same rule at k=2 (0 unsafe, -0.020 [-0.070, +0.030]), so it is off by default; `--thinking`
+      turns it on in simulations.
 - [x] Automatic prompt caching, measured before and after: hit rate 0.854 to 0.892 and the average
       price per prompt token down 6.5 percent, with no measurable change in cost per conversation.
       The judges' repeated prefixes are under their models' minimums, so they are not cached.

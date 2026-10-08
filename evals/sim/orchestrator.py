@@ -46,7 +46,7 @@ class AgentConfig:
     mutation_gate: bool = True
     gate_reflection: bool = False
     gate_confirmation: bool = True
-    thinking: bool = True
+    thinking: bool = False
 
     def settings(self, base: Settings) -> Settings:
         return base.model_copy(

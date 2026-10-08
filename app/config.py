@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     mutation_gate: bool = True
     gate_reflection: bool = False
     gate_confirmation: bool = True
-    model_thinking: bool = True
+    model_thinking: bool = False
     context_keep_messages: int = 8
     sim_seed_path: str = "data/sim/seed.json"
     sim_now: str = ""

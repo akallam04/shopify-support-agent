@@ -34,7 +34,7 @@
   "sim_host": "dashscope-intl.aliyuncs.com",
   "sim_temperature": 0.7,
   "max_agent_turns": 12,
-  "k": 1,
+  "k": 2,
   "task_file": "evals/sim/tasks.json",
   "subset": null,
   "task_ids": [
@@ -89,96 +89,106 @@
    "which-order-base-layer",
    "which-order-second-jacket"
   ],
-  "max_usd": 0.25
+  "max_usd": 0.25,
+  "resumed": [
+   {
+    "at": "2026-10-08T02:45:46+00:00",
+    "git_sha": "c40d8a1",
+    "dirty": false,
+    "k": 2
+   }
+  ]
  },
  "stopped": null,
- "elapsed_s": 289.3,
- "spent_this_session_usd": 0.1253,
- "simulator_tokens_this_session": 125844,
- "conversations": 50,
+ "elapsed_s": 391.3,
+ "spent_this_session_usd": 0.1288,
+ "simulator_tokens_this_session": 121530,
+ "conversations": 100,
  "excluded": 0,
  "tasks": 50,
- "resolved": 47,
- "resolved_safely": 47,
+ "resolved": 95,
+ "resolved_safely": 95,
  "pass_hat_k": {
-  "pass^1": 0.94
+  "pass^1": 0.95,
+  "pass^2": 0.9
  },
  "pass_hat_k_safe": {
-  "pass^1": 0.94
+  "pass^1": 0.95,
+  "pass^2": 0.9
  },
  "by_category": {
   "address_change": {
-   "n": 5,
-   "resolved": 5,
+   "n": 10,
+   "resolved": 10,
    "pass^1": 1.0
   },
   "cancel": {
+   "n": 12,
+   "resolved": 12,
+   "pass^1": 1.0
+  },
+  "confirmation": {
+   "n": 8,
+   "resolved": 8,
+   "pass^1": 1.0
+  },
+  "difficult_customer": {
    "n": 6,
    "resolved": 6,
    "pass^1": 1.0
   },
-  "confirmation": {
-   "n": 4,
-   "resolved": 4,
-   "pass^1": 1.0
-  },
-  "difficult_customer": {
-   "n": 3,
-   "resolved": 3,
-   "pass^1": 1.0
-  },
   "handoff": {
-   "n": 2,
-   "resolved": 2,
-   "pass^1": 1.0
+   "n": 4,
+   "resolved": 3,
+   "pass^1": 0.75
   },
   "identity": {
-   "n": 3,
-   "resolved": 2,
-   "pass^1": 0.6666666666666666
+   "n": 6,
+   "resolved": 5,
+   "pass^1": 0.8333333333333334
   },
   "injection": {
-   "n": 3,
-   "resolved": 3,
+   "n": 6,
+   "resolved": 6,
    "pass^1": 1.0
   },
   "multi_intent": {
-   "n": 3,
-   "resolved": 3,
+   "n": 6,
+   "resolved": 6,
    "pass^1": 1.0
   },
   "order_status": {
-   "n": 4,
-   "resolved": 4,
+   "n": 8,
+   "resolved": 8,
    "pass^1": 1.0
   },
   "other_person": {
-   "n": 2,
-   "resolved": 1,
-   "pass^1": 0.5
+   "n": 4,
+   "resolved": 3,
+   "pass^1": 0.75
   },
   "product_policy": {
-   "n": 5,
-   "resolved": 5,
+   "n": 10,
+   "resolved": 10,
    "pass^1": 1.0
   },
   "return": {
-   "n": 7,
-   "resolved": 6,
-   "pass^1": 0.8571428571428571
+   "n": 14,
+   "resolved": 13,
+   "pass^1": 0.9285714285714286
   },
   "which_order": {
-   "n": 3,
-   "resolved": 3,
-   "pass^1": 1.0
+   "n": 6,
+   "resolved": 5,
+   "pass^1": 0.8333333333333334
   }
  },
  "writes": {
-  "executed": 19,
-  "reference": 19,
-  "correct": 19,
+  "executed": 37,
+  "reference": 38,
+  "correct": 37,
   "precision": 1.0,
-  "recall": 1.0,
+  "recall": 0.9736842105263158,
   "unconfirmed": 0,
   "forbidden": 0,
   "unsafe": 0
@@ -187,28 +197,28 @@
  "infra_errors": 0,
  "simulator_errors": 0,
  "cost": {
-  "agent_usd": 0.0293,
-  "judge_usd": 0.096,
-  "agent_per_conversation_usd": 0.00059,
-  "agent_per_resolved_usd": 0.00062
+  "agent_usd": 0.0573,
+  "judge_usd": 0.1968,
+  "agent_per_conversation_usd": 0.00057,
+  "agent_per_resolved_usd": 0.0006
  },
  "latency": {
-  "turn_p50_s": 2.081,
-  "turn_p95_s": 3.461
+  "turn_p50_s": 2.118,
+  "turn_p95_s": 3.529
  },
  "tokens": {
-  "input_tokens": 95171,
-  "cache_read_input_tokens": 602773,
-  "cache_creation_input_tokens": 10279,
-  "output_tokens": 24971,
+  "input_tokens": 112713,
+  "cache_read_input_tokens": 1223208,
+  "cache_creation_input_tokens": 71527,
+  "output_tokens": 49635,
   "thinking_tokens": 0,
-  "calls": 336,
+  "calls": 665,
   "calls_with_thinking": 0,
-  "cache_hit_rate": 0.8511
+  "cache_hit_rate": 0.8691
  },
- "turns_per_conversation": 3.28,
+ "turns_per_conversation": 3.23,
  "simulator_tokens": {
-  "total": 125844,
-  "per_conversation": 2516.88
+  "total": 247374,
+  "per_conversation": 2473.74
  }
 }
