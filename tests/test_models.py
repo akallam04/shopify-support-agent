@@ -49,3 +49,14 @@ def test_thinking_blocks_in_the_loop_are_detected() -> None:
 
     assert carries_thinking([{"role": "user", "content": "hi"}, {"role": "assistant", "content": [SimpleNamespace(type="thinking")]}])
     assert not carries_thinking([{"role": "user", "content": "hi"}, {"role": "assistant", "content": [SimpleNamespace(type="tool_use")]}])
+
+
+def test_usage_records_keep_thinking_tokens_when_the_model_reports_them() -> None:
+    from types import SimpleNamespace
+
+    from app.agent.usage import usage_record
+
+    with_details = SimpleNamespace(usage=SimpleNamespace(input_tokens=10, output_tokens=40, output_tokens_details=SimpleNamespace(thinking_tokens=25)))
+    without = SimpleNamespace(usage=SimpleNamespace(input_tokens=10, output_tokens=40))
+    assert usage_record("route", "claude-haiku-5-5", with_details)["thinking_tokens"] == 25
+    assert usage_record("route", "claude-haiku-4-5", without)["thinking_tokens"] == 0

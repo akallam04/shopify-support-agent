@@ -463,6 +463,8 @@ Decision rule, written before any Haiku 5.5 run:
 - As for any default, Haiku 5.5 must also pass the 53-case suite, 53 of 53.
 - Resolved, cost per resolved conversation, and p50 and p95 turn latency are reported but do not
   decide.
+- The report states each model's thinking and temperature settings, and how much of the cost and
+  latency thinking accounts for, from thinking tokens recorded on every call.
 - Conversations excluded for infrastructure errors are rerun with `--resume` before comparing.
   Nothing is decided from a run that stopped early.
 - The result goes in the README after the frozen headline, whichever way it goes.

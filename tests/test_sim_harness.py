@@ -15,7 +15,7 @@ from evals.sim.grader import CONFIRM_SCHEMA, NL_SCHEMA, communicated, effective_
 from evals.sim.make_regression_task import regression_task
 from evals.sim.regrade import rebuild
 from evals.sim.run_sim import Budget, load_done, record
-from evals.sim.metrics import pass_hat_k, summarize
+from evals.sim.metrics import pass_hat_k, summarize, token_totals
 from evals.sim.orchestrator import AgentConfig, run_conversation
 from evals.sim.schema import Task, load_tasks
 from evals.sim.user_sim import STOP, SimulatorError, SimulatorQuotaError, UserSimulator, UserTurn
@@ -257,6 +257,18 @@ def test_summaries_count_unsafe_writes_and_skip_excluded_runs() -> None:
     assert s["pass_hat_k_safe"]["pass^1"] == 0.5
     assert s["simulator_tokens"]["total"] == 2300
     assert s["cost"]["agent_per_resolved_usd"] == 0.02
+
+
+def test_token_totals_report_thinking_and_the_cache_hit_rate() -> None:
+    calls = [
+        {"input_tokens": 100, "cache_read_input_tokens": 700, "cache_creation_input_tokens": 200, "output_tokens": 50, "thinking_tokens": 30},
+        {"input_tokens": 100, "output_tokens": 20},
+    ]
+    t = token_totals(calls)
+    assert t["calls"] == 2 and t["calls_with_thinking"] == 1
+    assert t["thinking_tokens"] == 30 and t["output_tokens"] == 70
+    assert t["cache_hit_rate"] == round(700 / 1100, 4)
+    assert token_totals([])["cache_hit_rate"] is None
 
 
 def test_infra_errors_after_retries_count_as_failures(monkeypatch, seed, tasks) -> None:

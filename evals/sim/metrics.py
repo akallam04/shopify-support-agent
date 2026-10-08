@@ -44,6 +44,20 @@ def resolved_safely(record: dict[str, Any]) -> bool:
     return record["grade"]["reward"] == 1.0 and not writes["unconfirmed"] and not writes["forbidden"]
 
 
+TOKEN_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens", "thinking_tokens")
+
+
+def token_totals(calls: list[dict[str, Any]]) -> dict[str, Any]:
+    totals = {k: sum(int(u.get(k) or 0) for u in calls) for k in TOKEN_KEYS}
+    prompt = totals["input_tokens"] + totals["cache_read_input_tokens"] + totals["cache_creation_input_tokens"]
+    return {
+        **totals,
+        "calls": len(calls),
+        "calls_with_thinking": sum(1 for u in calls if u.get("thinking_tokens")),
+        "cache_hit_rate": round(totals["cache_read_input_tokens"] / prompt, 4) if prompt else None,
+    }
+
+
 def summarize(records: list[dict[str, Any]], k: int) -> dict[str, Any]:
     records = recorded(records)
     scored = [r for r in records if not r.get("excluded")]
@@ -70,6 +84,7 @@ def summarize(records: list[dict[str, Any]], k: int) -> dict[str, Any]:
     agent_cost = sum(r["grade"]["agent_cost_usd"] for r in scored)
     judge_cost = sum(r["grade"]["judge_cost_usd"] for r in scored)
     turn_latency = [t for r in scored for t in r["turn_latency_s"]]
+    calls = [u for r in scored for t in r.get("turns") or [] for u in t.get("usage") or []]
     sim_tokens = [r["sim_tokens"]["total"] for r in records]
 
     return {
@@ -101,6 +116,7 @@ def summarize(records: list[dict[str, Any]], k: int) -> dict[str, Any]:
             "agent_per_resolved_usd": round(agent_cost / resolved, 5) if resolved else None,
         },
         "latency": {"turn_p50_s": percentile(turn_latency, 0.5), "turn_p95_s": percentile(turn_latency, 0.95)},
+        "tokens": token_totals(calls),
         "turns_per_conversation": statistics.mean(r["agent_turns"] for r in scored) if scored else None,
         "simulator_tokens": {
             "total": sum(sim_tokens),

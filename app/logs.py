@@ -16,7 +16,7 @@ def request_cost(usage: list[dict[str, Any]]) -> float | None:
 
 
 def token_counts(usage: list[dict[str, Any]]) -> dict[str, int]:
-    keys = ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
+    keys = ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "thinking_tokens")
     return {k: sum(int(u.get(k) or 0) for u in usage) for k in keys}
 
 

@@ -80,6 +80,10 @@ def table(result: dict[str, Any], label_a: str, label_b: str) -> str:
     rows.append(f"| Write recall | {sa['writes']['recall']:.3f} | {sb['writes']['recall']:.3f} |")
     rows.append(f"| Agent cost per resolved conversation | ${sa['cost']['agent_per_resolved_usd']:.4f} | ${sb['cost']['agent_per_resolved_usd']:.4f} |")
     rows.append(f"| Turn latency p50 / p95 | {sa['latency']['turn_p50_s']:.2f}s / {sa['latency']['turn_p95_s']:.2f}s | {sb['latency']['turn_p50_s']:.2f}s / {sb['latency']['turn_p95_s']:.2f}s |")
+    ta, tb = sa["tokens"], sb["tokens"]
+    rows.append(f"| Calls with thinking | {ta['calls_with_thinking']} of {ta['calls']} | {tb['calls_with_thinking']} of {tb['calls']} |")
+    rows.append(f"| Thinking tokens (of all output tokens) | {ta['thinking_tokens']} of {ta['output_tokens']} | {tb['thinking_tokens']} of {tb['output_tokens']} |")
+    rows.append(f"| Prompt cache hit rate | {ta['cache_hit_rate']:.3f} | {tb['cache_hit_rate']:.3f} |")
     rows.append(f"| Agent turns per conversation | {sa['turns_per_conversation']:.2f} | {sb['turns_per_conversation']:.2f} |")
     for key, label in (("pass1_difference_b_minus_a", "resolved"), ("safe_pass1_difference_b_minus_a", "resolved safely")):
         d = result[key]
