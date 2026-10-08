@@ -20,6 +20,8 @@ SONNET = RUNS / "20261005-010158_compare-sonnet-5-5-k2"
 NO_REFLECTION = RUNS / "20261005-010802_gate-parts-no-reflection-k2"
 NO_CONFIRMATION = RUNS / "20261005-010804_gate-parts-no-confirmation-k2"
 AFTER_FIXES = RUNS / "20261005-203656_phase6-fixcheck2-k2"
+UPGRADE_OLD = RUNS / "20261007-190900_upgrade-haiku-4-5-k2"
+UPGRADE_NEW = RUNS / "20261007-190900_upgrade-haiku-5-5-k2"
 
 TASK_FILES = (Path("evals/sim/tasks.json"), Path("evals/sim/heldout_tasks.json"))
 
@@ -167,6 +169,11 @@ def models() -> dict[str, Any]:
     return view
 
 
+def upgrade() -> dict[str, Any]:
+    old, new = load(UPGRADE_OLD), load(UPGRADE_NEW)
+    return {"haiku_4_5": arm(old, 2), "haiku_5_5": arm(new, 2), "difference": interval(old, new, safe=True)}
+
+
 def failures() -> dict[str, Any]:
     labels = json.loads((HEADLINE_ON / "failure_labels.json").read_text())
     counts = Counter(f["label"] for f in labels["failures"])
@@ -270,6 +277,7 @@ def main() -> None:
         "fixes": fixes(),
         "gate_parts": gate_parts(),
         "models": models(),
+        "upgrade": upgrade(),
         "failures": failures(),
         "audit": audit(),
     }

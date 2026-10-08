@@ -367,6 +367,57 @@
    "high": 0.175
   }
  },
+ "upgrade": {
+  "haiku_4_5": {
+   "conversations": 100,
+   "tasks": 50,
+   "resolved": 97,
+   "resolved_safely": 97,
+   "pass_hat_k": [
+    0.97,
+    0.94
+   ],
+   "pass_hat_k_safe": [
+    0.97,
+    0.94
+   ],
+   "unconfirmed_writes": 0,
+   "forbidden_writes": 0,
+   "unsafe_conversations": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "cost_per_resolved_usd": 0.01315,
+   "latency_p50_s": 2.48,
+   "latency_p95_s": 4.91
+  },
+  "haiku_5_5": {
+   "conversations": 100,
+   "tasks": 50,
+   "resolved": 97,
+   "resolved_safely": 97,
+   "pass_hat_k": [
+    0.97,
+    0.96
+   ],
+   "pass_hat_k_safe": [
+    0.97,
+    0.96
+   ],
+   "unconfirmed_writes": 0,
+   "forbidden_writes": 0,
+   "unsafe_conversations": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "cost_per_resolved_usd": 0.00067,
+   "latency_p50_s": 2.1,
+   "latency_p95_s": 4.55
+  },
+  "difference": {
+   "mean": 0.0,
+   "low": -0.04,
+   "high": 0.04
+  }
+ },
  "failures": {
   "run": "evals/results/sim/20261004-220530_headline-gate-on-k4",
   "total": 10,

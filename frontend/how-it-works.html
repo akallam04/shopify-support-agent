@@ -52,7 +52,7 @@
       <div class="wrap wrap--read">
         <section class="intro" aria-labelledby="pageTitle">
           <h1 id="pageTitle">How the Aurora assistant works</h1>
-          <p class="intro__lead">The assistant is an agent built with LangGraph on Claude Haiku 4.5. It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Because it can change things, every change passes through a gate written in code: a policy check, then the exact change shown to the customer, then nothing until they say yes.</p>
+          <p class="intro__lead">The assistant is an agent built with LangGraph on Claude Haiku 5.5. It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Because it can change things, every change passes through a gate written in code: a policy check, then the exact change shown to the customer, then nothing until they say yes.</p>
           <p class="intro__lead">It was tested the way tau-bench tests agents, with simulated customers playing scripted scenarios against the real agent. The results below come from saved runs and include where it falls short.</p>
           <nav class="toc" aria-label="On this page">
             <a href="#gate">The gate</a>
@@ -283,7 +283,25 @@
               </tbody>
             </table>
           </div>
-          <p>Sonnet resolved more, but on 20 tasks the difference, <span data-interval="models.difference">+0.075 [-0.025, +0.175]</span>, is not distinguishable from noise. It costs less per resolved conversation only because its prompts are cached; Haiku 4.5 needs a longer prompt than these to cache. The demo uses Haiku for its speed.</p>
+          <p>Sonnet resolved more, but on 20 tasks the difference, <span data-interval="models.difference">+0.075 [-0.025, +0.175]</span>, is not distinguishable from noise. It costs less per resolved conversation only because its prompts are cached; Haiku 4.5 needs a longer prompt than these to cache. The demo used Haiku 4.5 for its speed until the upgrade below.</p>
+        </section>
+
+        <section class="block" id="upgrade" aria-labelledby="upgradeTitle">
+          <h2 id="upgradeTitle">Haiku 4.5 to Haiku 5.5</h2>
+          <p>When Claude Haiku 5.5 came out, both models ran all 50 tasks, 2 tries each, on the same code with the gate on. The rule was written down before the runs: switch only if Haiku 5.5 makes no unsafe change and resolved safely is not worse beyond noise.</p>
+          <div class="table-scroll">
+            <table class="data">
+              <thead><tr><th scope="col"></th><th scope="col">Haiku 4.5</th><th scope="col">Haiku 5.5</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Resolved safely</th><td><span data-num="upgrade.haiku_4_5.resolved_safely">97</span> of <span data-num="upgrade.haiku_4_5.conversations">100</span></td><td><span data-num="upgrade.haiku_5_5.resolved_safely">97</span> of <span data-num="upgrade.haiku_5_5.conversations">100</span></td></tr>
+                <tr><th scope="row">Conversations with an unsafe change</th><td data-num="upgrade.haiku_4_5.unsafe_conversations">0</td><td data-num="upgrade.haiku_5_5.unsafe_conversations">0</td></tr>
+                <tr><th scope="row">Agent cost per resolved conversation</th><td data-num="upgrade.haiku_4_5.cost_per_resolved_usd" data-fmt="usd4">$0.0132</td><td data-num="upgrade.haiku_5_5.cost_per_resolved_usd" data-fmt="usd4">$0.0007</td></tr>
+                <tr><th scope="row">Turn latency, median</th><td data-num="upgrade.haiku_4_5.latency_p50_s" data-fmt="s2">2.48s</td><td data-num="upgrade.haiku_5_5.latency_p50_s" data-fmt="s2">2.10s</td></tr>
+                <tr><th scope="row">Turn latency, 95th percentile</th><td data-num="upgrade.haiku_4_5.latency_p95_s" data-fmt="s2">4.91s</td><td data-num="upgrade.haiku_5_5.latency_p95_s" data-fmt="s2">4.55s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The difference in resolved safely, <span data-interval="upgrade.difference">+0.000 [-0.040, +0.040]</span>, is within noise, and Haiku 5.5 made no unsafe change, so the demo now runs on Haiku 5.5. It costs less because its price per token is a tenth of Haiku 4.5's and its prompts are long enough to cache. These runs are separate from the headline numbers above, which stay as they were measured.</p>
         </section>
       </div>
 

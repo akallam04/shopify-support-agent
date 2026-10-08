@@ -475,12 +475,16 @@ content that is identical across calls is cached, and outputs do not change. Cac
 reads over all prompt tokens) and agent cost per conversation are measured on a small run before
 and after, under $0.30.
 
-- [ ] Haiku 5.5 in the price table, with request options for its API changes (adaptive thinking,
+- [x] Haiku 5.5 in the price table, with request options for its API changes (adaptive thinking,
       no sampling parameters, refusals, thinking blocks kept append-only).
-- [ ] 53-case suite on Haiku 5.5.
-- [ ] Haiku 4.5 against Haiku 5.5 on 50 tasks at k=2 with the gate on, and the rule applied.
-- [ ] Automatic prompt caching, measured before and after.
-- [ ] Web server access log off, so visitor IP addresses are not stored.
+- [x] 53-case suite on Haiku 5.5: 53 of 53.
+- [x] Haiku 4.5 against Haiku 5.5 on 50 tasks at k=2 with the gate on, and the rule applied: 0
+      unsafe conversations and resolved safely +0.000 [-0.040, +0.040], so the default is now
+      Haiku 5.5. A thinking switch (`--no-thinking`) measured what thinking costs.
+- [x] Automatic prompt caching, measured before and after: hit rate 0.854 to 0.892 and the average
+      price per prompt token down 6.5 percent, with no measurable change in cost per conversation.
+      The judges' repeated prefixes are under their models' minimums, so they are not cached.
+- [x] Web server access log off, so visitor IP addresses are not stored.
 - [ ] One redeploy, a v2.0 tag, and release notes.
 
 ## Working principles
