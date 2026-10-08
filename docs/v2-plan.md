@@ -485,7 +485,7 @@ and after, under $0.30.
       price per prompt token down 6.5 percent, with no measurable change in cost per conversation.
       The judges' repeated prefixes are under their models' minimums, so they are not cached.
 - [x] Web server access log off, so visitor IP addresses are not stored.
-- [ ] One redeploy, a v2.0 tag, and release notes.
+- [x] One redeploy (image `1729f9263654`), a v2.0 tag, and release notes.
 
 ## Working principles
 
