@@ -70,7 +70,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
         while rounds < limit:
             rounds += 1
             response = await client.messages.create(
-                **call_options(model, 1000, thinking=settings.model_thinking),
+                **call_options(model, 1000, thinking=settings.model_thinking, cache_tail=True),
                 system=system,
                 messages=messages,
                 tools=tools.anthropic_tools,

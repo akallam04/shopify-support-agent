@@ -21,7 +21,7 @@ def make_route_node(client: AsyncAnthropic, model: str, can_act: bool = False, t
         # no sampling params: newer models reject them, and the enum schema
         # constrains the output anyway
         response = await client.messages.create(
-            **call_options(model, 300, {"type": "json_schema", "schema": ROUTER_SCHEMA}, thinking=thinking),
+            **call_options(model, 300, {"type": "json_schema", "schema": ROUTER_SCHEMA}, thinking=thinking, cache_tail=True),
             system=system_blocks(system, state.get("context_digest")),
             messages=state["messages"],
         )

@@ -4,6 +4,7 @@ from typing import Any
 
 ADAPTIVE_THINKING_MODELS = frozenset({"claude-sonnet-5-5", "claude-haiku-5-5"})
 THINKING_MIN_MAX_TOKENS = 4000
+AUTOMATIC_CACHE = {"type": "ephemeral"}
 THINKING_OFF = {"claude-haiku-5-5": {"type": "disabled"}}
 
 
@@ -20,7 +21,7 @@ def system_blocks(stable: str, digest: str | None = None, extra: str | None = No
 
 
 def call_options(
-    model: str, max_tokens: int, output_format: dict[str, Any] | None = None, thinking: bool = True
+    model: str, max_tokens: int, output_format: dict[str, Any] | None = None, thinking: bool = True, cache_tail: bool = False
 ) -> dict[str, Any]:
     output_config: dict[str, Any] = {}
     if output_format is not None:
@@ -33,6 +34,8 @@ def call_options(
         options["output_config"] = output_config
     if not thinking and model in THINKING_OFF:
         options["thinking"] = THINKING_OFF[model]
+    if cache_tail:
+        options["cache_control"] = AUTOMATIC_CACHE
     return options
 
 

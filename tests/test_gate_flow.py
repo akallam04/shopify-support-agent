@@ -435,6 +435,22 @@ def test_the_thinking_switch_reaches_every_model_call(db: SimDB) -> None:
     assert all(kw["thinking"] == {"type": "disabled"} for _, kw in client.calls)
 
 
+def test_route_and_tool_calls_cache_their_tail_and_replies_do_not(db: SimDB) -> None:
+    script = {"route": [ORDER_ROUTE], "order_tools": [("get_order_status", {"order_number": "#1002", "email": MAYA}), "It is on its way."]}
+    graph, client, _ = make(db, script, context_keep_messages=4)
+    history = [
+        {"role": "user", "content": f"My order is #1002 and my email is {MAYA}."},
+        {"role": "assistant", "content": "Thanks, got it."},
+    ] * 4 + [{"role": "user", "content": "Where is it?"}]
+    turn(graph, history)
+    calls = {kind: kw for kind, kw in client.calls}
+    assert calls["route"]["cache_control"] == {"type": "ephemeral"}
+    rounds = [kw for kind, kw in client.calls if kind == "order_tools"]
+    assert len(rounds) == 2 and all(kw["cache_control"] == {"type": "ephemeral"} for kw in rounds)
+    assert "#1002" not in rounds[0]["system"][0]["text"] and "#1002" in rounds[0]["system"][1]["text"]
+    assert "cache_control" not in calls.get("respond", {})
+
+
 def test_a_correctable_input_mistake_goes_back_to_the_model_once(db: SimDB) -> None:
     bad = {**CANCEL_ARGS, "reason": "because"}
     script = {"route": [ORDER_ROUTE], "order_tools": [("cancel_order", bad), ("cancel_order", CANCEL_ARGS)], "reflect": [PROCEED]}

@@ -66,3 +66,17 @@ def test_the_thinking_switch_turns_thinking_off_only_where_the_model_allows_it()
     assert call_options("claude-haiku-5-5", 300, thinking=False)["thinking"] == {"type": "disabled"}
     assert "thinking" not in call_options("claude-haiku-5-5", 300)
     assert "thinking" not in call_options("claude-haiku-4-5", 300, thinking=False)
+
+
+def test_cache_tail_adds_one_top_level_cache_marker() -> None:
+    assert call_options("claude-haiku-5-5", 300, cache_tail=True)["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in call_options("claude-haiku-5-5", 300)
+
+
+def test_the_stable_system_block_is_unchanged_when_a_digest_is_added() -> None:
+    from app.agent.models import system_blocks
+
+    plain = system_blocks("stable rules")
+    cleaned = system_blocks("stable rules", "Customer said: cancel #1002", "extra")
+    assert cleaned[0] == plain[0] and cleaned[0]["cache_control"] == {"type": "ephemeral"}
+    assert all("cache_control" not in b for b in cleaned[1:])
