@@ -186,7 +186,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--categories", default="")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--k", type=int, default=1)
-    p.add_argument("--agent-model", default="claude-haiku-4-5")
+    p.add_argument("--agent-model", default="claude-haiku-5-5")
     p.add_argument("--no-gate", action="store_true")
     p.add_argument("--reflection", action="store_true")
     p.add_argument("--no-confirmation", action="store_true")

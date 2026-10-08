@@ -28,9 +28,9 @@ class Settings(BaseSettings):
     # checks for a real key when it builds the anthropic client
     anthropic_api_key: str = ""
 
-    # model choices, revisited after the eval phase
-    router_model: str = "claude-haiku-4-5"
-    answer_model: str = "claude-haiku-4-5"
+    # haiku 5.5 since the upgrade check in docs/v2-plan.md, phase 8
+    router_model: str = "claude-haiku-5-5"
+    answer_model: str = "claude-haiku-5-5"
 
     # judge stays a tier above whatever is being judged
     judge_model: str = "claude-sonnet-5"
