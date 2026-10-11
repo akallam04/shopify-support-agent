@@ -31,9 +31,9 @@ def receipts(state: AgentState) -> list[str]:
     return [a["message"] for a in state.get("executed_actions") or [] if a.get("ok") and a.get("message")]
 
 
-def facts_block(state: AgentState, fresh: list[dict[str, Any]]) -> str | None:
+def facts_block(state: AgentState, fresh: list[dict[str, Any]], records: bool = True) -> str | None:
     parts = []
-    facts = merge_facts(state.get("verified_facts") or [], fresh)
+    facts = merge_facts(state.get("verified_facts") or [], fresh) if records else []
     if facts:
         parts.append(FACTS_HEADER + "".join(f"\n{f['order_number']}: {json.dumps(f['result'])}" for f in facts))
     done = receipts(state)

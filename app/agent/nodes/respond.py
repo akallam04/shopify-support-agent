@@ -70,7 +70,7 @@ def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True)
             if feedback:
                 system += f"\n\nYour previous draft failed a grounding check: {feedback}\nFix that in the rewrite."
 
-        known = facts_block(state, [])
+        known = facts_block(state, [], records=intent == "order")
         response = await client.messages.create(
             **call_options(model, 1000, thinking=thinking),
             system=with_digest(system, state.get("context_digest")) + (f"\n\n{known}" if known else ""),

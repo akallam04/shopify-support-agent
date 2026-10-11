@@ -319,3 +319,12 @@ def test_a_bracketed_reference_that_is_not_a_retrieved_document_fails_the_citati
     ok, feedback = check_citations("Cancelling is still possible [order #1023].", {"policy-returns-return-window"})
     assert not ok and "order #1023" in feedback
     assert check_citations("Returns take 30 days [policy-returns-return-window].", {"policy-returns-return-window"})[0]
+
+
+def test_policy_answers_see_receipts_but_not_raw_order_records_they_might_cite(backend: SimStoreBackend) -> None:
+    policy = {"intent": "policy", "search_query": "return policy", "order_number": "#1023", "email": MAYA}
+    answer = "Items can be returned within 30 days of delivery [policy-returns-return-window]."
+    graph, client, history, first = cancel_pending(backend, {"confirm": ["question"], "respond": [answer]})
+    client.script["route"].append(policy)
+    run(graph, history + [{"role": "user", "content": "Before I decide, what is your return policy?"}], carry(first))
+    assert "Order records from store tools" not in system_text(client.of("respond")[-1])
