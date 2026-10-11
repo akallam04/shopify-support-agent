@@ -367,3 +367,10 @@ def test_a_policy_question_while_a_change_waits_sees_that_the_system_built_it(ba
     run(graph, history + [{"role": "user", "content": "Before I decide, what is your return policy?"}], carry(first))
     system = system_text(client.of("respond")[-1])
     assert "A change is waiting for the customer's yes" in system and "cancel order #1023" in system
+
+
+def test_the_answer_to_a_question_drops_its_own_yes_or_no_prompt() -> None:
+    from app.agent.nodes.gate import without_yes_question
+
+    live = "Returns have a 30-day window [policy-returns-return-window]. Your order is still pending my confirmation: reply yes to cancel order #1023, or no to keep it."
+    assert without_yes_question(live) == "Returns have a 30-day window [policy-returns-return-window]."

@@ -299,7 +299,7 @@ def make_handoff_node(tools: Any):
 
 
 SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
-GO_AHEAD_RE = re.compile(r"\b(go ahead|proceed)\b.*\?\s*$", re.IGNORECASE)
+GO_AHEAD_RE = re.compile(r"\b(go ahead|proceed)\b.*\?\s*$|\breply (yes|no)\b", re.IGNORECASE)
 
 
 def without_yes_question(text: str) -> str:
