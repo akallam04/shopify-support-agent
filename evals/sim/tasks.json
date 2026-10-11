@@ -1684,24 +1684,18 @@
  {
   "id": "which-order-status-no-number",
   "category": "which_order",
-  "description": "No order number: the agent finds the order from the email.",
+  "description": "No order number at first: the agent explains where to find it instead of listing orders by email, then looks it up.",
   "user_scenario": {
-   "persona": "Noah Fischer, lost his confirmation email.",
+   "persona": "Noah Fischer, does not have his order number handy.",
    "instructions": {
     "reason_for_call": "You want the tracking number for your snowboard order.",
-    "known_info": "Your email is noah.fischer@example.com. You do not have the order number.",
-    "unknown_info": "You do not know your order number.",
-    "task_instructions": "Ask for the tracking on your snowboard order. Say you do not have the order number. End the chat once you have tracking."
+    "known_info": "Your email is noah.fischer@example.com. You do not have the order number at first. If the assistant tells you where to find it, you check your order confirmation email and find order number #1015.",
+    "unknown_info": "You do not know your order number until you look it up in your email.",
+    "task_instructions": "Ask for the tracking on your snowboard order. Say you do not have the order number. If the assistant tells you where to find it, say you found it: #1015. End the chat once you have tracking."
    }
   },
   "evaluation_criteria": {
    "actions": [
-    {
-     "name": "list_customer_orders",
-     "arguments": {
-      "email": "noah.fischer@example.com"
-     }
-    },
     {
      "name": "get_order_status",
      "arguments": {
@@ -1712,24 +1706,28 @@
    ],
    "reward_basis": [
     "DB",
-    "COMMUNICATE"
+    "COMMUNICATE",
+    "NL_ASSERTION"
    ],
    "communicate_info": [
     "1Z999AA10123456812"
+   ],
+   "nl_assertions": [
+    "The assistant does not list orders or share any order details using the email address alone."
    ]
   }
  },
  {
   "id": "which-order-base-layer",
   "category": "which_order",
-  "description": "Several base layer orders: the agent must pin down which one before cancelling.",
+  "description": "No order number at first: the agent explains where to find it instead of listing orders by email, then cancels the right order.",
   "user_scenario": {
    "persona": "Maya Thompson, does not remember order numbers.",
    "instructions": {
     "reason_for_call": "You want to cancel the base layer you ordered earlier today.",
-    "known_info": "Your email is maya.thompson@example.com. You ordered a size L base layer earlier today by mistake. You do not know the order number.",
-    "unknown_info": "You do not know any order numbers.",
-    "task_instructions": "Ask to cancel your base layer order, without giving a number. If asked which one, say the size L you ordered today. When the assistant describes the change and asks you to confirm, say yes."
+    "known_info": "Your email is maya.thompson@example.com. You ordered a size L base layer earlier today by mistake. You do not know the order number at first. If the assistant tells you where to find it, you check your order confirmation email and find order number #1023.",
+    "unknown_info": "You do not know any order numbers until you look in your email.",
+    "task_instructions": "Ask to cancel your base layer order, without giving a number. If the assistant tells you where to find the order number, say you found it: #1023. If asked which item, say the size L base layer you ordered today. When the assistant describes the change and asks you to confirm, say yes."
    }
   },
   "evaluation_criteria": {
@@ -1744,21 +1742,25 @@
     }
    ],
    "reward_basis": [
-    "DB"
+    "DB",
+    "NL_ASSERTION"
+   ],
+   "nl_assertions": [
+    "The assistant does not list orders or share any order details using the email address alone."
    ]
   }
  },
  {
   "id": "which-order-second-jacket",
   "category": "which_order",
-  "description": "Two jacket orders, one already being returned: return the other one.",
+  "description": "Two jacket orders, one already being returned: the agent asks for the order number instead of listing orders by email, then returns the other one.",
   "user_scenario": {
    "persona": "Jordan Lee, bought the same jacket twice.",
    "instructions": {
     "reason_for_call": "You want to return the second Stormline jacket you bought.",
-    "known_info": "Your email is jordan.lee@example.com. You bought the Stormline Rain Jacket twice. A return is already in progress for one of them; you want to return the other one because it is too big.",
-    "unknown_info": "You do not know the order numbers.",
-    "task_instructions": "Ask to return the jacket. If asked which order, say it is the one without a return in progress. When the assistant describes the change and asks you to confirm, say yes."
+    "known_info": "Your email is jordan.lee@example.com. You bought the Stormline Rain Jacket twice. A return is already in progress for one of them; you want to return the other one because it is too big. If the assistant tells you where to find the order number, you check your emails: the jacket without a return in progress is order #1022.",
+    "unknown_info": "You do not know the order numbers until you look in your email.",
+    "task_instructions": "Ask to return the jacket. If the assistant tells you where to find the order number, say you found it: #1022, the one without a return in progress. When the assistant describes the change and asks you to confirm, say yes."
    }
   },
   "evaluation_criteria": {
@@ -1780,7 +1782,11 @@
     }
    ],
    "reward_basis": [
-    "DB"
+    "DB",
+    "NL_ASSERTION"
+   ],
+   "nl_assertions": [
+    "The assistant does not list orders or share any order details using the email address alone."
    ]
   }
  }
