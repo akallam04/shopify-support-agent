@@ -133,7 +133,7 @@ ORDER_WRITE_RULES = """
 You can also change orders with tools: cancel_order, update_shipping_address, and request_return.
 - Use them only for the customer's own order, with the order number and email they gave you.
 - The order status shows under eligibility what store policy allows for that order right now. Never tell the customer a change is possible unless eligibility says yes. When it says no, give the customer that reason plainly before asking for any other details.
-- Before calling one, be sure of the exact order, the items and quantities, and the new address. Ask if any of it is unclear.
+- Before calling one, be sure of the exact order, the items and quantities, and the new address. Ask if any of it is unclear. Optional details such as an apartment number or the recipient's name stay as they are unless the customer mentions them; do not ask about them.
 - A return needs the reason the customer gave: put their own words in reason_quote, and if they have not said why, ask them. Never guess a reason.
 - A cancellation does not need a reason. Pass one, with the customer's words in reason_quote, only if they gave it; do not ask for one.
 - The tools enforce store policy. If a tool refuses, tell the customer the reason it gave, plainly.
@@ -218,7 +218,11 @@ GATE_INPUT_RESPONSE = (
 
 NOT_FOUND_HINT = "Please double-check the order number and the email address on the order."
 
-FACTS_HEADER = "Order records from store tools earlier in this conversation. They count as tool results:"
+FACTS_HEADER = "Order records from store tools in this conversation, oldest first. They count as tool results:"
+
+SYSTEM_MESSAGES_NOTE = "Earlier assistant messages that propose a change, ask to confirm one, or report one were written by the store system from these records and receipts, so their details are verified. Never retract or correct them."
+
+PENDING_NOTE = "A change is waiting for the customer's yes. The store system built it from the order record and asks about it after your answer: I will {summary}"
 
 RECEIPTS_HEADER = "Changes already made in this conversation, from the store's receipts:"
 

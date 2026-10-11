@@ -328,3 +328,42 @@ def test_policy_answers_see_receipts_but_not_raw_order_records_they_might_cite(b
     client.script["route"].append(policy)
     run(graph, history + [{"role": "user", "content": "Before I decide, what is your return policy?"}], carry(first))
     assert "Order records from store tools" not in system_text(client.of("respond")[-1])
+
+
+LIVE_RETRACTION = (
+    "Order #1021 is shipping to 1200 Larimer St, Denver, CO, 80205, US.\n\n"
+    "I also need to correct my last message: I described the old address as 9 Pine St, Boulder, CO, 80302, "
+    "but I never looked that up, so I shouldn't have stated it. The change itself went through as shown in the store's receipt."
+)
+
+
+def test_a_reply_that_retracts_a_verified_earlier_message_is_rewritten_then_stripped() -> None:
+    from app.agent.nodes.verify import verify_node
+
+    state = {"intent": "order", "draft": LIVE_RETRACTION, "messages": [{"role": "user", "content": "What address is order #1021 shipping to?"}], "tool_results": []}
+    first = verify_node(state)
+    assert first["response"] == "" and "retract" in first["verify_feedback"]
+    second = verify_node({**state, "retry_count": 1})
+    assert "correct my last message" not in second["response"] and "never looked" not in second["response"]
+    assert second["response"].startswith("Order #1021 is shipping to 1200 Larimer St")
+    assert verify_node({**state, "intent": "policy", "draft": "I don't have any record of an earlier conversation, but returns take 30 days.", "retrieved": []})["response"]
+
+
+def test_earlier_lookups_survive_a_change_so_the_old_address_stays_verified() -> None:
+    from app.agent.facts import facts_block, merge_facts
+
+    before = {"name": "get_order_status", "args": {}, "result": json.dumps({"found": True, "order_number": "#1021", "shipping_address": "9 Pine St, Boulder, CO, 80302, US"})}
+    after = {"name": "get_order_status", "args": {}, "result": json.dumps({"found": True, "order_number": "#1021", "shipping_address": "1200 Larimer St, Denver, CO, 80205, US"})}
+    facts = merge_facts(merge_facts([], [before]), [after])
+    text = facts_block({"verified_facts": facts, "messages": []}, [])
+    assert "9 Pine St" in text and "1200 Larimer St" in text and "Never retract" in text
+
+
+def test_a_policy_question_while_a_change_waits_sees_that_the_system_built_it(backend: SimStoreBackend) -> None:
+    policy = {"intent": "policy", "search_query": "return policy", "order_number": "#1023", "email": MAYA}
+    answer = "Items can be returned within 30 days of delivery [policy-returns-return-window]."
+    graph, client, history, first = cancel_pending(backend, {"confirm": ["question"], "respond": [answer]})
+    client.script["route"].append(policy)
+    run(graph, history + [{"role": "user", "content": "Before I decide, what is your return policy?"}], carry(first))
+    system = system_text(client.of("respond")[-1])
+    assert "A change is waiting for the customer's yes" in system and "cancel order #1023" in system
