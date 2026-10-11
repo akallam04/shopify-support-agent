@@ -9,7 +9,7 @@ from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import FrozenClock, parse_instant
 from mcp_server.simdb import SimDB
 
-READ = {"get_order_status", "list_customer_orders", "check_inventory"}
+READ = {"get_order_status", "check_inventory"}
 WRITE = {"cancel_order", "update_shipping_address", "request_return", "transfer_to_human"}
 
 

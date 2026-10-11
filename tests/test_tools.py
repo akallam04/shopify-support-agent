@@ -5,13 +5,12 @@ import pytest
 from mcp_server.backends.base import FoundOrder
 from mcp_server.backends.shopify import ShopifyAdminBackend, TruncatedConnectionError, map_order, map_product
 from mcp_server.backends.sim import SimStoreBackend
-from mcp_server.simdb import Order, Product, SimDB, load_db
+from mcp_server.simdb import Product, SimDB, load_db
 from mcp_server.tools import (
     ORDER_NOT_FOUND,
     ToolInputError,
     check_inventory,
     get_order_status,
-    list_customer_orders,
 )
 
 
@@ -28,9 +27,6 @@ class RecordingBackend:
         self.calls.append(f"find_order {order_name}")
         return self.inner.find_order(order_name)
 
-    def orders_for_email(self, email: str, limit: int) -> list[Order]:
-        self.calls.append(f"orders_for_email {email}")
-        return self.inner.orders_for_email(email, limit)
 
     def search_products(self, text: str, limit: int) -> list[Product]:
         self.calls.append(f"search_products {text}")
@@ -65,6 +61,7 @@ def test_order_status_view(sim: RecordingBackend) -> None:
         ],
         "tracking": [{"number": "1Z999AA10123456784", "carrier": "UPS", "url": None}],
         "delivered_on": None,
+        "shipping_address": None,
         "returns": [],
     }
 
@@ -85,17 +82,8 @@ def test_invalid_inputs_raise_before_touching_the_store(sim: RecordingBackend) -
     with pytest.raises(ToolInputError):
         get_order_status(sim, "#1001", "not-an-email")
     with pytest.raises(ToolInputError):
-        list_customer_orders(sim, "also not an email")
-    with pytest.raises(ToolInputError):
         check_inventory(sim, "::((%%))::")
     assert sim.calls == []
-
-
-def test_list_customer_orders(sim: RecordingBackend) -> None:
-    result = list_customer_orders(sim, "maya.thompson@example.com")
-    assert result["count"] == 2
-    assert [o["order_number"] for o in result["orders"]] == ["#1002", "#1001"]
-    assert list_customer_orders(sim, "nobody@example.com")["found"] is False
 
 
 def test_inventory_view_and_default_variant_label(sim: RecordingBackend) -> None:
@@ -216,13 +204,6 @@ def test_live_search_is_sanitized_and_scoped_to_active_products() -> None:
     assert variables["limit"] == 10
 
 
-def test_live_customer_orders_filter_by_email() -> None:
-    client = FakeClient({"OrdersByEmail": {"orders": {"nodes": [order_node()]}}})
-    orders = ShopifyAdminBackend(client).orders_for_email("maya.thompson@example.com", 10)
-    assert [o.name for o in orders] == ["#1001"]
-    assert client.calls[0][1] == {"query": "email:maya.thompson@example.com", "limit": 10}
-
-
 def test_mapping_handles_guest_checkout_and_custom_items() -> None:
     found = map_order(order_node(with_customer=False, with_variant=False))
     assert found.customer is None
@@ -296,8 +277,6 @@ def test_order_status_shows_what_policy_allows_when_the_store_can_act(order: str
 def test_shipping_status_never_calls_a_fulfilled_order_delivered(order: str, email: str, expected: str) -> None:
     backend = SimStoreBackend(load_db("data/sim/seed.json"))
     assert get_order_status(backend, order, email)["shipping"] == expected
-    listed = {o["order_number"]: o["shipping"] for o in list_customer_orders(backend, email)["orders"]}
-    assert listed[order] == expected
 
 
 def test_an_allowed_return_lists_the_checks_it_passed() -> None:

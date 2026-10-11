@@ -89,7 +89,9 @@ def test_each_reply_shows_the_pending_change_and_what_happened_inside() -> None:
     assert first["pending"]["summary"].startswith("cancel order #1023")
     trace = first["trace"]
     assert trace["path"][:3] == ["sanitize", "context", "route"] and "gate" in trace["path"]
-    assert [t["kind"] for t in trace["tools"]] == ["policy_check"] and trace["tools"][0]["result"]["allowed"] is True
+    assert [(t["kind"], t["name"]) for t in trace["tools"]] == [("tool", "get_order_status"), ("policy_check", "cancel_order")]
+    assert trace["tools"][1]["result"]["allowed"] is True
+    assert first["pending"]["note"] == "This is a demo store, so nothing is emailed and no money moves."
     assert [g["step"] for g in trace["gate"]] == ["reason_check", "policy", "confirmation_requested"]
     assert first["pending"]["checks"][0] == "The email matches the order"
     assert first["pending"]["checks"][-1] == "The reason came from the customer"

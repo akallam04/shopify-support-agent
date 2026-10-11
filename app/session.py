@@ -21,6 +21,8 @@ class Session:
     pending_action: dict[str, Any] | None = None
     executed_actions: list[dict[str, Any]] = field(default_factory=list)
     tokens_used: int = 0
+    verified_facts: list[dict[str, Any]] = field(default_factory=list)
+    handoff: dict[str, Any] | None = None
 
 
 def _b64(data: bytes) -> str:
@@ -45,6 +47,8 @@ def issue(session: Session, key: bytes, now: datetime) -> str:
         "pending": session.pending_action,
         "executed": session.executed_actions[-MAX_EXECUTED:],
         "tokens": session.tokens_used,
+        "facts": session.verified_facts,
+        "handoff": session.handoff,
     }
     body = _b64(json.dumps(payload, separators=(",", ":")).encode())
     return f"{body}.{_sign(key, body)}"
@@ -66,6 +70,8 @@ def verify(token: str, key: bytes, now: datetime) -> Session | None:
         pending_action=payload.get("pending"),
         executed_actions=payload.get("executed") or [],
         tokens_used=int(payload.get("tokens") or 0),
+        verified_facts=payload.get("facts") or [],
+        handoff=payload.get("handoff"),
     )
 
 

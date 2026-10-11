@@ -5,6 +5,7 @@ from typing import Any
 ADAPTIVE_THINKING_MODELS = frozenset({"claude-sonnet-5-5", "claude-haiku-5-5"})
 THINKING_MIN_MAX_TOKENS = 4000
 AUTOMATIC_CACHE = {"type": "ephemeral"}
+FORCED_TOOL_MODELS = frozenset({"claude-haiku-4-5", "claude-haiku-5-5"})
 THINKING_OFF = {"claude-haiku-5-5": {"type": "disabled"}}
 
 
@@ -37,6 +38,12 @@ def call_options(
     if cache_tail:
         options["cache_control"] = AUTOMATIC_CACHE
     return options
+
+
+def forced_tool(model: str, name: str | None) -> dict[str, Any]:
+    if name is None or model not in FORCED_TOOL_MODELS:
+        return {}
+    return {"tool_choice": {"type": "tool", "name": name}}
 
 
 def response_text(response: Any) -> str | None:

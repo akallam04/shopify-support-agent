@@ -9,11 +9,13 @@ from app.agent.prompts import (
     HANDOFF_RESPONSE,
     INJECTION_RESPONSE,
     ORDER_ASK_SYSTEM,
+    ORDER_NUMBER_HELP,
     OUT_OF_SCOPE_RESPONSE,
     RETRY_SYSTEM,
     SMALLTALK_SYSTEM,
     with_digest,
 )
+from app.agent.facts import facts_block
 from app.agent.models import call_options
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
@@ -47,6 +49,8 @@ def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True)
         if intent == "smalltalk":
             system = SMALLTALK_SYSTEM
         elif intent == "order":
+            if not state.get("order_number") and not feedback:
+                return {"draft": ORDER_NUMBER_HELP}
             if state.get("tool_results") or feedback:
                 # verify retry, regenerate from stored tool results
                 context = "\n\n".join(
@@ -59,21 +63,17 @@ def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True)
                 )
             else:
                 # the graph sent the order here because the email is missing
-                missing = []
-                if not state.get("order_number"):
-                    missing.append("the order number")
-                if not state.get("email"):
-                    missing.append("the email address used at checkout")
-                system = ORDER_ASK_SYSTEM.format(missing=" and ".join(missing))
+                system = ORDER_ASK_SYSTEM.format(missing="the email address used at checkout")
         else:
             context = _context_block(state.get("retrieved", []))
             system = GROUNDED_SYSTEM.format(context=context or "(no matching documents found)")
             if feedback:
                 system += f"\n\nYour previous draft failed a grounding check: {feedback}\nFix that in the rewrite."
 
+        known = facts_block(state, [])
         response = await client.messages.create(
             **call_options(model, 1000, thinking=thinking),
-            system=with_digest(system, state.get("context_digest")),
+            system=with_digest(system, state.get("context_digest")) + (f"\n\n{known}" if known else ""),
             messages=state["messages"],
         )
         draft = "".join(b.text for b in response.content if b.type == "text").strip()

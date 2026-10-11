@@ -275,7 +275,11 @@ function renderWelcome() {
   logEl.append(wrap);
 }
 
+const conversation = createConversation();
+
 function resetChat() {
+  conversation.reset();
+  setBusy(false);
   history = [];
   sessionState = null;
   openCard = null;
@@ -333,11 +337,11 @@ function addAgentText(text, failed = false) {
   return msg;
 }
 
+const LABEL_OUTCOMES = { confirm: "confirmed", decline: "declined", question: "asked", conditional: "conditional", unclear: "unclear" };
+
 function answerOutcome(trace) {
   const reply = (trace?.gate || []).find((g) => g.step === "confirmation");
-  if (reply?.label === "confirm") return "confirmed";
-  if (reply?.label === "decline") return "declined";
-  return "replaced";
+  return LABEL_OUTCOMES[reply?.label] || "replaced";
 }
 
 function settlePending(trace) {
@@ -353,6 +357,7 @@ function addAgent(data) {
   settlePending(data.trace);
   let msg;
   if (data.pending) {
+    if (data.lead) addAgentText(data.lead);
     const card = buildConfirmCard(data.pending, send);
     msg = el("div", { class: "msg msg--agent msg--card" }, card);
     logEl.append(msg);
@@ -427,12 +432,14 @@ async function send(text) {
 }
 
 async function deliver(text) {
+  const request = conversation.begin();
   history.push({ role: "user", content: text });
   setBusy(true);
   const stopTyping = showTyping();
   try {
-    const data = await postWithRetry();
+    const data = await postWithRetry(request.signal);
     stopTyping();
+    if (!request.isCurrent()) return;
     warm = true;
     sessionState = data.session_state ?? null;
     if (data.session_reset) addAgentText(RESET_NOTE);
@@ -441,6 +448,7 @@ async function deliver(text) {
     renderActions();
   } catch (err) {
     stopTyping();
+    if (!request.isCurrent()) return;
     history.pop();
     let message = ERROR_MESSAGE;
     if (!navigator.onLine) message = OFFLINE_MESSAGE;
@@ -449,7 +457,8 @@ async function deliver(text) {
     addAgentText(message, true);
     renderRetry(text);
   } finally {
-    setBusy(false);
+    request.finish();
+    if (request.isCurrent()) setBusy(false);
   }
 }
 
@@ -490,16 +499,24 @@ function renderRetry(text) {
   scrollLog();
 }
 
-async function postWithRetry(attempts = 3, baseDelayMs = 2000) {
+function pause(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("aborted", "AbortError"));
+    }, { once: true });
+  });
+}
+
+async function postWithRetry(signal, attempts = 3, baseDelayMs = 2000) {
+  const body = JSON.stringify({ messages: history, session_state: sessionState });
   for (let i = 0; i < attempts; i++) {
     let res = null;
     try {
-      res = await fetch(`${API_BASE}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, session_state: sessionState }),
-      });
-    } catch {
+      res = await fetch(`${API_BASE}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body, signal });
+    } catch (err) {
+      if (signal.aborted) throw err;
       res = null;
     }
     if (res && res.ok) return res.json();
@@ -508,7 +525,7 @@ async function postWithRetry(attempts = 3, baseDelayMs = 2000) {
     const busy = !res || res.status === 429 || res.status === 503;
     if (!busy) throw new Error(`request failed (${res.status})`);
     if (i === attempts - 1) throw new BusyError("service busy");
-    await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** i + Math.random() * 500));
+    await pause(baseDelayMs * 2 ** i + Math.random() * 500, signal);
   }
   throw new BusyError("service busy");
 }

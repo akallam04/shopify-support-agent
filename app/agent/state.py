@@ -47,3 +47,12 @@ class AgentState(TypedDict, total=False):
     corrected_action: str | None
     gate_retries: int
     timings: list[dict[str, Any]]
+
+    # latest store lookup per order, carried between turns so later answers can rely on it
+    verified_facts: list[dict[str, Any]]
+    # whether a request for a person was recorded, and whether anyone was notified
+    handoff: dict[str, Any] | None
+    # the public demo: receipts say nothing is emailed and no money moves
+    sandbox: bool
+    # text to show before a confirmation card shown again, such as the answer to a question
+    lead: str

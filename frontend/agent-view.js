@@ -47,7 +47,6 @@ function toolChip(tool) {
   const a = tool.args || {};
   if (tool.kind === "policy_check") return { step: "gate", text: `policy check: ${WRITE_TOOLS[tool.name] || tool.name}` };
   if (tool.name === "get_order_status") return { step: "lookup", text: `order status ${a.order_number || ""}`.trim() };
-  if (tool.name === "list_customer_orders") return { step: "lookup", text: "order list" };
   if (tool.name === "check_inventory") return { step: "lookup", text: `stock: ${a.product_query || ""}`.trim() };
   if (tool.name === "transfer_to_human") return { step: "lookup", text: "handoff recorded" };
   if (WRITE_TOOLS[tool.name]) {
@@ -246,7 +245,14 @@ function buildBrain(data) {
   return brain;
 }
 
-const ANSWERS = { confirmed: "you said yes", declined: "you said no", replaced: "you asked for something else" };
+const ANSWERS = {
+  confirmed: "you said yes",
+  declined: "you said no",
+  replaced: "you asked for something else",
+  asked: "you asked a question",
+  conditional: "you added a condition",
+  unclear: "your reply was not a clear yes or no",
+};
 
 function settleGate(brain, outcome) {
   const gate = brain && brain.querySelector('.step[data-step="gate"]');
@@ -280,6 +286,7 @@ function buildConfirmCard(pending, onAnswer) {
     ]),
     el("p", { class: "confirm__summary", "data-summary": pending.summary, text: `I will ${pending.summary}` }),
     pending.checks && pending.checks.length ? checks : null,
+    pending.note ? el("p", { class: "confirm__note", text: pending.note }) : null,
     el("div", { class: "confirm__actions" }, [yes, no]),
     el("p", { class: "confirm__hint", text: "Nothing changes until you say yes." }),
   ]);
@@ -288,7 +295,14 @@ function buildConfirmCard(pending, onAnswer) {
   return card;
 }
 
-const ANSWER_TAGS = { confirmed: "You said yes", declined: "You said no", replaced: "You asked for something else" };
+const ANSWER_TAGS = {
+  confirmed: "You said yes",
+  declined: "You said no",
+  replaced: "You asked for something else",
+  asked: "You asked a question",
+  conditional: "You added a condition",
+  unclear: "Not a clear yes or no",
+};
 
 function settleCard(card, outcome) {
   card.dataset.state = outcome;

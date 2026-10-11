@@ -218,9 +218,9 @@ def test_every_summary_is_one_clean_sentence_and_returns_name_the_reason(db: Sim
     backend = delivered(db, 5)
     ret = prepare(backend, "request_return", return_args({"title": "Stormline Rain Jacket", "quantity": 1}, reason="size_too_large"))
     assert "(reason: too large)." in ret.summary
-    assert ".." not in CONFIRMATION_TEMPLATE.format(summary=ret.summary)
+    assert ".." not in CONFIRMATION_TEMPLATE.format(summary=ret.summary, note="")
     cancel = prepare(store(db), "cancel_order", CANCEL_1002)
     address = prepare(store(db), "update_shipping_address", NEW_ADDRESS)
     for prepared in (ret, cancel, address):
-        text = CONFIRMATION_TEMPLATE.format(summary=prepared.summary)
+        text = CONFIRMATION_TEMPLATE.format(summary=prepared.summary, note="")
         assert prepared.summary.endswith(".") and ".." not in text and text.endswith("Should I go ahead? Please reply yes or no.")

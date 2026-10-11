@@ -3,10 +3,12 @@
 import re
 from typing import Any
 
+from app.agent.facts import grounding_text
 from app.agent.prompts import SAFE_FALLBACK_RESPONSE
 from app.agent.state import AgentState
 
 CITATION_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
+BRACKET_RE = re.compile(r"\[([^\[\]\n]{1,80})\]")
 ORDER_NUMBER_RE = re.compile(r"#\d{3,}")
 # at least one digit, so status words like FULFILLED never match
 TRACKING_LIKE_RE = re.compile(r"\b(?=[A-Z0-9]*\d)[A-Z0-9]{8,}\b")
@@ -27,7 +29,7 @@ def plain_text(text: str) -> str:
 
 
 def check_citations(draft: str, allowed_ids: set[str]) -> tuple[bool, str | None]:
-    unknown = sorted(set(CITATION_RE.findall(draft)) - allowed_ids)
+    unknown = sorted(set(BRACKET_RE.findall(draft)) - allowed_ids)
     if unknown:
         return False, f"citations not present in the provided context: {unknown}"
     return True, None
@@ -54,7 +56,7 @@ def verify_node(state: AgentState) -> dict[str, Any]:
     if intent == "order":
         grounding = " ".join(t["result"] for t in state.get("tool_results", []))
         grounding += " " + " ".join(str(m["content"]) for m in state["messages"])
-        grounding += " " + (state.get("context_digest") or "")
+        grounding += " " + (state.get("context_digest") or "") + " " + grounding_text(state)
         ok, feedback = check_order_facts(draft, grounding)
     else:
         allowed: set[str] = set()

@@ -178,7 +178,8 @@ def test_a_draft_that_asks_for_a_yes_is_sent_back_to_call_the_tool(db: SimDB) ->
     first, second = [" ".join(b["text"] for b in kw["system"]) for kind, kw in client.calls if kind == "order_tools"]
     assert "Do not ask for confirmation yourself" not in first
     assert "Do not ask for confirmation yourself" in second
-    assert {"step": "self_confirm_nudge"} in state["gate_trace"]
+    assert {"step": "self_confirm_nudge", "forced": "cancel_order"} in state["gate_trace"]
+    assert [kw.get("tool_choice") for kind, kw in client.calls if kind == "order_tools"][1] == {"type": "tool", "name": "cancel_order"}
     assert state["response"].startswith("Just to confirm, I will cancel order #1002")
     assert db.orders["#1002"].cancelled_at is None
 
@@ -207,7 +208,7 @@ def test_the_nudge_restarts_the_loop_when_thinking_blocks_would_be_sent_back(db:
     calls = [kw for kind, kw in client.calls if kind == "order_tools"]
     assert len(calls) == 4
     assert len(calls[2]["messages"]) == 1
-    assert {"step": "self_confirm_nudge"} in state["gate_trace"]
+    assert {"step": "self_confirm_nudge", "forced": "cancel_order"} in state["gate_trace"]
     assert state["response"].startswith("Just to confirm, I will cancel order #1002")
 
 
@@ -241,14 +242,12 @@ def seed_turn(script: dict, text: str):
     return client, turn(graph, [{"role": "user", "content": text}])
 
 
-def test_a_guessed_return_reason_goes_back_to_the_model_and_then_the_customer_is_asked() -> None:
+def test_a_guessed_return_reason_is_never_used_and_the_customer_is_asked_once() -> None:
     guessed = {"order_number": "#1022", "email": JORDAN, "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large", "reason_quote": "it is too big"}
     client, state = seed_turn({"route": [RETURN_ROUTE], "order_tools": [("request_return", guessed), ("request_return", guessed)]}, RETURN_ASK)
-    assert client.count("order_tools") == 2
-    retry_system = " ".join(b["text"] for b in [kw for kind, kw in client.calls if kind == "order_tools"][1]["system"])
-    assert "not something the customer wrote" in retry_system
+    assert client.count("order_tools") == 1
     assert state["response"] == REASON_ASK
-    assert [t["found"] for t in state["gate_trace"] if t["step"] == "reason_check"] == [False, False]
+    assert [t["found"] for t in state["gate_trace"] if t["step"] == "reason_check"] == [False]
     assert not state.get("pending_action")
 
 
@@ -496,7 +495,7 @@ def test_asking_again_for_a_person_gets_a_follow_up_without_a_second_handoff(db:
     first = turn(graph, [{"role": "user", "content": "I want to talk to a real person."}])
     history = [{"role": "user", "content": "I want to talk to a real person."}, {"role": "assistant", "content": first["response"]},
                {"role": "user", "content": "No, connect me to a live agent now."}]
-    second = turn(graph, history)
+    second = turn(graph, history, {"handoff": first["handoff"]})
     assert first["response"] == HANDOFF_RESPONSE and second["response"] == HANDOFF_FOLLOWUP
     assert len(backend.handoffs) == 1
 

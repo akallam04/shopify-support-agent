@@ -16,11 +16,12 @@ def test_order_without_email_goes_to_ask() -> None:
     assert _after_route({"intent": "order", "order_number": "1002", "email": ""}) == "respond"
 
 
-def test_order_with_email_goes_to_tools() -> None:
-    assert (
-        _after_route({"intent": "order", "order_number": "", "email": "a@b.com"})
-        == "order_tools"
-    )
+def test_order_with_number_and_email_goes_to_tools() -> None:
+    assert _after_route({"intent": "order", "order_number": "#1001", "email": "a@b.com"}) == "order_tools"
+
+
+def test_order_with_only_an_email_never_reaches_the_tools() -> None:
+    assert _after_route({"intent": "order", "order_number": "", "email": "a@b.com"}) == "respond"
 
 
 def test_rag_intents_go_to_retrieve() -> None:

@@ -9,7 +9,7 @@ from anthropic import AsyncAnthropic
 from langgraph.graph import END, START, StateGraph
 
 from app.agent.nodes.context import make_context_node
-from app.agent.nodes.gate import make_confirm_node, make_execute_node, make_gate_node, make_handoff_node
+from app.agent.nodes.gate import make_confirm_node, make_execute_node, make_gate_node, make_handoff_node, reconfirm_node
 from app.agent.nodes.order_tools import make_order_tools_node
 from app.agent.nodes.respond import make_respond_node
 from app.agent.nodes.retrieve import make_retrieve_node
@@ -53,7 +53,7 @@ def _after_confirm(state: AgentState) -> str:
     label = state.get("confirmation")
     if label == "confirm":
         return "execute"
-    if label == "change":
+    if label in ("change", "question"):
         return "route"
     return "verify"
 
@@ -63,10 +63,10 @@ def _after_route(state: AgentState) -> str:
     if intent in ("product", "policy"):
         return "retrieve"
     if intent == "order":
-        # both tools need the email; without it the model has nothing to look
-        # up, so the graph routes straight to an ask instead of trusting the
-        # model to resist calling tools
-        return "order_tools" if state.get("email") else "respond"
+        # every lookup needs the order number and the email together, so without
+        # both the graph routes straight to an ask instead of trusting the model
+        # to resist calling tools
+        return "order_tools" if state.get("email") and state.get("order_number") else "respond"
     if intent == "handoff":
         return "handoff"
     return "respond"
@@ -81,7 +81,9 @@ def _after_gate(state: AgentState) -> str:
 
 
 def _after_verify(state: AgentState) -> str:
-    return END if state.get("response") else "respond"
+    if not state.get("response"):
+        return "respond"
+    return "reconfirm" if state.get("confirmation") == "question" and state.get("pending_action") else END
 
 
 def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any = None):
@@ -104,6 +106,7 @@ def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any 
     g.add_node("handoff", timed("handoff", make_handoff_node(tools)))
     g.add_node("respond", timed("respond", make_respond_node(client, settings.answer_model, settings.model_thinking)))
     g.add_node("verify", timed("verify", verify_node))
+    g.add_node("reconfirm", timed("reconfirm", reconfirm_node))
 
     g.add_edge(START, "sanitize")
     g.add_conditional_edges("sanitize", _after_sanitize)
@@ -117,5 +120,6 @@ def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any 
     g.add_edge("handoff", "verify")
     g.add_edge("respond", "verify")
     g.add_conditional_edges("verify", _after_verify)
+    g.add_edge("reconfirm", END)
 
     return g.compile()

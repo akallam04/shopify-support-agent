@@ -101,11 +101,6 @@ def test_missing_order_matches(live: ShopifyAdminBackend, sim: SimStoreBackend) 
     assert tools.get_order_status(live, "#9999", email) == tools.get_order_status(sim, "#9999", email)
 
 
-@pytest.mark.parametrize("email", CUSTOMER_EMAILS + [CUSTOMER_EMAILS[0].upper(), STRANGER])
-def test_customer_orders_match(live: ShopifyAdminBackend, sim: SimStoreBackend, email: str) -> None:
-    assert tools.list_customer_orders(live, email) == tools.list_customer_orders(sim, email)
-
-
 @pytest.mark.parametrize("query", SEARCHES)
 def test_inventory_matches(live: ShopifyAdminBackend, sim: SimStoreBackend, query: str) -> None:
     assert tools.check_inventory(live, query) == tools.check_inventory(sim, query)

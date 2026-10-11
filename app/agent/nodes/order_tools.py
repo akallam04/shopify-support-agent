@@ -16,10 +16,12 @@ from app.agent.prompts import (
     SAFE_FALLBACK_RESPONSE,
     SELF_CONFIRM_FEEDBACK,
 )
-from app.agent.models import call_options, carries_thinking, system_blocks
+from app.agent.facts import LOOKUP, facts_block, merge_facts
+from app.agent.models import call_options, carries_thinking, forced_tool, system_blocks
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
+from mcp_server.tools import HANDOFF_ACTION
 
 MAX_TOOL_ROUNDS = 3
 NUDGE_ROUNDS = 2
@@ -32,8 +34,20 @@ SELF_CONFIRM_RE = re.compile(
 )
 
 
+CHANGE_WORDS = (
+    ("request_return", re.compile(r"\breturn", re.IGNORECASE)),
+    ("cancel_order", re.compile(r"\bcancel", re.IGNORECASE)),
+    ("update_shipping_address", re.compile(r"\baddress\b", re.IGNORECASE)),
+)
+
+
 def asks_for_yes(text: str) -> bool:
     return bool(SELF_CONFIRM_RE.search(text))
+
+
+def proposed_change(text: str, gated: set[str]) -> str | None:
+    named = [name for name, pattern in CHANGE_WORDS if name in gated and pattern.search(text)]
+    return named[0] if len(named) == 1 else None
 
 
 def order_system(tools: Any, settings: Settings) -> str:
@@ -43,8 +57,11 @@ def order_system(tools: Any, settings: Settings) -> str:
     return ORDER_SYSTEM + ORDER_WRITE_RULES + (ORDER_GATE_RULE if gate_confirms else ORDER_CONFIRM_RULE)
 
 
-def system_extra(state: AgentState, nudged: bool = False) -> str | None:
-    parts = [SELF_CONFIRM_FEEDBACK] if nudged else []
+def system_extra(state: AgentState, nudged: bool = False, fresh: list[dict[str, Any]] | None = None) -> str | None:
+    known = facts_block(state, fresh or [])
+    parts = [known] if known else []
+    if nudged:
+        parts.append(SELF_CONFIRM_FEEDBACK)
     if state.get("gate_feedback"):
         parts.append(GATE_FEEDBACK_TEMPLATE.format(feedback=state["gate_feedback"]))
     if state.get("corrected_action"):
@@ -56,37 +73,53 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
     base_system = order_system(tools, settings)
     can_nudge = bool(tools.gated_tool_names) and settings.mutation_gate and settings.gate_confirmation
 
+    async def lookup(state: AgentState) -> list[dict[str, Any]]:
+        number, email = state.get("order_number"), state.get("email")
+        if not (number and email) or LOOKUP not in tools.tool_names:
+            return []
+        args = {"order_number": number, "email": email}
+        if any(c["name"] == LOOKUP and c["args"] == args for c in state.get("tool_results", [])):
+            return []
+        return [{"name": LOOKUP, "args": args, "result": await tools.call(LOOKUP, args)}]
+
     async def order_tools(state: AgentState) -> dict[str, Any]:
-        system = system_blocks(base_system, state.get("context_digest"), system_extra(state))
+        fresh = await lookup(state)
+        tool_results: list[dict[str, Any]] = list(state.get("tool_results", [])) + fresh
+        system = system_blocks(base_system, state.get("context_digest"), system_extra(state, fresh=fresh))
         messages: list[Any] = list(state["messages"])
-        tool_results: list[dict[str, Any]] = list(state.get("tool_results", []))
         executed: list[dict[str, Any]] = list(state.get("executed_actions", []))
         usage = list(state.get("usage", []))
         trace = list(state.get("gate_trace", []))
+        handoff = state.get("handoff")
+        read_only = bool(state.get("pending_action"))
+        offered = [t for t in tools.anthropic_tools if not (read_only and t["name"] in tools.write_tool_names)]
         draft = ""
         nudged = False
+        forced: str | None = None
         rounds, limit = 0, MAX_TOOL_ROUNDS
 
         while rounds < limit:
             rounds += 1
             response = await client.messages.create(
                 **call_options(model, 1000, thinking=settings.model_thinking, cache_tail=True),
+                **forced_tool(model, forced),
                 system=system,
                 messages=messages,
-                tools=tools.anthropic_tools,
+                tools=offered,
             )
             usage.append(usage_record("order_tools", model, response))
             tool_uses = [b for b in response.content if b.type == "tool_use"]
             if not tool_uses:
                 draft = "".join(b.text for b in response.content if b.type == "text").strip()
-                if can_nudge and not nudged and asks_for_yes(draft):
+                if can_nudge and not read_only and not nudged and asks_for_yes(draft):
                     if carries_thinking(messages):
                         messages = list(state["messages"])
                         limit = rounds + NUDGE_ROUNDS
                     if rounds < limit:
                         nudged = True
-                        trace.append({"step": "self_confirm_nudge"})
-                        system = system_blocks(base_system, state.get("context_digest"), system_extra(state, nudged))
+                        forced = proposed_change(draft, tools.gated_tool_names)
+                        trace.append({"step": "self_confirm_nudge", "forced": forced})
+                        system = system_blocks(base_system, state.get("context_digest"), system_extra(state, nudged, fresh))
                         continue
                 break
 
@@ -100,6 +133,8 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
                     "candidate_action": candidate,
                     "tool_results": tool_results,
                     "executed_actions": executed,
+                    "verified_facts": merge_facts(state.get("verified_facts") or [], tool_results),
+                    "handoff": handoff,
                     "usage": usage,
                     "draft": "",
                 }
@@ -112,7 +147,10 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
                 else:
                     result_text = await tools.call(tu.name, dict(tu.input))
                 if tu.name in tools.write_tool_names:
-                    executed.append(json.loads(result_text))
+                    outcome = json.loads(result_text)
+                    executed.append(outcome)
+                    if tu.name == HANDOFF_ACTION and outcome.get("ok"):
+                        handoff = {"recorded": True, "notified": False}
                 tool_results.append({"name": tu.name, "args": dict(tu.input), "result": result_text})
                 results_content.append({"type": "tool_result", "tool_use_id": tu.id, "content": result_text})
             messages.append({"role": "user", "content": results_content})
@@ -123,6 +161,8 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
             "draft": draft,
             "tool_results": tool_results,
             "executed_actions": executed,
+            "verified_facts": merge_facts(state.get("verified_facts") or [], tool_results),
+            "handoff": handoff,
             "usage": usage,
             "gate_feedback": None,
             "corrected_action": None,

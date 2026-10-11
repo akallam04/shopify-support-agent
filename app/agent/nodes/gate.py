@@ -9,21 +9,27 @@ from anthropic import AsyncAnthropic
 from app.agent.prompts import (
     CONFIRM_CLASSIFIER_SCHEMA,
     CONFIRM_CLASSIFIER_SYSTEM,
+    CONDITIONAL_LEAD,
+    CONDITIONAL_REASK,
     CONFIRMATION_TEMPLATE,
     DECLINED_RESPONSE,
+    DEMO_RECEIPT_NOTE,
     GATE_INPUT_RESPONSE,
+    HANDOFF_DEMO,
+    HANDOFF_DEMO_FOLLOWUP,
     HANDOFF_FOLLOWUP,
     HANDOFF_RESPONSE,
     NOT_FOUND_HINT,
     POLICY_RULES,
     REASK_TEMPLATE,
     REASON_ASK,
-    REASON_FEEDBACK,
+    RECONFIRM_TEMPLATE,
     REFLECTION_SCHEMA,
     REFLECTION_SYSTEM,
     with_digest,
 )
 from app.agent.models import call_options, response_text
+from app.agent.reasons import grounded, stated_reason
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -34,6 +40,11 @@ YES_RE = re.compile(
     r"([\s,.!]+(please|go ahead|do it|thanks|thank you|that is right|that's right))*[\s.!]*$"
 )
 NO_RE = re.compile(r"^(no|nope|nah|don't|do not|stop|wait|hold on|not yet|never mind|nevermind)\b")
+CONDITIONAL_RE = re.compile(
+    r"\b(only if|if and only if|unless|as long as|provided (that|you|i)|on (the )?condition|otherwise)\b"
+    r"|^(yes|yeah|yep|sure|ok|okay)\b.*\bif\b",
+    re.IGNORECASE,
+)
 
 
 FAST_DECLINE_MAX_WORDS = 4
@@ -41,6 +52,8 @@ FAST_DECLINE_MAX_WORDS = 4
 
 def classify_fast(text: str) -> str | None:
     normalized = " ".join(text.lower().split())
+    if CONDITIONAL_RE.search(normalized):
+        return "conditional"
     if YES_RE.match(normalized):
         return "confirm"
     if NO_RE.match(normalized) and len(normalized.split()) <= FAST_DECLINE_MAX_WORDS:
@@ -56,12 +69,17 @@ def _usage(state: AgentState, node: str, model: str, response: Any) -> list[dict
     return list(state.get("usage", [])) + [usage_record(node, model, response)]
 
 
-def result_message(result: dict[str, Any]) -> str:
+MONEY_ACTIONS = frozenset({"cancel_order", "request_return"})
+
+
+def result_message(result: dict[str, Any], sandbox: bool = False) -> str:
     if not result.get("ok"):
         reason = result.get("reason", "")
         return f"{reason} {NOT_FOUND_HINT}" if result.get("code") == "order_not_found" else reason
     parts = [result["message"]]
     parts += [result[k] for k in ("approval", "label", "fee", "refund") if result.get(k)]
+    if sandbox and result.get("action") in MONEY_ACTIONS:
+        parts.append(DEMO_RECEIPT_NOTE)
     text = " ".join(parts)
     return f"That is already done. {text}" if result.get("duplicate") else text
 
@@ -69,20 +87,26 @@ def result_message(result: dict[str, Any]) -> str:
 REASON_REQUIRED = frozenset({"request_return"})
 REASON_OPTIONAL = frozenset({"cancel_order"})
 REASON_CHECK = "The reason came from the customer"
-WORD_RE = re.compile(r"[a-z0-9']+")
-
-
-def _words(text: str) -> str:
-    return " ".join(WORD_RE.findall(text.lower()))
+def customer_texts(state: AgentState) -> list[str]:
+    texts = [str(m["content"]) for m in state["messages"] if m["role"] == "user"]
+    return texts + ([state["context_digest"]] if state.get("context_digest") else [])
 
 
 def reason_from_customer(quote: str, state: AgentState) -> bool:
-    wanted = _words(quote)
-    if len(wanted) < 3:
-        return False
-    said = [_words(str(m["content"])) for m in state["messages"] if m["role"] == "user"]
-    said.append(_words(state.get("context_digest") or ""))
-    return any(wanted in text for text in said)
+    return grounded(quote, customer_texts(state))
+
+
+def customer_reason(args: dict[str, Any], state: AgentState) -> dict[str, Any] | None:
+    texts = customer_texts(state)
+    quote, code = str(args.get("reason_quote") or ""), str(args.get("reason") or "")
+    stated = stated_reason(texts)
+    if stated is not None:
+        return {
+            **args,
+            "reason": code if code in stated.codes else stated.codes[0],
+            "reason_quote": quote if grounded(quote, texts) else stated.phrase,
+        }
+    return args if grounded(quote, texts) else None
 
 
 DECLINED_REFLECTION = {"verdict": "ask", "issues": ["the check declined"], "question": "Could you tell me exactly what you would like me to change?"}
@@ -132,15 +156,11 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         trace = list(state.get("gate_trace", []))
         reason_given = False
         if name in REASON_REQUIRED:
-            quote = str(args.get("reason_quote") or "")
-            found = reason_from_customer(quote, state)
-            trace.append({"step": "reason_check", "action": name, "found": found})
-            if not found:
-                retry = _retry(state, name, REASON_FEEDBACK.format(name=name, quote=quote))
-                if retry is not None:
-                    return {**retry, "candidate_action": None, "gate_trace": trace}
+            resolved = customer_reason(args, state)
+            trace.append({"step": "reason_check", "action": name, "found": resolved is not None})
+            if resolved is None:
                 return {"draft": REASON_ASK, "candidate_action": None, "gate_trace": trace}
-            reason_given = True
+            args, reason_given = resolved, True
         elif name in REASON_OPTIONAL and args.get("reason"):
             reason_given = reason_from_customer(str(args.get("reason_quote") or ""), state)
             trace.append({"step": "reason_check", "action": name, "found": reason_given, "optional": True})
@@ -163,7 +183,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             retry = _retry(state, name, prepared.reason) if prepared.code in CORRECTABLE_CODES else None
             if retry is not None:
                 return {**retry, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
-            draft = result_message({"ok": False, "code": prepared.code, "reason": prepared.reason})
+            draft = result_message({"ok": False, "code": prepared.code, "reason": prepared.reason}, bool(state.get("sandbox")))
             return {"draft": draft, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
 
         update: dict[str, Any] = {"candidate_action": None, "tool_results": tool_results}
@@ -178,6 +198,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         if settings.gate_confirmation:
             trace.append({"step": "confirmation_requested", "action": name, "key": key})
             checks = prepared.checks + ([REASON_CHECK] if reason_given else [])
+            note = DEMO_RECEIPT_NOTE if state.get("sandbox") and name in MONEY_ACTIONS else ""
             pending = {
                 "action": name,
                 "args": args,
@@ -185,10 +206,11 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
                 "summary": prepared.summary,
                 "checks": checks,
                 "key": key,
+                "note": note,
             }
             return {
                 **update,
-                "draft": CONFIRMATION_TEMPLATE.format(summary=prepared.summary),
+                "draft": CONFIRMATION_TEMPLATE.format(summary=prepared.summary, note=f" {note}" if note else ""),
                 "pending_action": pending,
                 "gate_trace": trace,
             }
@@ -196,7 +218,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         result = tools.execute(name, args, key)
         trace.append({"step": "executed" if result.get("ok") else "refused", "action": name, "key": key})
         recorded = _record({**state, "tool_results": tool_results}, result, name, args)
-        return {**update, **recorded, "draft": result_message(result), "gate_trace": trace}
+        return {**update, **recorded, "draft": result_message(result, bool(state.get("sandbox"))), "gate_trace": trace}
 
     return gate
 
@@ -227,10 +249,14 @@ def make_confirm_node(client: AsyncAnthropic, model: str, thinking: bool = True)
         update.update({"confirmation": label, "gate_trace": trace})
         if label == "decline":
             update.update({"pending_action": None, "draft": DECLINED_RESPONSE})
-        elif label == "unclear":
-            update["draft"] = REASK_TEMPLATE.format(summary=pending["summary"])
+        elif label == "conditional":
+            update.update({"draft": CONDITIONAL_REASK.format(summary=pending["summary"]), "lead": CONDITIONAL_LEAD})
+        elif label == "question":
+            update["intent"] = ""
         elif label == "change":
             update.update({"pending_action": None, "intent": "", "corrected_action": pending["summary"]})
+        elif label != "confirm":
+            update["draft"] = REASK_TEMPLATE.format(summary=pending["summary"])
         return update
 
     return confirm
@@ -243,17 +269,17 @@ def make_execute_node(tools: Any):
         trace = list(state.get("gate_trace", []))
         trace.append({"step": "executed" if result.get("ok") else "refused", "action": pending["action"], "key": pending["key"]})
         recorded = _record(state, result, pending["action"], pending["args"])
-        return {**recorded, "draft": result_message(result), "pending_action": None, "gate_trace": trace}
+        return {**recorded, "draft": result_message(result, bool(state.get("sandbox"))), "pending_action": None, "gate_trace": trace}
 
     return execute
 
 
 def make_handoff_node(tools: Any):
     def handoff(state: AgentState) -> dict[str, Any]:
-        handed_off = any(m["role"] == "assistant" and m["content"] in (HANDOFF_RESPONSE, HANDOFF_FOLLOWUP) for m in state["messages"])
-        if handed_off:
-            return {"draft": HANDOFF_FOLLOWUP}
-        update: dict[str, Any] = {"draft": HANDOFF_RESPONSE}
+        sandbox = bool(state.get("sandbox"))
+        if (state.get("handoff") or {}).get("recorded"):
+            return {"draft": HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP}
+        update: dict[str, Any] = {"draft": HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE}
         if "transfer_to_human" in tools.write_tool_names:
             args = {
                 "summary": f"Customer asked for a person: {_last_user_text(state)[:300]}",
@@ -262,7 +288,28 @@ def make_handoff_node(tools: Any):
             result = tools.execute("transfer_to_human", args)
             trace = list(state.get("gate_trace", []))
             trace.append({"step": "handoff_recorded", "ok": bool(result.get("ok"))})
-            update.update({"gate_trace": trace, "executed_actions": list(state.get("executed_actions", [])) + [result]})
+            update.update({
+                "gate_trace": trace,
+                "executed_actions": list(state.get("executed_actions", [])) + [result],
+                "handoff": {"recorded": bool(result.get("ok")), "notified": False},
+            })
         return update
 
     return handoff
+
+
+SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
+GO_AHEAD_RE = re.compile(r"\b(go ahead|proceed)\b.*\?\s*$", re.IGNORECASE)
+
+
+def without_yes_question(text: str) -> str:
+    sentences = SENTENCE_END_RE.split(text.strip())
+    while len(sentences) > 1 and GO_AHEAD_RE.search(sentences[-1]):
+        sentences.pop()
+    return " ".join(sentences)
+
+
+def reconfirm_node(state: AgentState) -> dict[str, Any]:
+    pending = state["pending_action"]
+    answer = without_yes_question(state["response"])
+    return {"lead": answer, "response": f"{answer}\n\n{RECONFIRM_TEMPLATE.format(summary=pending['summary'])}"}

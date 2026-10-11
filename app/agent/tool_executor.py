@@ -11,7 +11,6 @@ from mcp_server.backends.base import StoreBackend
 
 READ_FUNCTIONS = {
     "get_order_status": tools.get_order_status,
-    "list_customer_orders": tools.list_customer_orders,
     "check_inventory": tools.check_inventory,
 }
 

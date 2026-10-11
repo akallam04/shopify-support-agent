@@ -52,6 +52,7 @@ class ChatResponse(BaseModel):
     session_state: str | None = None
     session_reset: bool = False
     pending: dict[str, Any] | None = None
+    lead: str | None = None
     trace: dict[str, Any] | None = None
 
 
@@ -158,6 +159,7 @@ def create_app(graph: Any = None, tools: ShopifyTools | None = None, sandbox: Sa
             session_state=token,
             session_reset=reset,
             pending=pending_view(state),
+            lead=state.get("lead") if state.get("pending_action") else None,
             trace=turn_trace(state),
         )
 

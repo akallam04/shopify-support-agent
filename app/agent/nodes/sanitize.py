@@ -27,8 +27,15 @@ def clean_text(raw: str) -> str:
     return _CONTROL_CHARS.sub("", raw)[:MAX_INPUT_CHARS].strip()
 
 
+QUOTED_RE = re.compile(r'"[^"]*"|\u201c[^\u201d]*\u201d|\'[^\']{4,}\'')
+REPORTED_RE = re.compile(r"\b(said|says|told|tells|wrote|writes|asked|mentioned|claimed|quoted?|means?|meaning)\b", re.IGNORECASE)
+
+
 def looks_like_injection(text: str) -> bool:
-    return any(p.search(text) for p in INJECTION_PATTERNS)
+    unquoted = QUOTED_RE.sub(" ", text)
+    if any(p.search(unquoted) for p in INJECTION_PATTERNS):
+        return True
+    return any(p.search(text) for p in INJECTION_PATTERNS) and not REPORTED_RE.search(unquoted)
 
 
 def sanitize_node(state: AgentState) -> dict[str, Any]:

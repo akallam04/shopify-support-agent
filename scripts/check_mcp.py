@@ -53,12 +53,6 @@ async def main() -> None:
                 ),
             )
             show(
-                "customer order history",
-                await session.call_tool(
-                    "list_customer_orders", {"email": "maya.thompson@example.com"}
-                ),
-            )
-            show(
                 "live inventory search",
                 await session.call_tool("check_inventory", {"product_query": "rain jacket"}),
             )

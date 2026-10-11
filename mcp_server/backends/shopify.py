@@ -77,17 +77,6 @@ query OrderByName($query: String!) {
     + ORDER_FRAGMENT
 )
 
-ORDERS_BY_EMAIL_QUERY = (
-    """
-query OrdersByEmail($query: String!, $limit: Int!) {
-  orders(first: $limit, query: $query, sortKey: PROCESSED_AT, reverse: true) {
-    nodes { ...OrderFields }
-  }
-}
-"""
-    + ORDER_FRAGMENT
-)
-
 PRODUCT_SEARCH_QUERY = (
     """
 query ProductSearch($query: String!, $limit: Int!) {
@@ -410,12 +399,6 @@ class ShopifyAdminBackend:
                     found.order.returns = map_returns(node)
                 return found
         return None
-
-    def orders_for_email(self, email: str, limit: int) -> list[Order]:
-        data = self._client.graphql(
-            ORDERS_BY_EMAIL_QUERY, {"query": f"email:{email}", "limit": limit}
-        )
-        return [map_order(n).order for n in data["orders"]["nodes"]]
 
     def search_products(self, text: str, limit: int) -> list[Product]:
         data = self._client.graphql(

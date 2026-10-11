@@ -91,10 +91,15 @@ class Sandbox:
             "messages": history,
             "pending_action": self.checked_pending(session.pending_action, tools),
             "executed_actions": session.executed_actions,
+            "verified_facts": session.verified_facts,
+            "handoff": session.handoff,
+            "sandbox": True,
         })
         mutations = self.new_mutations(state)
         session.mutations = session.mutations + mutations
         session.pending_action = state.get("pending_action")
         session.executed_actions = list(state.get("executed_actions") or [])
+        session.verified_facts = list(state.get("verified_facts") or [])
+        session.handoff = state.get("handoff")
         session.tokens_used += sum(u["input_tokens"] + u["output_tokens"] for u in state.get("usage", []))
         return TurnResult(state, session, issue(session, self.key, now), reset, [m["action"] for m in mutations])

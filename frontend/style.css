@@ -770,6 +770,7 @@ button { font: inherit; color: inherit; }
 .confirm__actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px 0; }
 .confirm__actions .btn { flex: 1 1 auto; }
 .confirm__hint { padding: 10px 14px 12px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.confirm__note { margin: 0 14px 10px; color: var(--ink); font-size: 13px; }
 
 .confirm:not([data-state="open"]) { border-color: var(--line); background: var(--paper); box-shadow: none; }
 .confirm:not([data-state="open"]) .confirm__title { color: var(--granite); }

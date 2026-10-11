@@ -6,7 +6,7 @@ from typing import Any
 from mcp_server.backends.base import FoundOrder
 from mcp_server.clock import Clock, FrozenClock, format_instant, parse_instant
 from mcp_server.search import WORD_RE, prefix_hit, words
-from mcp_server.simdb import Address, Order, Product, ReturnLine, ReturnRequest, SimDB
+from mcp_server.simdb import Address, Product, ReturnLine, ReturnRequest, SimDB
 
 TRAILING_DIGITS = re.compile(r"(\d+)$")
 
@@ -34,12 +34,6 @@ class SimStoreBackend:
             return None
         customer = self.db.customers.get(order.customer_id) if order.customer_id else None
         return FoundOrder(order=order, customer=customer)
-
-    def orders_for_email(self, email: str, limit: int) -> list[Order]:
-        wanted = email.lower()
-        matches = [o for o in self.db.orders.values() if (o.email or "").lower() == wanted]
-        matches.sort(key=lambda o: (o.processed_at, o.name), reverse=True)
-        return matches[:limit]
 
     def search_products(self, text: str, limit: int) -> list[Product]:
         tokens = WORD_RE.findall(text.lower())

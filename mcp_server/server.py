@@ -76,16 +76,6 @@ def get_order_status(order_number: str, email: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def list_customer_orders(email: str) -> dict[str, Any]:
-    """List recent orders (up to 10, newest first) for a customer email address.
-
-    Args:
-        email: The customer's email address.
-    """
-    return tools.list_customer_orders(_store(), email)
-
-
-@mcp.tool()
 def check_inventory(product_query: str) -> dict[str, Any]:
     """Check live stock and prices for products matching a search phrase.
 
@@ -200,7 +190,7 @@ def transfer_to_human(summary: str, order_number: str = "") -> dict[str, Any]:
     return tools.execute(_store(), "transfer_to_human", {"summary": summary, "order_number": order_number})
 
 
-READ_TOOLS = (get_order_status, list_customer_orders, check_inventory)
+READ_TOOLS = (get_order_status, check_inventory)
 WRITE_TOOLS = (cancel_order, update_shipping_address, request_return, transfer_to_human)
 
 

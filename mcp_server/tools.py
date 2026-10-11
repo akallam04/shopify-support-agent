@@ -27,7 +27,6 @@ ORDER_NOT_FOUND = {
     "message": "No order found matching that order number and email address.",
 }
 
-CUSTOMER_ORDER_LIMIT = 10
 PRODUCT_CANDIDATE_LIMIT = 10
 PRODUCT_RESULT_LIMIT = 3
 
@@ -115,6 +114,7 @@ def _order_status_view(order: Order, include_returns: bool = False) -> dict[str,
             for t in f.tracking
         ],
         "delivered_on": delivered_on(order),
+        "shipping_address": format_address(order.shipping_address) if order.shipping_address else None,
     }
     if include_returns:
         view["returns"] = returns_view(order)
@@ -173,28 +173,6 @@ def get_order_status(backend: StoreBackend, order_number: str, email: str) -> di
     if backend.supports_writes:
         view["eligibility"] = eligibility_view(backend, found.order)
     return view
-
-
-def list_customer_orders(backend: StoreBackend, email: str) -> dict[str, Any]:
-    email = validate_email(email)
-    orders = backend.orders_for_email(email, CUSTOMER_ORDER_LIMIT)
-    if not orders:
-        return {"found": False, "message": "No orders found for that email address."}
-    return {
-        "found": True,
-        "count": len(orders),
-        "orders": [
-            {
-                "order_number": o.name,
-                "placed_at": o.processed_at,
-                "fulfillment_status": o.fulfillment_status,
-                "shipping": shipping_status(o),
-                "financial_status": o.financial_status,
-                "total": f"{o.total} {o.currency}",
-            }
-            for o in orders
-        ],
-    }
 
 
 def check_inventory(backend: StoreBackend, product_query: str) -> dict[str, Any]:

@@ -26,15 +26,6 @@ def test_parse_instant_rejects_naive_timestamps() -> None:
         parse_instant("2026-08-12T16:00:00")
 
 
-def test_customer_orders_newest_first_and_case_insensitive(db: SimDB) -> None:
-    names = [o.name for o in SimStoreBackend(db).orders_for_email("MAYA.Thompson@example.com", 10)]
-    assert names == ["#1002", "#1001"]
-
-
-def test_customer_orders_respect_the_limit(db: SimDB) -> None:
-    assert len(SimStoreBackend(db).orders_for_email("maya.thompson@example.com", 1)) == 1
-
-
 def test_search_needs_every_word_and_matches_prefixes(db: SimDB) -> None:
     backend = SimStoreBackend(db)
     assert [p.title for p in backend.search_products("storm jack", 3)] == ["Stormline Rain Jacket"]

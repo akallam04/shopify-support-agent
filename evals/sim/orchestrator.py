@@ -101,7 +101,7 @@ async def run_conversation(
         tokens or SimTokens(),
     )
     conv = Conversation(task=task, trial=trial, backend=backend, sim=sim)
-    carry: dict[str, Any] = {"pending_action": None, "executed_actions": []}
+    carry: dict[str, Any] = {"pending_action": None, "executed_actions": [], "verified_facts": [], "handoff": None}
     started = time.perf_counter()
     for _ in range(sim_settings.max_agent_turns):
         if meter is not None and meter.exhausted():
@@ -131,7 +131,12 @@ async def run_conversation(
             meter.charge(usage_cost(state.get("usage", [])))
         reply = state.get("response") or ""
         conv.transcript.append({"role": "assistant", "content": reply})
-        carry = {"pending_action": state.get("pending_action"), "executed_actions": state.get("executed_actions", [])}
+        carry = {
+            "pending_action": state.get("pending_action"),
+            "executed_actions": state.get("executed_actions", []),
+            "verified_facts": state.get("verified_facts", []),
+            "handoff": state.get("handoff"),
+        }
         conv.turns.append(
             {
                 "user": user.text,

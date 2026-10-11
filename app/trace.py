@@ -64,4 +64,4 @@ def pending_view(state: dict[str, Any]) -> dict[str, Any] | None:
     pending = state.get("pending_action")
     if not pending:
         return None
-    return {"action": pending["action"], "summary": pending["summary"], "checks": pending.get("checks", [])}
+    return {"action": pending["action"], "summary": pending["summary"], "checks": pending.get("checks", []), "note": pending.get("note", "")}
