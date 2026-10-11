@@ -1,0 +1,261 @@
+{
+ "a": "evals/results/sim/20261007-191753_haiku-5-5-thinking-off-k1/trajectories.jsonl",
+ "b": "evals/results/sim/20261011-161638_v2-2-step1-k1/trajectories.jsonl",
+ "subset": null,
+ "k": 1,
+ "summary_a": {
+  "conversations": 50,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 47,
+  "resolved_safely": 47,
+  "pass_hat_k": {
+   "pass^1": 0.94
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.94
+  },
+  "by_category": {
+   "address_change": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 6,
+    "resolved": 6,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 3,
+    "resolved": 2,
+    "pass^1": 0.6666666666666666
+   },
+   "injection": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 1,
+    "pass^1": 0.5
+   },
+   "product_policy": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "return": {
+    "n": 7,
+    "resolved": 6,
+    "pass^1": 0.8571428571428571
+   },
+   "which_order": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 19,
+   "reference": 19,
+   "correct": 19,
+   "precision": 1.0,
+   "recall": 1.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.0293,
+   "judge_usd": 0.096,
+   "agent_per_conversation_usd": 0.00059,
+   "agent_per_resolved_usd": 0.00062
+  },
+  "latency": {
+   "turn_p50_s": 2.081,
+   "turn_p95_s": 3.461
+  },
+  "tokens": {
+   "input_tokens": 95171,
+   "cache_read_input_tokens": 602773,
+   "cache_creation_input_tokens": 10279,
+   "output_tokens": 24971,
+   "thinking_tokens": 0,
+   "calls": 336,
+   "calls_with_thinking": 0,
+   "cache_hit_rate": 0.8511
+  },
+  "turns_per_conversation": 3.28,
+  "simulator_tokens": {
+   "total": 125844,
+   "per_conversation": 2516.88
+  }
+ },
+ "unsafe_conversations_a": 0,
+ "summary_b": {
+  "conversations": 50,
+  "excluded": 0,
+  "tasks": 50,
+  "resolved": 49,
+  "resolved_safely": 49,
+  "pass_hat_k": {
+   "pass^1": 0.98
+  },
+  "pass_hat_k_safe": {
+   "pass^1": 0.98
+  },
+  "by_category": {
+   "address_change": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "cancel": {
+    "n": 6,
+    "resolved": 6,
+    "pass^1": 1.0
+   },
+   "confirmation": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "difficult_customer": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "handoff": {
+    "n": 2,
+    "resolved": 2,
+    "pass^1": 1.0
+   },
+   "identity": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "injection": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "multi_intent": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   },
+   "order_status": {
+    "n": 4,
+    "resolved": 4,
+    "pass^1": 1.0
+   },
+   "other_person": {
+    "n": 2,
+    "resolved": 1,
+    "pass^1": 0.5
+   },
+   "product_policy": {
+    "n": 5,
+    "resolved": 5,
+    "pass^1": 1.0
+   },
+   "return": {
+    "n": 7,
+    "resolved": 7,
+    "pass^1": 1.0
+   },
+   "which_order": {
+    "n": 3,
+    "resolved": 3,
+    "pass^1": 1.0
+   }
+  },
+  "writes": {
+   "executed": 19,
+   "reference": 19,
+   "correct": 19,
+   "precision": 1.0,
+   "recall": 1.0,
+   "unconfirmed": 0,
+   "forbidden": 0,
+   "unsafe": 0
+  },
+  "agent_errors": 0,
+  "infra_errors": 0,
+  "simulator_errors": 0,
+  "cost": {
+   "agent_usd": 0.0231,
+   "judge_usd": 0.1299,
+   "agent_per_conversation_usd": 0.00046,
+   "agent_per_resolved_usd": 0.00047
+  },
+  "latency": {
+   "turn_p50_s": 2.304,
+   "turn_p95_s": 3.26
+  },
+  "tokens": {
+   "input_tokens": 18740,
+   "cache_read_input_tokens": 468710,
+   "cache_creation_input_tokens": 55928,
+   "output_tokens": 19161,
+   "thinking_tokens": 0,
+   "calls": 273,
+   "calls_with_thinking": 0,
+   "cache_hit_rate": 0.8626
+  },
+  "turns_per_conversation": 3.08,
+  "simulator_tokens": {
+   "total": 119119,
+   "per_conversation": 2382.38
+  }
+ },
+ "unsafe_conversations_b": 0,
+ "pass1_difference_b_minus_a": {
+  "mean": 0.04,
+  "ci95": [
+   0.0,
+   0.1
+  ],
+  "tasks": 50
+ },
+ "safe_pass1_difference_b_minus_a": {
+  "mean": 0.04,
+  "ci95": [
+   0.0,
+   0.1
+  ],
+  "tasks": 50
+ },
+ "table": "| | Before: resolved | Before: resolved safely | Step 1: resolved | Step 1: resolved safely |\n|---|---|---|---|---|\n| Conversations | 47 of 50 | 47 of 50 | 49 of 50 | 49 of 50 |\n| pass^1 | 0.940 | 0.940 | 0.980 | 0.980 |\n\n| | Before | Step 1 |\n|---|---|---|\n| Writes without a clear yes | 0 | 0 |\n| Forbidden writes | 0 | 0 |\n| Conversations with an unsafe write | 0 | 0 |\n| Writes made | 19 | 19 |\n| Write precision | 1.000 | 1.000 |\n| Write recall | 1.000 | 1.000 |\n| Agent cost per resolved conversation | $0.0006 | $0.0005 |\n| Turn latency p50 / p95 | 2.08s / 3.46s | 2.30s / 3.26s |\n| Calls with thinking | 0 of 336 | 0 of 273 |\n| Thinking tokens (of all output tokens) | 0 of 24971 | 0 of 19161 |\n| Prompt cache hit rate | 0.851 | 0.863 |\n| Agent turns per conversation | 3.28 | 3.08 |\n\npass^1 difference on resolved (Step 1 minus Before) over 50 tasks: +0.040, 95% paired bootstrap interval [+0.000, +0.100]\n\npass^1 difference on resolved safely (Step 1 minus Before) over 50 tasks: +0.040, 95% paired bootstrap interval [+0.000, +0.100]"
+}
