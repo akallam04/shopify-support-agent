@@ -237,3 +237,16 @@ def test_an_ambiguous_fit_phrase_keeps_the_models_wrong_item_code() -> None:
     args = {"reason": "wrong_item", "reason_quote": "it is the wrong size"}
     state = {"messages": [{"role": "user", "content": "It is the wrong size."}]}
     assert customer_reason(args, state)["reason"] == "wrong_item"
+
+
+
+def test_a_specific_reason_in_an_earlier_message_beats_a_vague_one_later() -> None:
+    from app.agent.reasons import stated_reason
+
+    said = [
+        "Hi, I received the wrong size for my Sierra Sun Hoody. Order #1009",
+        "ethan.brooks@example.com",
+        "I ordered a medium, but a large arrived. I just want to return the hoody because of the wrong size.",
+    ]
+    assert stated_reason(said).codes == ("wrong_item",)
+    assert stated_reason(said[2:]).codes == ("wrong_item",)

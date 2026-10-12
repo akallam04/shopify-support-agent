@@ -16,7 +16,8 @@ class StatedReason:
 REASON_PHRASES: tuple[tuple[re.Pattern[str], tuple[str, ...]], ...] = (
     (re.compile(
         r"\b(wrong item|not what i ordered|(received|got|sent) the wrong|wrong (size|color|colour|one) (arrived|came|was sent)|"
-        r"(different|another) (size|color|colour) (arrived|came)|instead of the \w+ (i|we) ordered)\b", re.I), ("wrong_item",)),
+        r"(different|another) (size|color|colour) (arrived|came)|instead of the \w+ (i|we) ordered|"
+        r"ordered (a|an|the|size) \w+,? but (a|an|the|size)? ?\w+ (arrived|came)|ordered (a|an|the|size) \w+,? but (got|received) (a|an|the|size)? ?\w+)\b", re.I), ("wrong_item",)),
     (re.compile(r"\btoo (big|large|long|loose|baggy|wide)\b|\bruns? (big|large)\b", re.I), ("size_too_large",)),
     (re.compile(r"\btoo (small|tight|short|snug|narrow)\b|\bruns? small\b", re.I), ("size_too_small",)),
     (re.compile(r"\b(does ?n[o']?t|did ?n[o']?t|does not|did not|won't|will not) fit\b|\bwrong size\b", re.I), ("other", "size_too_large", "size_too_small", "wrong_item")),
@@ -33,11 +34,14 @@ def _words(text: str) -> list[str]:
 
 
 def stated_reason(customer_texts: list[str]) -> StatedReason | None:
-    for text in reversed(customer_texts):
-        for pattern, codes in REASON_PHRASES:
-            match = pattern.search(text)
-            if match:
-                return StatedReason(match.group(0).lower(), codes)
+    specific = [(p, c) for p, c in REASON_PHRASES if len(c) == 1]
+    ambiguous = [(p, c) for p, c in REASON_PHRASES if len(c) > 1]
+    for tier in (specific, ambiguous):
+        for text in reversed(customer_texts):
+            for pattern, codes in tier:
+                match = pattern.search(text)
+                if match:
+                    return StatedReason(match.group(0).lower(), codes)
     return None
 
 
