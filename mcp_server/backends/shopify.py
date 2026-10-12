@@ -276,7 +276,7 @@ def map_product(node: dict[str, Any]) -> Product:
         product_type=node.get("productType") or "",
         vendor=node.get("vendor") or "",
         description=node.get("description") or "",
-        tags=list(node.get("tags") or []),
+        tags=list(node["tags"]) if isinstance(node.get("tags"), list) else None,
         is_gift_card=bool(node.get("isGiftCard")),
         variants={v.variant_id: v for v in variants},
     )

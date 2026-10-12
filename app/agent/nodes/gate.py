@@ -9,6 +9,7 @@ from anthropic import AsyncAnthropic
 from app.agent.prompts import (
     CONFIRM_CLASSIFIER_SCHEMA,
     CONFIRM_CLASSIFIER_SYSTEM,
+    ADDRESS_ASK,
     CONDITIONAL_LEAD,
     CONDITIONAL_REASK,
     CONFIRMATION_TEMPLATE,
@@ -29,7 +30,8 @@ from app.agent.prompts import (
     with_digest,
 )
 from app.agent.models import call_options, response_text
-from app.agent.reasons import grounded, stated_reason
+from app.agent.addresses import ungrounded_parts
+from app.agent.reasons import customer_texts, grounded, stated_condition, stated_reason
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -87,11 +89,6 @@ def result_message(result: dict[str, Any], sandbox: bool = False) -> str:
 REASON_REQUIRED = frozenset({"request_return"})
 REASON_OPTIONAL = frozenset({"cancel_order"})
 REASON_CHECK = "The reason came from the customer"
-def customer_texts(state: AgentState) -> list[str]:
-    texts = [str(m["content"]) for m in state["messages"] if m["role"] == "user"]
-    return texts + ([state["context_digest"]] if state.get("context_digest") else [])
-
-
 def reason_from_customer(quote: str, state: AgentState) -> bool:
     return grounded(quote, customer_texts(state))
 
@@ -155,7 +152,16 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         name, args = candidate["name"], candidate["args"]
         trace = list(state.get("gate_trace", []))
         reason_given = False
-        if name in REASON_REQUIRED:
+        condition = stated_condition(customer_texts(state)) if name in REASON_REQUIRED else None
+        if condition:
+            trace.append({"step": "condition_check", "action": name, "condition": condition})
+            args = {**args, "condition": condition}
+        if name == "update_shipping_address":
+            missing = ungrounded_parts(args, customer_texts(state))
+            trace.append({"step": "address_check", "action": name, "missing": missing})
+            if missing:
+                return {"draft": ADDRESS_ASK, "candidate_action": None, "gate_trace": trace}
+        if name in REASON_REQUIRED and not condition:
             resolved = customer_reason(args, state)
             trace.append({"step": "reason_check", "action": name, "found": resolved is not None})
             if resolved is None:

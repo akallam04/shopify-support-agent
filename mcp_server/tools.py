@@ -136,7 +136,7 @@ def eligibility_view(backend: StoreBackend, order: Order) -> dict[str, Any]:
     products = backend.products_by_id({li.product_id for li in order.line_items if li.product_id})
     returns = []
     for line in order.line_items:
-        left = line.quantity - policy.already_requested(order, line)
+        left = policy.delivered_quantity(order, line) - policy.already_requested(order, line)
         decision = policy.can_return(order, [(line, max(left, 1))], products, "other", now)
         delivered = policy.delivered_at(order, line)
         if decision.allowed and delivered is not None:
@@ -297,6 +297,7 @@ def variant_key(text: str) -> str:
     return " ".join(w for w in text.lower().split() if w not in VARIANT_FILLER)
 
 
+RETURN_CONDITION = "The items must be unworn and unused, with their original tags."
 WRONG_ITEM_HINT = "If a different size or color arrived than was ordered, return the ordered item with the reason wrong_item."
 
 
@@ -309,10 +310,9 @@ def _resolve_items(order: Order, raw_items: Any, reason: str = "") -> tuple[list
             raise ToolInputError("each item needs a title, for example {\"title\": \"Stormline Rain Jacket\", \"quantity\": 1}")
         title = str(raw["title"]).strip().lower()
         variant = str(raw.get("variant") or "").strip().lower()
-        try:
-            quantity = int(raw.get("quantity", 1))
-        except (TypeError, ValueError) as e:
-            raise ToolInputError("item quantity must be a whole number") from e
+        quantity = raw.get("quantity", 1)
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 1:
+            raise ToolInputError("item quantity must be a whole number, 1 or more")
         matches = [li for li in order.line_items if li.title.lower() == title]
         if not matches:
             wanted = words(title)
@@ -330,7 +330,12 @@ def _resolve_items(order: Order, raw_items: Any, reason: str = "") -> tuple[list
             variants = ", ".join(li.variant_title or "standard" for li in matches)
             return [], policy.refuse("ambiguous_item", f"Order {order.name} has more than one {matches[0].title}: {variants}. Which one?")
         resolved.append((matches[0], quantity))
-    return resolved, policy.ALLOWED
+    totals: dict[str, int] = {}
+    lines: dict[str, LineItem] = {}
+    for line, quantity in resolved:
+        totals[line.line_item_id] = totals.get(line.line_item_id, 0) + quantity
+        lines[line.line_item_id] = line
+    return [(lines[lid], qty) for lid, qty in totals.items()], policy.ALLOWED
 
 
 def _address_from(args: dict[str, Any], found: FoundOrder) -> Address:
@@ -394,7 +399,7 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         pairs, decision = _resolve_items(order, args.get("items"), str(args.get("reason") or ""))
         if decision.allowed:
             products = backend.products_by_id({li.product_id for li, _ in pairs if li.product_id})
-            decision = policy.can_return(order, pairs, products, reason, now)
+            decision = policy.can_return(order, pairs, products, reason, now, str(args.get("condition") or ""))
         terms = policy.return_terms(reason, order.shipping_address.country_code if order.shipping_address else None)
         normalized = {
             "order_number": name,
@@ -403,7 +408,10 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             "items": sorted([[li.line_item_id, qty] for li, qty in pairs]),
         }
         reason_label = policy.RETURN_REASON_LABELS.get(reason, reason)
-        summary = f"request a return of {_items_text(pairs)} from order {name} (reason: {reason_label}). {terms['fee']} {terms['label']}"
+        summary = (
+            f"request a return of {_items_text(pairs)} from order {name} (reason: {reason_label}). "
+            f"{RETURN_CONDITION} {terms['fee']} {terms['label']}"
+        )
         facts = {**facts, "return_terms": terms}
 
     if not decision.allowed:

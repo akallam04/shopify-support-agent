@@ -31,8 +31,19 @@ def unfulfilled_node(name: str = "#2001") -> dict[str, Any]:
     return node
 
 
+JACKET_NODE = {
+    "id": "gid://shopify/Product/1",
+    "handle": "stormline-rain-jacket",
+    "title": "Stormline Rain Jacket",
+    "status": "ACTIVE",
+    "tags": ["rain", "jacket"],
+    "isGiftCard": False,
+    "variants": {"nodes": [{"id": "gid://shopify/ProductVariant/11", "title": "M", "price": "179.99", "availableForSale": True}]},
+}
+
+
 def backend(write: ScriptedGraphQL) -> ShopifyAdminBackend:
-    b = ShopifyAdminBackend(ScriptedGraphQL({"ProductsById": [{"nodes": []}]}), write)
+    b = ShopifyAdminBackend(ScriptedGraphQL({"ProductsById": [{"nodes": [JACKET_NODE]}]}), write)
     b.clock = FrozenClock(parse_instant("2026-10-04T22:30:00Z"))
     return b
 

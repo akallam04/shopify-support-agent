@@ -43,7 +43,7 @@ class Product(Model):
     product_type: str = ""
     vendor: str = ""
     description: str = ""
-    tags: list[str] = []
+    tags: list[str] | None = []
     is_gift_card: bool = False
     variants: dict[str, Variant]
 

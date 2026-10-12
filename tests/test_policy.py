@@ -150,8 +150,8 @@ def test_cancelled_orders_have_nothing_to_return(db: SimDB) -> None:
 
 
 def test_return_terms_follow_the_policy() -> None:
-    assert "No return shipping fee" in return_terms("defective", "US")["fee"]
-    assert "7.50 USD" in return_terms("size_too_small", "US")["fee"]
+    assert "No return shipping fee" in return_terms("wrong_item", "US")["fee"]
+    assert "7.50 USD" in return_terms("size_too_small", "US")["fee"] and "prepaid" in return_terms("size_too_small", "US")["fee"]
     assert "own cost" in return_terms("unwanted", "CA")["label"]
     assert "prepaid" in return_terms("unwanted", "US")["label"]
 

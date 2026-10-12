@@ -39,8 +39,32 @@ def stated_reason(customer_texts: list[str]) -> StatedReason | None:
     return None
 
 
+def customer_texts(state: dict) -> list[str]:
+    texts = [str(m["content"]) for m in state["messages"] if m["role"] == "user"]
+    return texts + ([state["context_digest"]] if state.get("context_digest") else [])
+
+
 def grounded(quote: str, customer_texts: list[str]) -> bool:
     wanted = [w for w in _words(quote) if w not in FILLER]
     if not wanted or len(" ".join(wanted)) < 3:
         return False
     return any(set(wanted) <= set(_words(text)) for text in customer_texts)
+
+
+CONDITION_PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\b(cut|removed|took|ripped|pulled) (off )?(the |its |their )?(original )?tags?\b|\b(no|without|missing) (the |its |their )?(original )?tags?\b|\btags? (are|is|were|was) (off|gone|removed|missing)\b", re.I), "tags_removed"),
+    (re.compile(r"\b(opened|used|applied) (the |some of the |my )?(\w+ )?(wax|consumables?)\b", re.I), "opened"),
+    (re.compile(r"\b(washed|laundered)\b", re.I), "washed"),
+    (re.compile(r"\b(worn|wore)\b", re.I), "worn"),
+    (re.compile(r"\b(used) (it|them|this|these|the \w+)\b|\bused (it )?(outdoors|outside)\b", re.I), "used"),
+)
+NEGATION_RE = re.compile(r"\b(not|never|haven't|hasn't|hadn't|didn't|don't|without|no)\W+(\w+\W+)?$", re.I)
+
+
+def stated_condition(customer_texts: list[str]) -> str | None:
+    for text in reversed(customer_texts):
+        for pattern, condition in CONDITION_PHRASES:
+            for match in pattern.finditer(text):
+                if condition == "tags_removed" or not NEGATION_RE.search(text[: match.start()]):
+                    return condition
+    return None

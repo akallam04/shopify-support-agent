@@ -337,16 +337,40 @@ LIVE_RETRACTION = (
 )
 
 
-def test_a_reply_that_retracts_a_verified_earlier_message_is_rewritten_then_stripped() -> None:
+ADDRESS_HISTORY = [
+    {"role": "user", "content": "Actually change the ZIP to 80205."},
+    {"role": "assistant", "content": "Just to confirm, I will change the shipping address on order #1021 from 9 Pine St, Boulder, CO, 80302, US to 1200 Larimer St, Denver, CO, 80205, US. Should I go ahead? Please reply yes or no."},
+    {"role": "user", "content": "Yes, go ahead"},
+    {"role": "assistant", "content": "The shipping address on order #1021 is now 1200 Larimer St, Denver, CO, 80205, US."},
+    {"role": "user", "content": "What address is order #1021 shipping to?"},
+]
+
+
+def test_a_reply_that_retracts_a_system_built_message_is_rewritten_then_stripped() -> None:
     from app.agent.nodes.verify import verify_node
 
-    state = {"intent": "order", "draft": LIVE_RETRACTION, "messages": [{"role": "user", "content": "What address is order #1021 shipping to?"}], "tool_results": []}
+    state = {"intent": "order", "draft": LIVE_RETRACTION, "messages": ADDRESS_HISTORY, "tool_results": []}
     first = verify_node(state)
     assert first["response"] == "" and "retract" in first["verify_feedback"]
     second = verify_node({**state, "retry_count": 1})
     assert "correct my last message" not in second["response"] and "never looked" not in second["response"]
     assert second["response"].startswith("Order #1021 is shipping to 1200 Larimer St")
     assert verify_node({**state, "intent": "policy", "draft": "I don't have any record of an earlier conversation, but returns take 30 days.", "retrieved": []})["response"]
+
+
+def test_a_correction_of_the_models_own_free_text_answer_is_kept() -> None:
+    from app.agent.nodes.verify import verify_node
+
+    history = [
+        {"role": "user", "content": "Please cancel order #1023. My email is maya.thompson@example.com. I ordered it by mistake."},
+        {"role": "assistant", "content": "Just to confirm, I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method. Should I go ahead? Please reply yes or no."},
+        {"role": "user", "content": "No. How much is the Stormline Rain Jacket?"},
+        {"role": "assistant", "content": "The Stormline Rain Jacket costs 159.99 USD."},
+        {"role": "user", "content": "Are you sure?"},
+    ]
+    correction = "I need to correct my last message: the Stormline Rain Jacket costs 179.99 USD, not 159.99 USD [stormline-rain-jacket]."
+    state = {"intent": "product", "draft": correction, "messages": history, "retrieved": [{"id": "stormline-rain-jacket", "metadata": {"handle": "stormline-rain-jacket"}}]}
+    assert verify_node(state)["response"] == correction
 
 
 def test_earlier_lookups_survive_a_change_so_the_old_address_stays_verified() -> None:

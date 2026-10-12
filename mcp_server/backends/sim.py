@@ -49,7 +49,7 @@ class SimStoreBackend:
                 product.product_type,
                 product.vendor,
                 product.description,
-                *product.tags,
+                *(product.tags or []),
                 *(v.sku for v in product.variants.values()),
             )
             if all(prefix_hit(t, haystack) for t in tokens):

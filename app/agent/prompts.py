@@ -150,6 +150,8 @@ SELF_CONFIRM_FEEDBACK = """Your draft asked the customer to confirm a change. Do
 
 REASON_FEEDBACK = "{name} needs the reason in the customer's own words, and reason_quote ({quote!r}) is not something the customer wrote. If the customer has said why, copy their words into reason_quote exactly. If not, ask them why instead of calling the tool."
 
+ADDRESS_ASK = "I only use the address exactly as you give it. Could you share the full new address, with the street, city, state or province, and ZIP or postal code?"
+
 REASON_ASK = "Before I set up the return, could you tell me why you are returning it? For example, it does not fit, it arrived damaged, or you no longer need it."
 
 CORRECTION_TEMPLATE = """The customer was asked to confirm this change and replied with something different instead: {summary}
@@ -219,6 +221,8 @@ GATE_INPUT_RESPONSE = (
 NOT_FOUND_HINT = "Please double-check the order number and the email address on the order."
 
 FACTS_HEADER = "Order records from store tools in this conversation, oldest first. They count as tool results:"
+
+CONDITION_NOTE = "The customer said the item was {condition}. Store policy refuses that return in code: {reason} Tell the customer this plainly; do not offer the return or call it eligible."
 
 SYSTEM_MESSAGES_NOTE = "Earlier assistant messages that propose a change, ask to confirm one, or report one were written by the store system from these records and receipts, so their details are verified. Never retract or correct them."
 

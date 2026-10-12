@@ -7,6 +7,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.agent.prompts import (
+    CONDITION_NOTE,
     CORRECTION_TEMPLATE,
     GATE_FEEDBACK_TEMPLATE,
     ORDER_CONFIRM_RULE,
@@ -18,10 +19,14 @@ from app.agent.prompts import (
 )
 from app.agent.facts import LOOKUP, facts_block, merge_facts
 from app.agent.models import call_options, carries_thinking, forced_tool, system_blocks
+from app.agent.reasons import customer_texts, stated_condition
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
+from mcp_server import policy
 from mcp_server.tools import HANDOFF_ACTION
+
+CONDITION_WORDS = {"worn": "worn", "washed": "washed", "used": "used", "tags_removed": "missing its tags", "opened": "opened"}
 
 MAX_TOOL_ROUNDS = 3
 NUDGE_ROUNDS = 2
@@ -60,6 +65,10 @@ def order_system(tools: Any, settings: Settings) -> str:
 def system_extra(state: AgentState, nudged: bool = False, fresh: list[dict[str, Any]] | None = None) -> str | None:
     known = facts_block(state, fresh or [])
     parts = [known] if known else []
+    condition = stated_condition(customer_texts(state))
+    refusal = policy.condition_refusal(condition)
+    if refusal is not None:
+        parts.append(CONDITION_NOTE.format(condition=CONDITION_WORDS[condition], reason=refusal.reason))
     if nudged:
         parts.append(SELF_CONFIRM_FEEDBACK)
     if state.get("gate_feedback"):

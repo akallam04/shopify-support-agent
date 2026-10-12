@@ -19,6 +19,8 @@ class VectorStore(Protocol):
 
     def query(self, collection: str, text: str, k: int = 4) -> list[SearchResult]: ...
 
+    def get(self, collection: str, ids: list[str]) -> list[SearchResult]: ...
+
     def count(self, collection: str) -> int: ...
 
 
@@ -54,6 +56,13 @@ class ChromaVectorStore:
             }
             for i in range(len(res["ids"][0]))
         ]
+
+    def get(self, collection: str, ids: list[str]) -> list[SearchResult]:
+        if not ids:
+            return []
+        res = self._collection(collection).get(ids=ids)
+        found = {i: (doc, meta) for i, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])}
+        return [{"id": i, "text": found[i][0], "metadata": found[i][1], "distance": 1.0} for i in ids if i in found]
 
     def count(self, collection: str) -> int:
         return self._collection(collection).count()

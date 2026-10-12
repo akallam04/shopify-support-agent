@@ -22,14 +22,46 @@ RETRACTION_RE = re.compile(
     r"(do not|don't) (actually )?have (order\b|its details|any record of (order|that order|this order|it)\b))",
     re.IGNORECASE,
 )
-RETRACTION_FEEDBACK = "do not retract or correct earlier messages: their order details came from store records and receipts"
+RETRACTION_FEEDBACK = "do not retract or correct the confirmation and receipt messages: the store system built them from store records"
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
+SYSTEM_START_RE = re.compile(
+    r"^(Just to confirm, I will|Sorry, I want to be sure before I change anything|"
+    r"I cannot make this change depend on a condition|That is already done\.|Order #\d+ is cancelled\.|"
+    r"The shipping address on order #\d+ is now|A return is requested on order #\d+)"
+)
+RECONFIRM_MARK = "Your change is still waiting: I will"
+DISTINCT_NUMBER_RE = re.compile(r"(?<![#\d.])(\d[\d,]*\.\d+|\d{3,})")
 
 
-def without_retractions(text: str) -> str:
+def system_part(message: str) -> str:
+    text = message.strip()
+    if SYSTEM_START_RE.match(text):
+        return text
+    at = text.find(RECONFIRM_MARK)
+    return text[at:] if at >= 0 else ""
+
+
+def retracts_system_message(sentence: str, messages: list[dict[str, Any]]) -> bool:
+    if not RETRACTION_RE.search(sentence):
+        return False
+    said = [str(m["content"]).strip() for m in messages if m["role"] == "assistant"]
+    built = [p for p in (system_part(m) for m in said) if p]
+    if not built:
+        return False
+    numbers = set(DISTINCT_NUMBER_RE.findall(sentence))
+    if numbers and any(numbers & set(DISTINCT_NUMBER_RE.findall(p)) for p in built):
+        return True
+    return system_part(said[-1]) == said[-1]
+
+
+def system_retractions(text: str, messages: list[dict[str, Any]]) -> list[str]:
+    return [s for p in text.split("\n\n") for s in SENTENCE_RE.split(p.strip()) if s and retracts_system_message(s, messages)]
+
+
+def without_retractions(text: str, messages: list[dict[str, Any]]) -> str:
     kept = []
     for paragraph in text.split("\n\n"):
-        sentences = [s for s in SENTENCE_RE.split(paragraph.strip()) if s and not RETRACTION_RE.search(s)]
+        sentences = [s for s in SENTENCE_RE.split(paragraph.strip()) if s and not retracts_system_message(s, messages)]
         if sentences:
             kept.append(" ".join(sentences))
     return "\n\n".join(kept)
@@ -72,9 +104,9 @@ def verify_node(state: AgentState) -> dict[str, Any]:
     if state.get("hard_injection") or intent in UNCHECKED_INTENTS:
         return {"response": plain_text(draft), "verify_feedback": None}
 
-    if RETRACTION_RE.search(draft):
+    if system_retractions(draft, state["messages"]):
         if state.get("retry_count", 0) >= 1:
-            return {"response": plain_text(without_retractions(draft)), "verify_feedback": None}
+            return {"response": plain_text(without_retractions(draft, state["messages"])), "verify_feedback": None}
         return {"response": "", "verify_feedback": RETRACTION_FEEDBACK, "retry_count": state.get("retry_count", 0) + 1}
 
     if intent == "order":
