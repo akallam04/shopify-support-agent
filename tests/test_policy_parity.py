@@ -214,3 +214,26 @@ def test_a_stated_condition_reaches_the_order_context_even_without_a_tool_call(b
     run(graph, [{"role": "user", "content": WORN_ASK}])
     system = system_text(client.of("order_tools")[0])
     assert "The customer said the item was worn" in system and "cannot be returned" in system
+
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "The reason is that the wrong size arrived; I ordered a medium but received a large.",
+        "Hi, I received a large Sierra Sun Hoody on order #1009 instead of the medium I ordered.",
+    ],
+)
+def test_a_wrong_size_that_arrived_is_a_wrong_item_return(said: str) -> None:
+    from app.agent.reasons import stated_reason
+
+    found = stated_reason([said])
+    assert found is not None and found.codes == ("wrong_item",)
+
+
+def test_an_ambiguous_fit_phrase_keeps_the_models_wrong_item_code() -> None:
+    from app.agent.nodes.gate import customer_reason
+
+    args = {"reason": "wrong_item", "reason_quote": "it is the wrong size"}
+    state = {"messages": [{"role": "user", "content": "It is the wrong size."}]}
+    assert customer_reason(args, state)["reason"] == "wrong_item"

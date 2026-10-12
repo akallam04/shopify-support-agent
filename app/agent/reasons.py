@@ -14,11 +14,13 @@ class StatedReason:
 
 
 REASON_PHRASES: tuple[tuple[re.Pattern[str], tuple[str, ...]], ...] = (
+    (re.compile(
+        r"\b(wrong item|not what i ordered|(received|got|sent) the wrong|wrong (size|color|colour|one) (arrived|came|was sent)|"
+        r"(different|another) (size|color|colour) (arrived|came)|instead of the \w+ (i|we) ordered)\b", re.I), ("wrong_item",)),
     (re.compile(r"\btoo (big|large|long|loose|baggy|wide)\b|\bruns? (big|large)\b", re.I), ("size_too_large",)),
     (re.compile(r"\btoo (small|tight|short|snug|narrow)\b|\bruns? small\b", re.I), ("size_too_small",)),
-    (re.compile(r"\b(does ?n[o']?t|did ?n[o']?t|does not|did not|won't|will not) fit\b|\bwrong size\b", re.I), ("other", "size_too_large", "size_too_small")),
+    (re.compile(r"\b(does ?n[o']?t|did ?n[o']?t|does not|did not|won't|will not) fit\b|\bwrong size\b", re.I), ("other", "size_too_large", "size_too_small", "wrong_item")),
     (re.compile(r"\b(not as (described|pictured|shown|advertised)|looks different)\b", re.I), ("not_as_described",)),
-    (re.compile(r"\b(wrong item|not what i ordered|received the wrong|sent the wrong|different (size|color|colour) (arrived|came))\b", re.I), ("wrong_item",)),
     (re.compile(r"\b(defective|faulty|broken|stopped working|does ?n[o']?t work|does not work|ripped|torn)\b", re.I), ("defective",)),
     (re.compile(r"\b(no longer (need|want)|do ?n[o']?t (need|want)|do not (need|want)|changed my mind|not needed)\b", re.I), ("unwanted",)),
     (re.compile(r"\b(do ?n[o']?t|do not) like the (colou?r)\b", re.I), ("color",)),
