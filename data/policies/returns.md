@@ -16,7 +16,7 @@ Refunds go to the original payment method within 5 to 7 business days after we r
 
 ## Return shipping cost
 
-A flat 7.50 USD return shipping fee is deducted from your refund when you use our prepaid label. The fee is waived entirely if the item arrived damaged, defective, or not as ordered.
+A flat 7.50 USD return shipping fee is deducted from your refund when you use our prepaid label. Prepaid labels are for US returns: Canadian customers ship returns at their own cost, so no fee is deducted. The fee is waived entirely if the item arrived damaged, defective, or not as ordered.
 
 ## Exchanges
 
