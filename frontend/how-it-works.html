@@ -100,15 +100,15 @@
             </li>
             <li>
               <h3>Answer</h3>
-              <p>Product and policy answers come from retrieval over the catalog and policy pages, with a citation for every claim. Order answers come from store tools: a self-built MCP server over the Shopify Admin API, or in this demo a private sandbox copy of the store. Its clock is fixed at October 4, 2026, 5:03 pm Mountain Time, so order ages and time windows read the same every day.</p>
+              <p>Product and policy answers come from retrieval over the catalog and policy pages, with citations to the passages used. Order answers come from store tools: a self-built MCP server over the Shopify Admin API, or in this demo a private sandbox copy of the store. Its clock is fixed at October 4, 2026, 5:03 pm Mountain Time, so order ages and time windows read the same every day.</p>
             </li>
             <li class="rail__gate">
               <h3>Gate, for any change</h3>
               <p>Code decides whether the change is allowed: the email must match the order, cancellations and address changes must come within 2 hours and before shipping, and returns must be inside 30 days and not final sale. If allowed, the customer sees the exact change from a template, and the change waits in a signed session token. It runs only after a clear yes, exactly once.</p>
             </li>
             <li>
-              <h3>Verify</h3>
-              <p>Every order number and tracking number in the reply must appear in a tool result or earlier in the conversation, and every citation must point to a retrieved document. A reply that fails gets one rewrite, then a safe fallback.</p>
+              <h3>Source check</h3>
+              <p>Code checks every reply the model writes. Citations must point to passages that retrieval returned. Every amount, date, time, and duration must appear in the store's tool results or receipts, or in the policy text the reply cites; a number only the customer gave can be repeated only as theirs. Order numbers, tracking numbers, and links must come from store tools, not from the customer or earlier chat text, and a reply may not offer a lookup by name, phone, or email alone. A reply that fails gets one rewrite, then a safe fallback. This checks where facts come from, not whether every sentence is right.</p>
             </li>
           </ol>
           <p class="stack">Runs as a FastAPI app in a container on AWS Lambda. The page is static and hosted on Vercel.</p>

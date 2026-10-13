@@ -86,14 +86,14 @@ function stepModel(data) {
   const touchedGate = ran.has("gate") || ran.has("confirm") || ran.has("execute");
   steps.push({ key: "gate", name: "Gate", ...(touchedGate ? gateModel(t, data.pending) : { state: "skip", note: "" }) });
   let verify = { state: "skip", note: "" };
-  if (ran.has("verify") && t.verify !== "not needed") {
-    if (t.verify.startsWith("fell back")) verify = { state: "stop", note: "safe fallback" };
+  if (ran.has("verify")) {
+    if (t.verify === "not needed") verify = { state: "skip", note: "fixed reply, nothing to check" };
+    else if (t.verify === "store-built") verify = { state: "skip", note: "written by code from store records" };
+    else if (t.verify.startsWith("fell back")) verify = { state: "stop", note: "safe fallback" };
     else if (t.rewrites) verify = { state: "done", note: "rewrote once", loop: true };
-    else verify = { state: "done", note: "passed" };
-  } else if (ran.has("verify")) {
-    verify = { state: "skip", note: "not needed" };
+    else verify = { state: "done", note: "facts found in sources" };
   }
-  steps.push({ key: "verify", name: "Verify", ...verify });
+  steps.push({ key: "verify", name: "Sources", ...verify });
   steps.push({ key: "reply", name: "Reply", state: "done", note: blocked ? "refused" : "" });
   return steps;
 }
@@ -142,6 +142,20 @@ function gateLine(g) {
   }
 }
 
+const CHECK_LABELS = {
+  citations: "Citations point to passages that retrieval returned",
+  numbers: "Amounts, dates, times and durations appear in store data or the cited policy",
+  identifiers: "Order numbers, tracking numbers and links come from store tools",
+  lookup_rule: "No lookup offered by name, phone or email alone",
+  retraction: "No store-built message taken back",
+};
+const CHECK_LIMIT = "These checks confirm where the facts come from. They do not prove that every sentence is right.";
+
+function checkLine(c) {
+  const label = CHECK_LABELS[c.check] || c.check.replace(/_/g, " ");
+  return c.detail ? `${label}: ${c.ok ? "yes" : "no"}, ${c.detail}` : `${label}: ${c.ok ? "yes" : "no"}`;
+}
+
 function argsText(args) {
   return maskEmails(
     Object.entries(args || {})
@@ -176,6 +190,11 @@ function detailsPanel(data, steps, id) {
   }
   if (t.retrieved && t.retrieved.length) {
     body.append(el("div", { class: "inside__row" }, [el("p", { class: "inside__key", text: "Documents retrieved" }), el("p", { text: t.retrieved.map(prettyDoc).join(", ") })]));
+  }
+  if (t.checks && t.checks.length) {
+    const list = el("ul", { class: "gate-lines" });
+    for (const c of t.checks) list.append(el("li", { class: c.ok ? "ok" : "stop", text: checkLine(c) }));
+    body.append(el("div", { class: "inside__row" }, [el("p", { class: "inside__key", text: "Source checks" }), list, el("p", { class: "inside__note", text: CHECK_LIMIT })]));
   }
   if (t.gate.length) {
     const list = el("ul", { class: "gate-lines" });

@@ -325,14 +325,43 @@ function addUser(text) {
   scrollLog();
 }
 
-function addAgentText(text, failed = false) {
+let passageCount = 0;
+
+function passageText(source) {
+  const lines = source.text.split("\n");
+  return source.id.startsWith("policy-") && lines.length > 1 ? lines.slice(1).join("\n") : source.text;
+}
+
+function sourceChips(ids, sources) {
+  const byId = Object.fromEntries((sources || []).map((s) => [s.id, s]));
+  const panelId = `passage-${++passageCount}`;
+  const panel = el("div", { class: "passage", id: panelId, hidden: "" });
+  const row = el("div", { class: "sources", role: "group", "aria-label": "Sources" });
+  for (const id of ids) {
+    const source = byId[id];
+    if (!source) {
+      row.append(el("span", { class: "source", text: prettyDoc(id) }));
+      continue;
+    }
+    const chip = el("button", { class: "source source--open", type: "button", "aria-expanded": "false", "aria-controls": panelId, text: prettyDoc(id) });
+    chip.addEventListener("click", () => {
+      const open = chip.getAttribute("aria-expanded") !== "true";
+      for (const other of row.querySelectorAll("button")) other.setAttribute("aria-expanded", "false");
+      chip.setAttribute("aria-expanded", String(open));
+      panel.hidden = !open;
+      if (open) panel.replaceChildren(el("p", { class: "passage__title", text: source.title }), el("p", { class: "passage__text", text: passageText(source) }));
+    });
+    row.append(chip);
+  }
+  return [row, panel];
+}
+
+function addAgentText(text, failed = false, sources = []) {
   const { clean, ids } = cleanText(text);
   const bubble = el("div", { class: "bubble" });
   linkify(bubble, clean);
   const msg = el("div", { class: `msg msg--agent${failed ? " msg--failed" : ""}` }, bubble);
-  if (ids.length) {
-    msg.append(el("div", { class: "sources", "aria-label": "Sources" }, ids.map((id) => el("span", { class: "source", text: prettyDoc(id) }))));
-  }
+  if (ids.length) msg.append(...sourceChips(ids, sources));
   logEl.append(msg);
   return msg;
 }
@@ -357,7 +386,7 @@ function addAgent(data) {
   settlePending(data.trace);
   let msg;
   if (data.pending) {
-    if (data.lead) addAgentText(data.lead);
+    if (data.lead) addAgentText(data.lead, false, data.sources);
     const card = buildConfirmCard(data.pending, send);
     msg = el("div", { class: "msg msg--agent msg--card" }, card);
     logEl.append(msg);
@@ -368,7 +397,7 @@ function addAgent(data) {
       msg = el("div", { class: "msg msg--agent msg--card" }, buildOutcome(kind, cleanText(data.response).clean));
       logEl.append(msg);
     } else {
-      msg = addAgentText(data.response);
+      msg = addAgentText(data.response, false, data.sources);
     }
   }
   msg.append(el("p", { class: "msg__meta", text: `${(INTENT_LABELS[data.intent] || "Answer")}, ${data.latency_s.toFixed(1)}s` }));

@@ -718,6 +718,34 @@ button { font: inherit; color: inherit; }
   font-size: 13px;
 }
 
+.source--open {
+  min-height: 32px;
+  padding: 4px 10px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.source--open:hover { border-color: var(--line-strong); color: var(--ink); }
+.source--open[aria-expanded="true"] { border-color: var(--glacier); color: var(--glacier); }
+.source--open:focus-visible { outline: 2px solid var(--glacier); outline-offset: 2px; }
+
+.passage {
+  max-width: 62ch;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--glacier);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.passage__title { margin: 0 0 4px; color: var(--ink); font-weight: 600; }
+.passage__text { margin: 0; color: var(--granite); white-space: pre-line; overflow-wrap: anywhere; }
+
+.inside__note { margin: 0; color: #9fb0bd; font-size: 12px; }
+
 .typing { display: inline-flex; gap: 4px; padding: 14px; }
 .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
 
