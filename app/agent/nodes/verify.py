@@ -48,19 +48,28 @@ NEGATED_BEFORE_RE = re.compile(r"\b(not|rather than|instead of|isn't|wasn't|is n
 
 LOOKUP_VERB = r"(look(ing)? (it |them |this |that |your orders? |the orders? |orders )?up|find|locate|pull up|search for|track down|retrieve|list|show you)"
 OTHER_ID = r"((full |first and last )?name|phone( number)?|(shipping |home |street |billing )?address|account)"
-MATCH_VERB = r"(look(ing)? (it |them |this |that )?up|find|locate|pull up|search for|track down|retrieve|match|verify|identify)"
-ASKED_ID = (
-    r"((full )?name|phone( number)?|(?<!new )(?<!email )(?<!e-mail )(shipping |billing )?address (on|for|used for) the order|"
-    r"(?<!new )shipping address)"
+OTHER_PROOF_RE = re.compile(
+    r"\b(full name|name on the (order|account)|first and last name|names?\b(?= (on|used|for) )|phone( number)?|"
+    r"last (four|4) digits|card number|payment card|billing (zip|postal)|"
+    r"(?<!new )(?<!email )(?<!e-mail )(shipping |billing |home )?address (on|for|used for|on file for) the order|(?<!new )shipping address|"
+    r"first (few )?letters|(the )?part (of|you)|parts of|partial|(e-?mail |the )provider|the domain|initials)\b",
+    re.IGNORECASE,
 )
-PARTIAL_EMAIL_RE = re.compile(
-    r"\b(first (few )?letters|(the )?part (of|you)|parts of|partial|(e-?mail |the )provider|the domain|initials)\b", re.IGNORECASE
+PROVIDE_RE = re.compile(
+    r"\b(tell me|share|give me|provide|send|let me know|if you have|if you know|if you can|you could|you can|i need|i'd need|i would need)\b",
+    re.IGNORECASE,
 )
-MATCH_OFFER_RE = re.compile(rf"\b{MATCH_VERB}\b|\benough to\b", re.IGNORECASE)
-CANNOT_RE = re.compile(r"\b(can't|cannot|can not|won't|unable|not able|isn't|is not|not enough)\b", re.IGNORECASE)
+CHECK_OFFER_RE = re.compile(
+    r"\b(i'll|i will|i can|i could|i'd|let me)\b[^?!\n]{0,60}\b(see|check|try|look|find|locate|match|verify|confirm|use|work|search|pull up|identify)"
+    r"|\bmatch(es|ed|ing)?\b|\b(for|of) verification\b|\bto verify\b|\benough to\b|\bif that works\b|\bhelps? me (find|locate|verify)",
+    re.IGNORECASE,
+)
+CANNOT_RE = re.compile(
+    r"\b(i|we)('m| am| are)? (can't|cannot|can not|won't|will not|unable|not able)\b|\b(isn't|is not|not) enough\b|\bnever\b",
+    re.IGNORECASE,
+)
 OFFER_OTHER_RE = re.compile(
-    rf"\b{LOOKUP_VERB}\b[^.?!\n]{{0,60}}\b(by|with|using|from|via|under|through) (just |only )?(your|the|their|her|his)? ?{OTHER_ID}\b"
-    rf"|\b(share|send|give me|provide|tell me|what is|what's)\b[^?!\n]{{0,25}}\b{ASKED_ID}\b[^?!\n]{{0,100}}\b{MATCH_VERB}\b",
+    rf"\b{LOOKUP_VERB}\b[^.?!\n]{{0,60}}\b(by|with|using|from|via|under|through) (just |only )?(your|the|their|her|his)? ?{OTHER_ID}\b",
     re.IGNORECASE,
 )
 OFFER_EMAIL_RE = re.compile(
@@ -223,10 +232,9 @@ def _denies_lookup(sentence: str) -> bool:
     return any(DENY_RE.search(c) and not LOOKUP_CONDITION_RE.search(c) for c in CLAUSE_RE.split(sentence))
 
 
-def _offers_partial_email(sentence: str) -> bool:
-    if not re.search(r"e-?mail|address", sentence, re.IGNORECASE):
-        return False
-    return bool(PARTIAL_EMAIL_RE.search(sentence) and MATCH_OFFER_RE.search(sentence) and not CANNOT_RE.search(sentence))
+def offers_other_proof(sentence: str) -> bool:
+    asked = PROVIDE_RE.search(sentence) and OTHER_PROOF_RE.search(sentence)
+    return bool(asked and CHECK_OFFER_RE.search(sentence) and not CANNOT_RE.search(sentence))
 
 
 def breaks_lookup_rule(draft: str, state: AgentState) -> list[str]:
@@ -234,7 +242,7 @@ def breaks_lookup_rule(draft: str, state: AgentState) -> list[str]:
     found = []
     for sentence in sentences(draft):
         by_email = OFFER_EMAIL_RE.search(sentence) and not known and not NAMES_ORDER_RE.search(sentence)
-        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or _offers_partial_email(sentence) or _denies_lookup(sentence):
+        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or offers_other_proof(sentence) or _denies_lookup(sentence):
             found.append(sentence.strip())
     return found
 

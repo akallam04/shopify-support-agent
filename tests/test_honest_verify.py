@@ -279,3 +279,33 @@ def test_any_offer_to_match_part_of_an_email_breaks_the_lookup_rule(reply: str) 
 )
 def test_asking_for_the_full_email_or_refusing_a_partial_one_is_fine(sentence: str) -> None:
     assert not breaks_lookup_rule(sentence, {"order_number": "#1005"})
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        'If you\'d prefer not to share the full address, you can tell me just the first few letters or the domain (for example, "starts with j, gmail.com"), and I\'ll check whether it matches.',
+        "If you'd rather not share your email, you could tell me the name on the order or the last four digits of the payment card used, and I'll see if that works for verification.",
+        "To check on #1005, I need one piece of verification: the email address used at checkout, or the name on the order plus the last four digits of the card.",
+        "Alternatively, if you have the name on the order or the shipping address, you can share those here and I'll see whether that helps me locate it.",
+    ],
+)
+def test_offering_any_proof_other_than_the_full_email_breaks_the_lookup_rule(sentence: str) -> None:
+    assert breaks_lookup_rule(sentence, {"order_number": "#1005"})
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "Without the email address, the name, or the shipping address, I'm not able to verify the order from this chat.",
+        "If you can find the confirmation email, it will show the email address you used, and I can look it up right away.",
+        "I can update the shipping address on order #1011 if you send me the new one.",
+    ],
+)
+def test_refusals_and_address_changes_are_not_offers_of_other_proof(sentence: str) -> None:
+    assert not breaks_lookup_rule(sentence, {"order_number": "#1005"})
+
+
+def test_the_customer_saying_they_cannot_reach_someone_does_not_hide_an_offer() -> None:
+    offer = "If you can't reach her, you could also tell me the full name on the order, and I'll see what I can find with that."
+    assert breaks_lookup_rule(offer, {"order_number": "#1006"})

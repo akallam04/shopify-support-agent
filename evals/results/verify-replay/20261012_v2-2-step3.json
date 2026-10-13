@@ -16,10 +16,10 @@
   "checked": 3285,
   "numbers_checked": 1710,
   "skipped_store_built_or_fixed": 1484,
-  "flagged": 54,
+  "flagged": 58,
   "flagged_using_removed_listing_tool": 34,
   "by_check": {
-   "lookup_rule": 35,
+   "lookup_rule": 39,
    "numbers": 19,
    "identifiers": 1,
    "retraction": 2
@@ -27,10 +27,10 @@
  },
  "review": {
   "wrongly_flagged_correct_replies": 0,
-  "real_problems": 17,
+  "real_problems": 21,
   "real_problems_by_kind": {
    "wrongly said it cannot look up or check orders": 8,
-   "offered or described a lookup by name, phone, or address": 5,
+   "offered or described a lookup by name, phone, or address": 9,
    "changed the tracking link the tool returned": 1,
    "took back a store-built receipt": 2,
    "offered to match a partial email": 1
@@ -76,6 +76,28 @@
    "review": {
     "kind": "removed_tool",
     "why": "used the email listing tool, removed after the headline runs, so it cannot recur"
+   }
+  },
+  {
+   "run": "20261004-204210_validate-haiku",
+   "task": "other-person-spouse",
+   "trial": 0,
+   "turn": 1,
+   "listing_tool": false,
+   "reward": 1.0,
+   "intent": "order",
+   "failed": [
+    {
+     "check": "lookup_rule",
+     "detail": "1 sentence(s) misstate how lookups work",
+     "feedback": "order lookups need the order number and the email address on the order, and anyone who has both can look the order up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
+    }
+   ],
+   "reply": "No problem! Do you have access to the email inbox where the order confirmation was sent? You could check there for the email address, or if you'd like, I can help you look up the order using a different piece of information - like the name or phone number on the account. What works best for you?",
+   "review": {
+    "kind": "real_problem",
+    "why": "offered or described a lookup by name, phone, or address",
+    "sentence": "You could check there for the email address, or if you'd like, I can help you look up the order using a different piece of information - like the name or phone number on the account."
    }
   },
   {
@@ -834,6 +856,50 @@
   },
   {
    "run": "20261007-190900_upgrade-haiku-5-5-k2",
+   "task": "other-person-spouse",
+   "trial": 1,
+   "turn": 3,
+   "listing_tool": false,
+   "reward": 0.0,
+   "intent": "order",
+   "failed": [
+    {
+     "check": "lookup_rule",
+     "detail": "1 sentence(s) misstate how lookups work",
+     "feedback": "order lookups need the order number and the email address on the order, and anyone who has both can look the order up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
+    }
+   ],
+   "reply": "I understand, and I'm sorry for the back-and-forth. Let's try a different route: if you can tell me your wife's full name as it appears on the order, or the phone number used at checkout, I can look for order #1006 with that. If neither is handy, your wife may be able to find the tracking number quickly in her order confirmation email or her Aurora Outfitters account, if she has one.",
+   "review": {
+    "kind": "real_problem",
+    "why": "offered or described a lookup by name, phone, or address",
+    "sentence": "Let's try a different route: if you can tell me your wife's full name as it appears on the order, or the phone number used at checkout, I can look for order #1006 with that."
+   }
+  },
+  {
+   "run": "20261007-190900_upgrade-haiku-5-5-k2",
+   "task": "other-person-spouse",
+   "trial": 0,
+   "turn": 2,
+   "listing_tool": false,
+   "reward": 0.0,
+   "intent": "order",
+   "failed": [
+    {
+     "check": "lookup_rule",
+     "detail": "1 sentence(s) misstate how lookups work",
+     "feedback": "order lookups need the order number and the email address on the order, and anyone who has both can look the order up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
+    }
+   ],
+   "reply": "I understand. Unfortunately, I need the email address used at checkout to verify the order and share tracking details, so I can't look it up without it. Here are a few options:\n\n- **Ask your wife** to share the email address with you, or to send you the tracking number directly from her order confirmation.\n- **Check the shipping notification** if one was sent to her phone as a text message, since tracking links are often included there.\n- **Share a different detail** here, such as the name on the order or the shipping address, and I can see whether that's enough to locate it. (I may still need the checkout email to confirm the match.)\n\nOnce you have the email address, just send it here and I'll get the tracking number for order #1006 right away.",
+   "review": {
+    "kind": "real_problem",
+    "why": "offered or described a lookup by name, phone, or address",
+    "sentence": "- **Share a different detail** here, such as the name on the order or the shipping address, and I can see whether that's enough to locate it."
+   }
+  },
+  {
+   "run": "20261007-190900_upgrade-haiku-5-5-k2",
    "task": "difficult-demand-exception",
    "trial": 1,
    "turn": 1,
@@ -937,6 +1003,28 @@
     "kind": "real_problem",
     "why": "offered to match a partial email",
     "sentence": "If you'd prefer not to share the full address, you can give me just the first few letters and the domain (for example, \"jo***@gmail.com\"), and I can still work with that to match the order."
+   }
+  },
+  {
+   "run": "20261007-191753_haiku-5-5-thinking-off-k1",
+   "task": "other-person-spouse",
+   "trial": 0,
+   "turn": 1,
+   "listing_tool": false,
+   "reward": 0.0,
+   "intent": "order",
+   "failed": [
+    {
+     "check": "lookup_rule",
+     "detail": "1 sentence(s) misstate how lookups work",
+     "feedback": "order lookups need the order number and the email address on the order, and anyone who has both can look the order up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
+    }
+   ],
+   "reply": "No problem! If you can find the email address on her account or in her order confirmation, that would work. Alternatively, if you have the name on the order or the shipping address, you can share that here and I'll try to locate the order that way.",
+   "review": {
+    "kind": "real_problem",
+    "why": "offered or described a lookup by name, phone, or address",
+    "sentence": "Alternatively, if you have the name on the order or the shipping address, you can share that here and I'll try to locate the order that way."
    }
   },
   {
