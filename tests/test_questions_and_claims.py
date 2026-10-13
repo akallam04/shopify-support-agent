@@ -1,0 +1,94 @@
+import pytest
+
+from app.agent.asks import asks_eligibility, claims_warranty
+from app.agent.prompts import HANDOFF_CLAIM_DEMO
+from mcp_server.backends.sim import SimStoreBackend
+from mcp_server.simdb import load_db
+from tests.test_review_fixes import CANCEL_CALL, JORDAN, MAYA, SEED, graph_for, run
+
+WRITE_TOOLS = {"cancel_order", "update_shipping_address", "request_return"}
+QUESTIONS = [
+    ("Can I still cancel #1023? Until what time? My email is maya.thompson@example.com.", "#1023", MAYA,
+     "Yes, you can still cancel order #1023 for 60 more minutes, until 6:03 pm Mountain Time. Should I go ahead and cancel it?", "6:03 pm"),
+    ("How long do I have to return the jacket from #1022? jordan.lee@example.com", "#1022", JORDAN,
+     "You can return the Stormline Rain Jacket from order #1022 until October 29, 2026, so you have 25 days left. Would you like me to start the return?", "October 29, 2026"),
+    ("Is it too late to change the address on #1021? jordan.lee@example.com", "#1021", JORDAN,
+     "It is not too late: the address on order #1021 can be changed for 81 more minutes. Shall I go ahead and change it?", "81 more minutes"),
+]
+
+
+@pytest.fixture
+def backend() -> SimStoreBackend:
+    return SimStoreBackend(load_db(SEED))
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Can I still cancel #1023? Until what time?",
+        "How long do I have to return the jacket?",
+        "Is it too late to change the address on my order?",
+        "Can I still return the jacket from order #1022? How much would I get back?",
+    ],
+)
+def test_questions_about_a_change_are_questions(said: str) -> None:
+    assert asks_eligibility(said)
+
+
+@pytest.mark.parametrize(
+    "said",
+    ["Please cancel #1023.", "Can you cancel #1023?", "I want to return the jacket. How long do I have?", "Can I still cancel? If so, please cancel it."],
+)
+def test_requests_are_not_questions(said: str) -> None:
+    assert not asks_eligibility(said)
+
+
+@pytest.mark.parametrize(("said", "number", "email", "draft", "deadline"), QUESTIONS)
+def test_a_question_about_a_change_is_answered_with_an_offer_and_no_card(backend: SimStoreBackend, said: str, number: str, email: str, draft: str, deadline: str) -> None:
+    route = {"intent": "order", "search_query": "", "order_number": number, "email": email}
+    graph, client = graph_for(backend, {"route": [route], "order_tools": [draft]})
+    state = run(graph, [{"role": "user", "content": said}])
+    offered = {t["name"] for t in client.of("order_tools")[0]["tools"]}
+    assert not offered & WRITE_TOOLS
+    assert state.get("pending_action") is None
+    assert not any(g["step"] == "self_confirm_nudge" for g in state.get("gate_trace", []))
+    assert deadline in state["response"]
+
+
+def test_asking_for_the_change_after_the_answer_shows_the_card(backend: SimStoreBackend) -> None:
+    route = {"intent": "order", "search_query": "", "order_number": "#1023", "email": MAYA}
+    answer = "Yes, you can still cancel order #1023 for 60 more minutes, until 6:03 pm Mountain Time. Would you like me to cancel it?"
+    graph, client = graph_for(backend, {"route": [route, route], "order_tools": [answer, ("cancel_order", CANCEL_CALL)]})
+    history = [{"role": "user", "content": "Can I still cancel #1023? Until what time? maya.thompson@example.com"}]
+    first = run(graph, history)
+    history += [{"role": "assistant", "content": first["response"]}, {"role": "user", "content": "Yes, please cancel it."}]
+    second = run(graph, history)
+    assert {t["name"] for t in client.of("order_tools")[1]["tools"]} & WRITE_TOOLS
+    assert second["pending_action"]["action"] == "cancel_order"
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Hi, I need to file a warranty claim. The sole of my hiking boots is coming apart after only six weeks.",
+        "My zipper broke, can I get a replacement?",
+        "My tent arrived damaged and I want a replacement.",
+    ],
+)
+def test_warranty_and_damage_claims_are_claims(said: str) -> None:
+    assert claims_warranty(said)
+
+
+@pytest.mark.parametrize("said", ["What does your warranty cover?", "Does the warranty cover zippers?", "Can I return a broken item?"])
+def test_warranty_questions_are_not_claims(said: str) -> None:
+    assert not claims_warranty(said)
+
+
+def test_a_warranty_claim_the_router_calls_a_policy_question_records_a_handoff(backend: SimStoreBackend) -> None:
+    said = "Hi, I need to file a warranty claim. The sole of my hiking boots is coming apart after only six weeks."
+    graph, client = graph_for(backend, {"route": [{"intent": "policy", "search_query": "warranty claim", "order_number": "", "email": ""}]})
+    state = run(graph, [{"role": "user", "content": said}], {"sandbox": True})
+    assert state["intent"] == "handoff" and state["response"] == HANDOFF_CLAIM_DEMO
+    assert state["handoff"] == {"recorded": True, "notified": False}
+    assert backend.handoffs and backend.handoffs[-1]["summary"].startswith("Warranty or damage claim:")
+    assert client.count("respond") == 0

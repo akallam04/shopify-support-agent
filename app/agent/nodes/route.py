@@ -5,6 +5,7 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
+from app.agent.asks import claims_warranty, latest_customer_text
 from app.agent.models import call_options, response_text, system_blocks
 from app.agent.prompts import ROUTER_SCHEMA, ROUTER_SYSTEM, ROUTER_WRITE_RULE
 from app.agent.state import AgentState
@@ -29,8 +30,11 @@ def make_route_node(client: AsyncAnthropic, model: str, can_act: bool = False, t
         parsed = json.loads(text) if text else DECLINED_ROUTE
         usage = list(state.get("usage", []))
         usage.append(usage_record("route", model, response))
+        intent = parsed["intent"]
+        if intent != "injection" and claims_warranty(latest_customer_text(state["messages"])):
+            intent = "handoff"
         return {
-            "intent": parsed["intent"],
+            "intent": intent,
             "search_query": parsed["search_query"],
             "order_number": parsed["order_number"],
             "email": parsed["email"],

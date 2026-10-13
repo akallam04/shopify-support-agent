@@ -114,6 +114,26 @@ HANDOFF_DEMO_FOLLOWUP = (
     "recorded in your private copy only, and no one was notified."
 )
 
+HANDOFF_CLAIM_DEMO = (
+    "I have recorded your warranty or damage claim for our support team. Claims are decided from photos: email photos of "
+    "the item and its packaging to support@auroraoutfitters.com with your order number. Aurora Outfitters brand gear has a "
+    "1-year warranty against manufacturing defects, and items that arrived damaged need photos within 7 days of delivery. "
+    "This is a demo store, so the claim stays in your private copy of the store: no one is notified, and no ticket or email is created."
+)
+
+HANDOFF_CLAIM = (
+    "I have noted your warranty or damage claim, but this chat cannot reach the support team or open a ticket. Claims are "
+    "decided from photos: email photos of the item and its packaging to support@auroraoutfitters.com with your order number. "
+    "Aurora Outfitters brand gear has a 1-year warranty against manufacturing defects, and items that arrived damaged need "
+    "photos within 7 days of delivery."
+)
+
+QUESTION_NOTE = (
+    "The customer asked whether a change is still possible, not for the change itself. Answer from the order record's "
+    "eligibility, with the exact time or date it gives, then offer to make the change if they want it. Do not ask them to "
+    "confirm a change."
+)
+
 DEMO_RECEIPT_NOTE = "This is a demo store, so nothing is emailed and no money moves."
 
 ORDER_NUMBER_HELP = (

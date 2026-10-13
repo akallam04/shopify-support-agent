@@ -16,6 +16,8 @@ from app.agent.prompts import (
     DECLINED_RESPONSE,
     DEMO_RECEIPT_NOTE,
     GATE_INPUT_RESPONSE,
+    HANDOFF_CLAIM,
+    HANDOFF_CLAIM_DEMO,
     HANDOFF_DEMO,
     HANDOFF_DEMO_FOLLOWUP,
     HANDOFF_FOLLOWUP,
@@ -29,6 +31,7 @@ from app.agent.prompts import (
     REFLECTION_SYSTEM,
     with_digest,
 )
+from app.agent.asks import claims_warranty
 from app.agent.models import call_options, response_text
 from app.agent.addresses import ungrounded_parts
 from app.agent.reasons import condition_mentions, customer_texts, grounded, item_condition, stated_reason
@@ -292,10 +295,12 @@ def make_handoff_node(tools: Any):
         sandbox = bool(state.get("sandbox"))
         if (state.get("handoff") or {}).get("recorded"):
             return {"draft": HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP, "system_draft": True}
-        update: dict[str, Any] = {"draft": HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE, "system_draft": True}
+        claim = claims_warranty(_last_user_text(state))
+        reply = (HANDOFF_CLAIM_DEMO if sandbox else HANDOFF_CLAIM) if claim else (HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE)
+        update: dict[str, Any] = {"draft": reply, "system_draft": True}
         if "transfer_to_human" in tools.write_tool_names:
             args = {
-                "summary": f"Customer asked for a person: {_last_user_text(state)[:300]}",
+                "summary": f"{'Warranty or damage claim' if claim else 'Customer asked for a person'}: {_last_user_text(state)[:300]}",
                 "order_number": state.get("order_number") or "",
             }
             result = tools.execute("transfer_to_human", args)
