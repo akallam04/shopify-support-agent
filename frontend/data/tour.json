@@ -1,15 +1,15 @@
 {
- "recorded_on": "October 12, 2026",
- "release": "846abec68132",
+ "recorded_on": "October 13, 2026",
+ "release": "f3cb43f1f210",
  "turns": [
   {
    "user": "I want to return the rain jacket from order #1022. It is too big. My email is jordan.lee@example.com.",
    "response": {
     "response": "Just to confirm, I will request a return of 1 x Stormline Rain Jacket (L) from order #1022 (reason: too large). The items must be unworn and unused, with their original tags. A flat 7.50 USD fee for the prepaid return label is deducted from the refund. Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee). We email a prepaid return label within 1 business day. This is a demo store, so nothing is emailed and no money moves. Should I go ahead? Please reply yes or no.",
     "intent": "order",
-    "latency_s": 2.66,
-    "tokens": 237,
-    "release": "846abec68132",
+    "latency_s": 2.74,
+    "tokens": 236,
+    "release": "f3cb43f1f210",
     "sandbox": true,
     "session_state": null,
     "session_reset": false,
@@ -39,7 +39,7 @@
      "nodes": [
       {
        "node": "sanitize",
-       "ms": 0.0
+       "ms": 0.1
       },
       {
        "node": "context",
@@ -47,15 +47,15 @@
       },
       {
        "node": "route",
-       "ms": 1331.7
+       "ms": 1483.7
       },
       {
        "node": "order_tools",
-       "ms": 1299.5
+       "ms": 1201.6
       },
       {
        "node": "gate",
-       "ms": 0.5
+       "ms": 0.6
       },
       {
        "node": "verify",
@@ -67,7 +67,7 @@
        "kind": "tool",
        "name": "get_order_status",
        "args": {
-        "order_number": "#1022",
+        "order_number": "1022",
         "email": "j\u2022\u2022\u2022@example.com"
        },
        "result": {
@@ -196,15 +196,15 @@
      "retrieved": [],
      "tokens": {
       "input_tokens": 23,
-      "output_tokens": 214,
-      "cache_creation_input_tokens": 0,
-      "cache_read_input_tokens": 5378,
+      "output_tokens": 213,
+      "cache_creation_input_tokens": 5378,
+      "cache_read_input_tokens": 0,
       "thinking_tokens": 0
      },
-     "cost_usd": 0.000163,
+     "cost_usd": 0.000781,
      "node_costs": {
-      "route": 3.2e-05,
-      "order_tools": 0.000131
+      "route": 0.000166,
+      "order_tools": 0.000615
      }
     }
    }
@@ -216,7 +216,7 @@
     "intent": "order",
     "latency_s": 0.04,
     "tokens": 0,
-    "release": "846abec68132",
+    "release": "f3cb43f1f210",
     "sandbox": true,
     "session_state": null,
     "session_reset": false,
@@ -246,7 +246,7 @@
       },
       {
        "node": "execute",
-       "ms": 0.3
+       "ms": 0.4
       },
       {
        "node": "verify",

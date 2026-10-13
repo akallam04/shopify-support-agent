@@ -108,3 +108,12 @@ def test_the_readme_diagram_shows_the_fixed_reply_and_the_path_where_nothing_run
     assert "no, unclear, or conditional: nothing runs" in diagram
     assert "reflection off by default" in diagram
     assert "question, or yes and also| ROUTE" in diagram
+
+
+def test_the_readme_live_box_matches_the_saved_release_manifest_and_the_tour_ran_on_it() -> None:
+    from scripts.live_config import readme_box, render
+
+    live = json.loads((FRONTEND / "data" / "live.json").read_text())
+    tour = json.loads((FRONTEND / "data" / "tour.json").read_text())
+    assert readme_box(Path("README.md").read_text()) == render(live)
+    assert tour["release"] == live["release"]

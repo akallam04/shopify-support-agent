@@ -14,7 +14,7 @@ fi
 
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 FUNCTION_ARN=$(aws lambda get-function --function-name "$FUNCTION" --region "$AWS_REGION" --query Configuration.FunctionArn --output text)
-SCHEDULE_ARN="arn:aws:scheduler:$AWS_REGION:$ACCOUNT:schedule/default/$SCHEDULE"
+GROUP_ARN="arn:aws:scheduler:$AWS_REGION:$ACCOUNT:schedule-group/default"
 ROLE_ARN="arn:aws:iam::$ACCOUNT:role/$ROLE_NAME"
 
 WORK=$(mktemp -d)
@@ -22,7 +22,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 cat > "$WORK/trust.json" <<JSON
 {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "scheduler.amazonaws.com"}, "Action": "sts:AssumeRole",
-  "Condition": {"StringEquals": {"aws:SourceAccount": "$ACCOUNT", "aws:SourceArn": "$SCHEDULE_ARN"}}}]}
+  "Condition": {"StringEquals": {"aws:SourceAccount": "$ACCOUNT", "aws:SourceArn": "$GROUP_ARN"}}}]}
 JSON
 cat > "$WORK/invoke.json" <<JSON
 {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": "lambda:InvokeFunction", "Resource": ["$FUNCTION_ARN", "$FUNCTION_ARN:*"]}]}
@@ -54,8 +54,15 @@ ACTION=create-schedule
 if aws scheduler get-schedule --name "$SCHEDULE" --region "$AWS_REGION" >/dev/null 2>&1; then
   ACTION=update-schedule
 fi
-aws scheduler "$ACTION" --name "$SCHEDULE" --region "$AWS_REGION" \
-  --schedule-expression "rate(5 minutes)" --flexible-time-window Mode=OFF --state ENABLED \
-  --description "Calls GET /health on the Lambda every 5 minutes; no model call" \
-  --target "file://$WORK/target.json" >/dev/null
-echo "$ACTION: $SCHEDULE calls GET /health on $FUNCTION every 5 minutes"
+for attempt in 1 2 3 4 5 6; do
+  if aws scheduler "$ACTION" --name "$SCHEDULE" --region "$AWS_REGION" \
+    --schedule-expression "rate(5 minutes)" --flexible-time-window Mode=OFF --state ENABLED \
+    --description "Calls GET /health on the Lambda every 5 minutes; no model call" \
+    --target "file://$WORK/target.json" >/dev/null; then
+    echo "$ACTION: $SCHEDULE calls GET /health on $FUNCTION every 5 minutes"
+    exit 0
+  fi
+  echo "waiting for the role to reach the scheduler ($attempt)"
+  sleep 10
+done
+exit 1

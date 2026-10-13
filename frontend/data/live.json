@@ -1,0 +1,18 @@
+{
+ "release": "f3cb43f1f210",
+ "git_sha": "1f10aa30d282",
+ "prompts": "12c1a695b1c1",
+ "knowledge": "e948ba6116ae",
+ "models": {
+  "router": "claude-haiku-5-5",
+  "answer": "claude-haiku-5-5"
+ },
+ "thinking": false,
+ "gate": {
+  "write_actions": true,
+  "mutation_gate": true,
+  "reflection": false,
+  "confirmation": true
+ },
+ "checked_on": "October 13, 2026"
+}
