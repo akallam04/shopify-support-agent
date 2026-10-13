@@ -40,6 +40,7 @@ from app.agent.reasons import condition_mentions, customer_texts, grounded, item
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
+from mcp_server.policy import condition_refusal
 from mcp_server.tools import ToolInputError, idempotency_key
 
 YES_RE = re.compile(
@@ -302,8 +303,11 @@ def make_execute_node(tools: Any):
 def make_handoff_node(tools: Any):
     def handoff(state: AgentState) -> dict[str, Any]:
         sandbox = bool(state.get("sandbox"))
+        stated = item_condition(customer_texts(state))
+        refusal = condition_refusal(stated.condition if stated else None)
+        rule = f"{refusal.reason} " if refusal else ""
         if (state.get("handoff") or {}).get("recorded"):
-            return {"draft": HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP, "system_draft": True}
+            return {"draft": rule + (HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP), "system_draft": True}
         said = _last_user_text(state)
         claim = claims_warranty(said)
         if claim:
@@ -312,7 +316,7 @@ def make_handoff_node(tools: Any):
             reply = HANDOFF_EXCEPTION_DEMO if sandbox else HANDOFF_EXCEPTION
         else:
             reply = HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE
-        update: dict[str, Any] = {"draft": reply, "system_draft": True}
+        update: dict[str, Any] = {"draft": rule + reply, "system_draft": True}
         if "transfer_to_human" in tools.write_tool_names:
             args = {
                 "summary": f"{'Warranty or damage claim' if claim else 'Customer asked for a person'}: {said[:300]}",

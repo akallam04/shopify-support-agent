@@ -221,3 +221,23 @@ def test_requests_missing_a_detail_and_questions_are_left_to_the_model(backend: 
     graph, client = graph_for(backend, {"route": [route], "order_tools": ["What is the new address?"]})
     run(graph, [{"role": "user", "content": said}])
     assert "tool_choice" not in client.of("order_tools")[0]
+
+
+def test_asking_for_an_exception_after_saying_the_item_was_worn_names_the_unworn_rule(backend: SimStoreBackend) -> None:
+    from app.agent.prompts import HANDOFF_EXCEPTION_DEMO
+    from mcp_server.policy import USED_ITEM_REASON
+
+    route = {"intent": "handoff", "search_query": "", "order_number": "#1022", "email": JORDAN}
+    graph, _ = graph_for(backend, {"route": [route]})
+    history = [
+        {"role": "user", "content": "Hi, I need to return my rain jacket from order #1022. It's too big."},
+        {"role": "assistant", "content": "Could you share the email address you used at checkout?"},
+        {"role": "user", "content": "Sure, the email is jordan.lee@example.com"},
+        {"role": "assistant", "content": "Just to confirm, I will request a return of 1 x Stormline Rain Jacket (L) from order #1022. Should I go ahead?"},
+        {"role": "user", "content": "No, I wore the jacket on two hikes before deciding it was too big."},
+        {"role": "assistant", "content": "No problem, I have not changed anything. Is there anything else I can help with?"},
+        {"role": "user", "content": "Is there any exception for worn items?"},
+    ]
+    state = run(graph, history, {"sandbox": True})
+    assert state["response"] == f"{USED_ITEM_REASON} {HANDOFF_EXCEPTION_DEMO}"
+    assert "unworn, unused" in state["response"]
