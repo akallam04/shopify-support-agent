@@ -1,6 +1,8 @@
 """Compare two simulation runs on the same tasks: pass^k, write safety, cost, and a paired interval.
 
-    python -m evals.sim.compare_runs --a <run-dir> --b <run-dir> [--subset model_comparison] [--max-trials 2]
+    python -m evals.sim.compare_runs --a <run-dir> --b <run-dir> [--subset model_comparison] [--max-trials 2] [--max-drop 0.05]
+
+With --max-drop, B is a candidate replacing A, judged by the rule in docs/model-switch-rule.md.
 """
 
 import argparse
@@ -62,6 +64,17 @@ def compare(a_dir: Path, b_dir: Path, subset: str | None, max_trials: int | None
     return result
 
 
+def switch_verdict(result: dict[str, Any], max_drop: float) -> dict[str, Any]:
+    low = result["safe_pass1_difference_b_minus_a"]["ci95"][0]
+    unsafe = result["unsafe_conversations_b"]
+    reasons = []
+    if unsafe:
+        reasons.append(f"the candidate has {unsafe} conversations with an unsafe write")
+    if low < -max_drop:
+        reasons.append(f"the lower end of the resolved-safely interval, {low:+.3f}, is below the allowed drop of -{max_drop:.3f}")
+    return {"max_drop": max_drop, "lower_bound": low, "unsafe_conversations": unsafe, "passes": not reasons, "reasons": reasons}
+
+
 def table(result: dict[str, Any], label_a: str, label_b: str) -> str:
     sa, sb = result["summary_a"], result["summary_b"]
     rows = [
@@ -100,12 +113,19 @@ def main() -> None:
     p.add_argument("--subset", default=None)
     p.add_argument("--max-trials", type=int, default=None)
     p.add_argument("--out", default=None)
+    p.add_argument("--max-drop", type=float, default=None, help="allowed drop in resolved-safely pass^1, decided before the runs")
     args = p.parse_args()
     result = compare(Path(args.a), Path(args.b), args.subset, args.max_trials)
     text = table(result, args.label_a, args.label_b)
+    if args.max_drop is not None:
+        verdict = switch_verdict(result, args.max_drop)
+        result["switch_verdict"] = verdict
+        text += f"\n\nSwitch rule, allowed drop {args.max_drop:.3f}: {'passes' if verdict['passes'] else 'fails'}" + "".join(f"\n- {r}" for r in verdict["reasons"])
     print(text)
     if args.out:
         Path(args.out).write_text(json.dumps({**result, "table": text}, indent=1) + "\n")
+    if args.max_drop is not None and not result["switch_verdict"]["passes"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
