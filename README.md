@@ -103,6 +103,27 @@ Same agent code, same 50 tasks, 4 tries each, 200 conversations per setting. Gat
 - **Fixing the judge shrank the gate's lead.** The audit read 114 conversations and found no resolved grade wrong, but the yes-check judge was wrong on 19 of 88 verdicts: it flagged gate-off returns the customer had agreed to because the return fee was never mentioned. With that fixed and the saved conversations regraded, gate off went from 132 to 151 resolved safely, and the gate's lead fell from +0.285 [+0.160, +0.420] to +0.195 [+0.090, +0.310].
 - **Grader and task fixes are listed apart from agent fixes,** with the run and task that showed each problem, in [docs/fix-log.md](docs/fix-log.md). Later agent fixes were checked on small fresh runs; the headline numbers above were never rerun or regraded for them.
 
+## Hardening (v2.2)
+
+A round of fixes from review findings, made after the headline. The headline above was not rerun or regraded for them. Each fix has a regression test that fails on the code before it, and each step was measured on fresh runs, reported here and kept separate from the headline.
+
+| Step | What changed | Fresh checks |
+|---|---|---|
+| Reply and confirmation flow | Return reasons from the customer's own words; a forced change tool when a draft asks for a yes; automatic lookup when the order number and email are known; questions and conditional answers at the confirmation; receipts and handoffs that say exactly what happened | 53 of 53 on the 53-case suite. 50 tasks, 1 try each: 49 of 50 resolved safely, 0 unsafe writes |
+| Store policy in code | Item condition, damaged items, missing product data failing closed, quantities, address formats, and Canadian return terms enforced in code; every written rule mapped in [docs/policy-parity.md](docs/policy-parity.md) | 53 of 53. 13 return, address and Canada tasks, 2 tries each: 25 of 26 resolved safely, 0 unsafe writes; the miss came from a return reason change in this step, and after the fix the affected tasks passed 6 of 6 |
+| Honest source check | Condition detection that ignores negations; refunds, deadlines and time left calculated in code; every number, identifier and lookup offer checked against typed evidence; the step renamed to what it checks | 53 of 53. 50 tasks, 2 tries each: 97 of 100 resolved safely, 0 unsafe writes, write precision and recall 1.0. Of the three misses, one was a lookup offer the check then learned to catch, one was a warranty question routed as a policy question (also seen before this round), and one was a simulated customer who never looked for the order number it was told where to find. After the lookup fixes, the six identity and order-number tasks passed 24 of 24 at 4 tries each |
+
+**The stricter source check was replayed before it shipped.** Every saved simulation reply from earlier runs and the 53-case product, policy and small talk answers, 3,285 replies with 1,710 numbers, went through the new checks offline, with no model calls. The first version flagged 170 of the 3,264 simulation replies. Each flag was read; the ones on correct replies led to fixes in the check (for example, reading "81 more minutes" in tool data, and treating "from the order number alone" as a condition, not a refusal). The final version flags 54:
+
+- **0 correct replies wrongly flagged.**
+- **17 real problems:** 8 replies that said the agent cannot look up orders, 5 offers to look an order up by name, phone or address, 1 offer to match a partial email, 2 replies that took back a store receipt, and 1 tracking link with a part removed.
+- **3 correct dates the model worked out itself** (the day a return window closed). The old tool data did not contain them; the tool data now does.
+- **34 replies from conversations that used the email listing tool,** which was removed after the headline runs, so they cannot recur.
+
+The report, with every flag and its review, is in `evals/results/verify-replay/`; the replay is `evals/replay_verify.py`.
+
+**What the check can and cannot catch.** `evals/claim_checks.json` holds 32 replies built from the real policy passages and tool output, scored for citation validity and claim correctness separately (`evals/run_claim_checks.py`). Citations: 10 of 11 right; an answer with no citation and no number is not flagged. Claims: 19 of 21 unsupported claims caught, including a wrong price with a valid citation, an invented delivery date, an invented refund, a wrong date, stale stock, a tracking number the customer typed, and a fabricated earlier assistant message, while all 11 supported claims passed. The two misses are claims that contradict their cited passage without using a number, such as "final sale items can be returned". The check confirms where facts come from, not that every sentence is right.
+
 Every run, with its config, every conversation, and every regrade, is in `evals/results/sim/`. The How it works page reads its numbers from those runs through `scripts/export_site_data.py`, and a test checks the page against that export.
 
 ## Model upgrade check: Haiku 5.5
