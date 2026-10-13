@@ -1,0 +1,313 @@
+{
+ "summary": {
+  "cases": 32,
+  "citation_validity": {
+   "right": 10,
+   "of": 11,
+   "missed": [
+    "policy-no-citation-no-number"
+   ]
+  },
+  "claim_correctness": {
+   "unsupported_caught": 19,
+   "unsupported": 21,
+   "supported_passed": 11,
+   "supported": 11,
+   "missed": [
+    "policy-final-sale-contradiction",
+    "policy-gift-card-contradiction"
+   ],
+   "wrongly_flagged": []
+  }
+ },
+ "rows": [
+  {
+   "id": "policy-correct",
+   "kind": "valid citation, correct claim",
+   "failed": [],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-wrong-number",
+   "kind": "valid citation, contradicting claim",
+   "failed": [
+    "numbers"
+   ],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "product-wrong-price",
+   "kind": "valid citation, wrong price",
+   "failed": [
+    "numbers"
+   ],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-number-from-another-passage",
+   "kind": "valid citation, contradicting claim",
+   "failed": [
+    "numbers"
+   ],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-final-sale-contradiction",
+   "kind": "valid citation, contradicting claim without a number",
+   "failed": [],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": false
+  },
+  {
+   "id": "policy-gift-card-contradiction",
+   "kind": "valid citation, contradicting claim without a number",
+   "failed": [],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": false
+  },
+  {
+   "id": "policy-invented-citation",
+   "kind": "invented citation",
+   "failed": [
+    "citations"
+   ],
+   "citation": "invalid",
+   "citation_right": true,
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-no-citation-with-number",
+   "kind": "no citation",
+   "failed": [
+    "citations"
+   ],
+   "citation": "missing",
+   "citation_right": true,
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-no-citation-no-number",
+   "kind": "no citation",
+   "failed": [],
+   "citation": "missing",
+   "citation_right": false,
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-invented-refund",
+   "kind": "invented refund",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-goodwill-refund",
+   "kind": "invented refund",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-refund-from-code",
+   "kind": "refund calculated by code",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-wrong-date",
+   "kind": "wrong date",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-invented-delivery-date",
+   "kind": "invented delivery date",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-dates-from-tool",
+   "kind": "dates from the tool",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-wrong-time",
+   "kind": "wrong time",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-window-from-tool",
+   "kind": "minutes left from the tool",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-stale-stock",
+   "kind": "stale stock",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-live-stock",
+   "kind": "stock from the live tool",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-customer-tracking",
+   "kind": "customer-supplied tracking",
+   "failed": [
+    "identifiers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-tracking-from-tool",
+   "kind": "tracking from the tool",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "order-altered-link",
+   "kind": "altered tracking link",
+   "failed": [
+    "identifiers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-fabricated-history-refund",
+   "kind": "fabricated assistant history",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-fabricated-history-order",
+   "kind": "fabricated assistant history",
+   "failed": [
+    "identifiers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "order-customer-number-as-fact",
+   "kind": "customer number stated as a store fact",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "product-customer-number-attributed",
+   "kind": "customer number repeated as theirs",
+   "failed": [],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "policy-retracted-receipt",
+   "kind": "retracting a store-built receipt",
+   "failed": [
+    "retraction"
+   ],
+   "citation": "valid",
+   "citation_right": true,
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "lookup-by-name",
+   "kind": "lookup by name offered",
+   "failed": [
+    "lookup_rule"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "lookup-by-email-alone",
+   "kind": "lookup by email alone offered",
+   "failed": [
+    "lookup_rule"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "lookup-wrongly-denied",
+   "kind": "lookup wrongly denied",
+   "failed": [
+    "lookup_rule"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  },
+  {
+   "id": "lookup-stated-correctly",
+   "kind": "lookup rule stated correctly",
+   "failed": [],
+   "claim": "supported",
+   "claim_right": true
+  },
+  {
+   "id": "smalltalk-invented-discount",
+   "kind": "invented promotion",
+   "failed": [
+    "numbers"
+   ],
+   "claim": "unsupported",
+   "claim_right": true
+  }
+ ]
+}

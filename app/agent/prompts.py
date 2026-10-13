@@ -140,6 +140,12 @@ LOOKUP_FEEDBACK = (
     "up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
 )
 
+ORDER_NUMBER_WHERE = (
+    "No problem. Your order number is in the order confirmation email from Aurora Outfitters: it starts with # and "
+    "is in the subject line and near the top of the email. Once you find it, send it here with the email address on "
+    "the order and I will look it up right away."
+)
+
 SAFE_FALLBACK_RESPONSE = (
     "I want to be sure I give you accurate information, and I could not verify my "
     "answer just now. Please email support@auroraoutfitters.com with your question "

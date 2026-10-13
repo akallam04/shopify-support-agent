@@ -215,3 +215,30 @@ def test_an_offer_to_match_an_order_by_name_or_address_is_rewritten_then_replace
     assert first["response"] == "" and "name, phone, address" in first["verify_feedback"]
     assert verify_node({**state, "retry_count": 1})["response"] == ORDER_NUMBER_HELP
     assert not breaks_lookup_rule("Please share the new shipping address and I will confirm the change.", {"order_number": "#1011"})
+
+
+PARTIAL_EMAIL_REPLY = (
+    "I understand your concern about privacy. Unfortunately, I can't look up an order by number alone, since the email "
+    "address is what verifies it belongs to you. If you'd rather not share your full email, you could give me just the "
+    "first few letters and the domain (for example, \"jsm...@gmail.com\"), and I can try to match it against the order."
+)
+
+
+def test_an_offer_to_match_a_partial_email_breaks_the_lookup_rule() -> None:
+    assert breaks_lookup_rule(PARTIAL_EMAIL_REPLY, {"order_number": "#1005"})
+
+
+def test_a_customer_still_without_a_number_hears_where_to_find_it_instead_of_the_same_paragraph(backend: SimStoreBackend) -> None:
+    from app.agent.prompts import ORDER_NUMBER_WHERE
+
+    route = {"intent": "order", "search_query": "", "order_number": "", "email": ""}
+    graph, _ = graph_for(backend, {"route": [route, route]})
+    first = run(graph, [{"role": "user", "content": "Hi, I'd like the tracking number for my snowboard order."}])
+    assert first["response"] == ORDER_NUMBER_HELP
+    history = [
+        {"role": "user", "content": "Hi, I'd like the tracking number for my snowboard order."},
+        {"role": "assistant", "content": first["response"]},
+        {"role": "user", "content": "I don't have the order number handy right now."},
+    ]
+    second = run(graph, history)
+    assert second["response"] == ORDER_NUMBER_WHERE and second["response"].startswith("No problem. Your order number is in")

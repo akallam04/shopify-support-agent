@@ -10,6 +10,7 @@ from app.agent.prompts import (
     INJECTION_RESPONSE,
     ORDER_ASK_SYSTEM,
     ORDER_NUMBER_HELP,
+    ORDER_NUMBER_WHERE,
     OUT_OF_SCOPE_RESPONSE,
     RETRY_SYSTEM,
     SMALLTALK_SYSTEM,
@@ -37,6 +38,11 @@ def _context_block(docs: list[dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
+def order_number_help(state: AgentState) -> str:
+    said = [str(m["content"]).strip() for m in state["messages"] if m["role"] == "assistant"]
+    return ORDER_NUMBER_WHERE if said and said[-1] in (ORDER_NUMBER_HELP, ORDER_NUMBER_WHERE) else ORDER_NUMBER_HELP
+
+
 def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True):
     async def respond(state: AgentState) -> dict[str, Any]:
         if state.get("hard_injection"):
@@ -50,7 +56,7 @@ def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True)
             system = SMALLTALK_SYSTEM
         elif intent == "order":
             if not state.get("order_number") and not feedback:
-                return {"draft": ORDER_NUMBER_HELP, "system_draft": True}
+                return {"draft": order_number_help(state), "system_draft": True}
             if state.get("tool_results") or feedback:
                 # verify retry, regenerate from stored tool results
                 context = "\n\n".join(
