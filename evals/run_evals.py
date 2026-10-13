@@ -35,6 +35,14 @@ from evals.graders import (
 
 RESULTS_DIR = Path("evals/results")
 
+def skipped_case(case: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": case["id"], "category": case["category"], "pass": False, "checks": {}, "judge_reason": "", "intent_actual": "",
+        "retries": 0, "latency_s": 0.0, "agent_tokens": 0, "agent_cost_usd": 0.0, "judge_cost_usd": 0.0, "response": "",
+        "skipped": "budget cap reached",
+    }
+
+
 async def evaluate_case(
     case: dict[str, Any],
     graph: Any,
@@ -221,6 +229,7 @@ async def main() -> None:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--concurrency", type=int, default=2)
     parser.add_argument("--dataset", default="evals/dataset.jsonl")
+    parser.add_argument("--max-usd", type=float, default=0.0, help="stop starting cases once agent plus judge spend reaches this")
     args = parser.parse_args()
 
     cases = [json.loads(line) for line in Path(args.dataset).read_text().splitlines() if line]
@@ -234,11 +243,18 @@ async def main() -> None:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     sem = asyncio.Semaphore(args.concurrency)
 
+    spent = {"usd": 0.0}
+
+    async def capped(case: dict[str, Any]) -> dict[str, Any]:
+        if args.max_usd and spent["usd"] >= args.max_usd:
+            return skipped_case(case)
+        record = await evaluate_case(case, graph, client, settings.judge_model, sem)
+        spent["usd"] += record.get("agent_cost_usd", 0.0) + record.get("judge_cost_usd", 0.0)
+        return record
+
     started = time.perf_counter()
     try:
-        records = await asyncio.gather(
-            *(evaluate_case(c, graph, client, settings.judge_model, sem) for c in cases)
-        )
+        records = await asyncio.gather(*(capped(c) for c in cases))
     finally:
         await tools.aclose()
     wall = time.perf_counter() - started
@@ -268,6 +284,9 @@ async def main() -> None:
     path = RESULTS_DIR / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{args.label}.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(f"\nwrote {path}")
+    skipped = sum(1 for r in records if r.get("skipped"))
+    if skipped:
+        raise SystemExit(f"{skipped} cases skipped at the {args.max_usd} USD cap")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,82 @@
+name: Agent checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/agent/**"
+      - "app/rag/**"
+      - "mcp_server/**"
+      - "data/policies/**"
+      - "data/sim/**"
+      - "evals/dataset.jsonl"
+      - "evals/scenarios.json"
+      - "evals/scenario_check.py"
+      - "evals/run_evals.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-checks
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.CI_ANTHROPIC_API_KEY }}
+      STORE_BACKEND: sim
+      API_MODE: sandbox
+      WRITE_ACTIONS: "true"
+      SCENARIO_MAX_USD: "0.05"
+      SUITE_MAX_USD: "0.20"
+    steps:
+      - id: key
+        name: Check for the CI key
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::CI_ANTHROPIC_API_KEY is not set, so the paid agent checks are skipped."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/checkout@v5
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - if: steps.key.outputs.ready == 'true'
+        run: pip install -r requirements.txt
+      - if: steps.key.outputs.ready == 'true'
+        name: Build the knowledge index
+        run: python -m app.rag.index
+      - if: steps.key.outputs.ready == 'true'
+        name: Start the agent on the simulated store
+        run: |
+          key=$(python -c "import secrets; print(secrets.token_hex(32))")
+          echo "::add-mask::$key"
+          export SESSION_SIGNING_KEY="$key"
+          nohup uvicorn app.main:app --port 8000 > server.log 2>&1 &
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:8000/health && exit 0; sleep 2; done
+          cat server.log
+          exit 1
+      - if: steps.key.outputs.ready == 'true'
+        name: Scenario checks for every homepage button
+        run: python -m evals.scenario_check --api http://127.0.0.1:8000 --max-usd "$SCENARIO_MAX_USD" --label ci
+      - if: steps.key.outputs.ready == 'true'
+        name: 53-case suite
+        run: python -m evals.run_evals --label ci --max-usd "$SUITE_MAX_USD"
+      - if: always() && steps.key.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-checks
+          path: |
+            evals/results/scenarios/*_ci.json
+            evals/results/*_ci.json
+            server.log

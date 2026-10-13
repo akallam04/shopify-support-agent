@@ -14,6 +14,12 @@ from mcp_server.simdb import (
 )
 
 
+def pytest_ignore_collect(collection_path, config: pytest.Config) -> bool | None:
+    if "e2e" in collection_path.parts and not any("e2e" in str(arg) for arg in config.args):
+        return True
+    return None
+
+
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "live: hits the real development store, run with SHOPIFY_LIVE_TESTS=1"
