@@ -366,7 +366,7 @@ function addAgentText(text, failed = false, sources = []) {
   return msg;
 }
 
-const LABEL_OUTCOMES = { confirm: "confirmed", decline: "declined", question: "asked", conditional: "conditional", unclear: "unclear" };
+const LABEL_OUTCOMES = { confirm: "confirmed", decline: "declined", question: "asked", addition: "added", conditional: "conditional", unclear: "unclear" };
 
 function answerOutcome(trace) {
   const reply = (trace?.gate || []).find((g) => g.step === "confirmation");

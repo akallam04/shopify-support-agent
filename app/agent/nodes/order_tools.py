@@ -35,7 +35,7 @@ NUDGE_ROUNDS = 2
 
 SELF_CONFIRM_RE = re.compile(
     r"\b((should|shall) i (go ahead|proceed|submit|file|process|place|put (it|this|that) through)|"
-    r"(would you like|do you want|want) me to (go ahead|proceed|submit|file)|"
+    r"(would you like|do you want|want|you'd like|you want) me to (go ahead|proceed|submit|file)|(could|would) you (please )?confirm|"
     r"(is|does) (that|this|everything|all of (that|this)) (look |sound )?(right|correct)|"
     r"can you confirm|please confirm|just to confirm)",
     re.IGNORECASE,

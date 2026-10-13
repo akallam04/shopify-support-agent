@@ -66,6 +66,12 @@ def pointless_questions(record: dict[str, Any]) -> int:
     return count
 
 
+def complete_first_message(record: dict[str, Any]) -> bool:
+    turns = record.get("turns") or []
+    first = turns[0]["user"] if turns else ""
+    return bool(record.get("first_message_complete") and ORDER_GIVEN_RE.search(first) and EMAIL_GIVEN_RE.search(first))
+
+
 def card_in_one_turn(record: dict[str, Any]) -> bool:
     turns = record.get("turns") or []
     return bool(turns) and bool(turns[0]["pending_after"])
@@ -86,7 +92,7 @@ def false_refusal(record: dict[str, Any]) -> bool:
 
 
 def behavior(scored: list[dict[str, Any]]) -> dict[str, Any]:
-    complete = [r for r in scored if r.get("first_message_complete")]
+    complete = [r for r in scored if complete_first_message(r)]
     eligible = [r for r in scored if r["grade"]["writes"]["reference"] or r.get("harmless")]
     pointless = [pointless_questions(r) for r in scored]
     return {

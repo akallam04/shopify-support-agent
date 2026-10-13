@@ -72,3 +72,11 @@ def test_false_refusals_count_blocked_or_refused_tasks_that_should_have_succeede
     assert false_refusal(blocked) and false_refusal(refused) and not false_refusal(right)
     summary = behavior([{**r, "first_message_complete": False} for r in (blocked, refused, right)])
     assert (summary["false_refusals"], summary["false_refusal_eligible"]) == (2, 2)
+
+
+def test_a_first_message_counts_as_complete_only_when_it_carries_the_order_number_and_email() -> None:
+    from evals.sim.metrics import complete_first_message
+
+    full = {"first_message_complete": True, "turns": [turn("Return the jacket from order #1022, too big, jordan.lee@example.com", "Just to confirm", pending=True)]}
+    partial = {"first_message_complete": True, "turns": [turn("I need to return the rain jacket from order #1022 because it is too big.", "Your email?")]}
+    assert complete_first_message(full) and not complete_first_message(partial)

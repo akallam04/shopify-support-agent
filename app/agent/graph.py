@@ -53,7 +53,7 @@ def _after_confirm(state: AgentState) -> str:
     label = state.get("confirmation")
     if label == "confirm":
         return "execute"
-    if label in ("change", "question"):
+    if label in ("change", "question", "addition"):
         return "route"
     return "verify"
 
@@ -83,7 +83,7 @@ def _after_gate(state: AgentState) -> str:
 def _after_verify(state: AgentState) -> str:
     if not state.get("response"):
         return "respond"
-    return "reconfirm" if state.get("confirmation") == "question" and state.get("pending_action") else END
+    return "reconfirm" if state.get("confirmation") in ("question", "addition") and state.get("pending_action") else END
 
 
 def build_graph(settings: Settings, store: VectorStore, tools: Any, client: Any = None):

@@ -269,6 +269,7 @@ const ANSWERS = {
   declined: "you said no",
   replaced: "you asked for something else",
   asked: "you asked a question",
+  added: "you asked for something more",
   conditional: "you added a condition",
   unclear: "your reply was not a clear yes or no",
 };
@@ -319,6 +320,7 @@ const ANSWER_TAGS = {
   declined: "You said no",
   replaced: "You asked for something else",
   asked: "You asked a question",
+  added: "You asked for something more",
   conditional: "You added a condition",
   unclear: "Not a clear yes or no",
 };

@@ -1043,7 +1043,7 @@
     "6:03"
    ],
    "nl_assertions": [
-    "The assistant answers the question and does not ask the customer to confirm a cancellation they did not request."
+    "The assistant answers with the time the cancellation window closes. It may offer to cancel, but it does not set up a cancellation for confirmation (such as 'Just to confirm, I will cancel...') unless the customer asks for one."
    ],
    "forbidden_actions": [
     {
@@ -1085,7 +1085,7 @@
     "October 29"
    ],
    "nl_assertions": [
-    "The assistant answers the question and does not ask the customer to confirm a return they did not request."
+    "The assistant answers with the last day to return. It may offer to start a return, but it does not set up a return for confirmation (such as 'Just to confirm, I will request a return...') unless the customer asks for one."
    ],
    "forbidden_actions": [
     {

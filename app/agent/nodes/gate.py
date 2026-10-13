@@ -52,6 +52,11 @@ CONDITIONAL_RE = re.compile(
 )
 
 
+ADDITION_RE = re.compile(
+    r"^(yes|yeah|yep|yup|sure|ok|okay)\b[\s,.!]*(and|plus)\b|^(yes|yeah|yep|yup|sure|ok|okay)\b.*\b(also|as well)\b",
+    re.IGNORECASE,
+)
+INSTEAD_RE = re.compile(r"\b(instead|rather|actually|different|not that one|wrong order)\b", re.IGNORECASE)
 FAST_DECLINE_MAX_WORDS = 4
 
 
@@ -59,6 +64,8 @@ def classify_fast(text: str) -> str | None:
     normalized = " ".join(text.lower().split())
     if CONDITIONAL_RE.search(normalized):
         return "conditional"
+    if ADDITION_RE.search(normalized) and not INSTEAD_RE.search(normalized):
+        return "addition"
     if YES_RE.match(normalized):
         return "confirm"
     if NO_RE.match(normalized) and len(normalized.split()) <= FAST_DECLINE_MAX_WORDS:
@@ -267,7 +274,7 @@ def make_confirm_node(client: AsyncAnthropic, model: str, thinking: bool = True)
             update.update({"pending_action": None, "draft": DECLINED_RESPONSE})
         elif label == "conditional":
             update.update({"draft": CONDITIONAL_REASK.format(summary=pending["summary"]), "lead": CONDITIONAL_LEAD})
-        elif label == "question":
+        elif label in ("question", "addition"):
             update["intent"] = ""
         elif label == "change":
             update.update({"pending_action": None, "intent": "", "corrected_action": pending["summary"]})

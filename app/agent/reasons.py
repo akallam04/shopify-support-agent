@@ -118,7 +118,9 @@ def condition_mentions(customer_texts: list[str]) -> list[ItemCondition]:
                     mention = ItemCondition(condition, _stated(clause, question, match.start()), clause)
                     if condition not in seen or mention.stated == "yes":
                         seen[condition] = mention
-        latest.update(seen)
+        for condition, mention in seen.items():
+            if mention.stated != "unclear" or condition not in latest:
+                latest[condition] = mention
     return list(latest.values())
 
 

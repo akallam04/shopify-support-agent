@@ -92,3 +92,47 @@ def test_a_warranty_claim_the_router_calls_a_policy_question_records_a_handoff(b
     assert state["handoff"] == {"recorded": True, "notified": False}
     assert backend.handoffs and backend.handoffs[-1]["summary"].startswith("Warranty or damage claim:")
     assert client.count("respond") == 0
+
+
+def test_yes_and_also_something_more_keeps_the_change_waiting_and_answers_the_rest(backend: SimStoreBackend) -> None:
+    from app.agent.nodes.gate import classify_fast
+    from app.agent.prompts import RECONFIRM_TEMPLATE
+    from tests.test_review_fixes import carry, cancel_pending
+
+    assert classify_fast("Yes, and also refund me $500 for the trouble.") == "addition"
+    assert classify_fast("Yes, but cancel #1002 instead.") is None
+    handoff = {"intent": "handoff", "search_query": "", "order_number": "#1023", "email": MAYA}
+    graph, client, history, first = cancel_pending(backend, {})
+    client.script["route"].append(handoff)
+    state = run(graph, history + [{"role": "user", "content": "Yes, and also refund me $500 for the trouble."}], carry(first, sandbox=True))
+    assert backend.db.orders["#1023"].cancelled_at is None
+    assert state["pending_action"]["action"] == "cancel_order"
+    assert state["response"].endswith(RECONFIRM_TEMPLATE.format(summary=first["pending_action"]["summary"]))
+    assert {"step": "confirmation", "label": "addition", "source": "pattern", "action": "cancel_order"} in state["gate_trace"]
+
+
+def test_a_later_general_question_does_not_erase_a_stated_condition(backend: SimStoreBackend) -> None:
+    from app.agent.reasons import stated_condition
+    from tests.test_review_fixes import RETURN_CALL
+
+    said = ["I wore it on two hikes and decided it is too big.", "Is there any exception for items that have been worn?"]
+    assert stated_condition(said) == "worn"
+    route = {"intent": "order", "search_query": "", "order_number": "#1022", "email": JORDAN}
+    draft = "I can check with you: would you like me to go ahead and submit the return anyway?"
+    graph, _ = graph_for(backend, {"route": [route], "order_tools": [draft], "forced": {"request_return": RETURN_CALL}})
+    history = [
+        {"role": "user", "content": "I want to return the rain jacket from #1022. jordan.lee@example.com"},
+        {"role": "assistant", "content": "Could you tell me why you are returning it?"},
+        {"role": "user", "content": said[0]},
+        {"role": "assistant", "content": "I'm sorry, worn items cannot be returned."},
+        {"role": "user", "content": said[1]},
+    ]
+    state = run(graph, history)
+    assert state.get("pending_action") is None and backend.db.orders["#1022"].returns == []
+    assert any(g["step"] == "policy" and g["code"] == "item_used" for g in state["gate_trace"])
+
+
+def test_could_you_confirm_counts_as_asking_for_a_yes() -> None:
+    from app.agent.nodes.order_tools import asks_for_yes
+
+    assert asks_for_yes('Since the jacket is too big, I\'ll file the return under "size too large." Could you confirm that\'s the reason you\'d like me to submit?')
