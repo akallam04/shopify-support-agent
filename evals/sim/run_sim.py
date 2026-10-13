@@ -104,6 +104,8 @@ def record(conv: Conversation, graded: dict[str, Any] | None, excluded: str | No
     return {
         "task_id": conv.task.id,
         "category": conv.task.category,
+        "first_message_complete": conv.task.first_message_complete,
+        "harmless": conv.task.harmless,
         "trial": conv.trial,
         "stop_reason": conv.stop_reason,
         "error": conv.error,

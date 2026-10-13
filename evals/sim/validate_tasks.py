@@ -13,7 +13,7 @@ from evals.sim.env import TaskError, build_db, load_seed, target_db
 from evals.sim.schema import WRITE_TOOLS, Task, load_tasks
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.simdb import SimDB, db_hash
-from mcp_server.tools import HANDOFF_ACTION, execute
+from mcp_server.tools import HANDOFF_ACTION, STORE_ERROR_REASON, execute
 
 DOC_PATHS = ("data/policies/returns.md", "data/policies/shipping.md", "data/policies/faq.md", "data/catalog/products.jsonl")
 KNOWN_TOOLS = set(READ_FUNCTIONS) | WRITE_TOOLS | {HANDOFF_ACTION}
@@ -68,10 +68,14 @@ def check_task(task: Task, seed: SimDB, docs: str) -> list[str]:
         target = db_hash(target_db(seed, task))
     except TaskError as e:
         return problems + [str(e)]
+    for action in task.initial_state.fail_writes:
+        if action not in WRITE_TOOLS:
+            problems.append(f"fail_writes names {action}, which is not a write tool")
     if (initial != target) != bool(c.write_actions()):
         problems.append("the target database must differ from the start exactly when the task has reference writes")
 
-    grounding = (reference_outputs(seed, task) + " " + write_outcome_text(seed, task) + " " + docs).lower()
+    failure = STORE_ERROR_REASON if task.initial_state.fail_writes else ""
+    grounding = (reference_outputs(seed, task) + " " + write_outcome_text(seed, task) + " " + failure + " " + docs).lower()
     for item in c.communicate_info:
         options = [item] if isinstance(item, str) else item
         if not any(o.lower() in grounding for o in options):

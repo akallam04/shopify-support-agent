@@ -3,7 +3,7 @@
 import re
 from typing import Any
 
-from mcp_server.backends.base import FoundOrder
+from mcp_server.backends.base import FoundOrder, StoreWriteError
 from mcp_server.clock import Clock, FrozenClock, format_instant, parse_instant
 from mcp_server.search import WORD_RE, prefix_hit, words
 from mcp_server.simdb import Address, Product, ReturnLine, ReturnRequest, SimDB
@@ -27,6 +27,11 @@ class SimStoreBackend:
         self.executed: dict[str, dict[str, Any]] = {}
         self.audit: list[dict[str, Any]] = []
         self.handoffs: list[dict[str, Any]] = []
+        self.fail_writes: frozenset[str] = frozenset()
+
+    def _write(self, action: str) -> None:
+        if action in self.fail_writes:
+            raise StoreWriteError(f"simulated store failure during {action}")
 
     def find_order(self, order_name: str) -> FoundOrder | None:
         order = self.db.orders.get(order_name)
@@ -61,6 +66,7 @@ class SimStoreBackend:
         return {pid: self.db.products[pid] for pid in product_ids if pid in self.db.products}
 
     def cancel_order(self, order_name: str) -> None:
+        self._write("cancel_order")
         order = self.db.orders[order_name]
         order.cancelled_at = format_instant(self.clock.now())
         order.cancel_reason = "CUSTOMER"
@@ -69,9 +75,11 @@ class SimStoreBackend:
             order.financial_status = "REFUNDED"
 
     def update_shipping_address(self, order_name: str, address: Address) -> None:
+        self._write("update_shipping_address")
         self.db.orders[order_name].shipping_address = address
 
     def request_return(self, order_name: str, lines: list[tuple[str, int]], reason: str) -> None:
+        self._write("request_return")
         self.db.orders[order_name].returns.append(
             ReturnRequest(
                 status="REQUESTED",

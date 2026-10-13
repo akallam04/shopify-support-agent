@@ -3,7 +3,7 @@
 from evals.sim.schema import InitialState, Task
 from mcp_server.backends.sim import SimStoreBackend
 from mcp_server.clock import format_instant, parse_ago, parse_instant
-from mcp_server.simdb import SimDB, load_db
+from mcp_server.simdb import Address, SimDB, load_db
 from mcp_server.tools import execute
 
 SEED_PATH = "data/sim/seed.json"
@@ -33,12 +33,24 @@ def build_db(seed: SimDB, state: InitialState) -> SimDB:
         for fulfillment in order.fulfillments:
             fulfillment.delivered_at = format_instant(now - parse_ago(ago))
             fulfillment.display_status = "DELIVERED"
+    for name, fields in state.ship_to.items():
+        order = db.orders.get(name)
+        if order is None:
+            raise TaskError(f"overlay ships unknown order {name}")
+        current = order.shipping_address.model_dump() if order.shipping_address else {}
+        order.shipping_address = Address(**{**current, **fields})
     for handle, tag in state.tag_products.items():
         product = next((p for p in db.products.values() if p.handle == handle), None)
         if product is None:
             raise TaskError(f"overlay tags unknown product {handle}")
         product.tags.append(tag)
     return db
+
+
+def task_backend(seed: SimDB, task: Task) -> SimStoreBackend:
+    backend = SimStoreBackend(build_db(seed, task.initial_state))
+    backend.fail_writes = frozenset(task.initial_state.fail_writes)
+    return backend
 
 
 def target_db(seed: SimDB, task: Task) -> SimDB:

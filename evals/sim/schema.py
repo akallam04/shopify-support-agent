@@ -20,6 +20,7 @@ CATEGORIES = (
     "confirmation",
     "handoff",
     "which_order",
+    "store_failure",
 )
 WRITE_TOOLS = frozenset({"cancel_order", "update_shipping_address", "request_return"})
 RewardType = Literal["DB", "COMMUNICATE", "NL_ASSERTION", "ENV_ASSERTION"]
@@ -72,6 +73,8 @@ class InitialState(Strict):
     place: dict[str, str] = {}
     deliver: dict[str, str] = {}
     tag_products: dict[str, str] = {}
+    ship_to: dict[str, dict[str, str]] = {}
+    fail_writes: list[str] = []
 
 
 class Task(Strict):
@@ -81,6 +84,8 @@ class Task(Strict):
     user_scenario: UserScenario
     initial_state: InitialState = InitialState()
     evaluation_criteria: EvaluationCriteria
+    first_message_complete: bool = False
+    harmless: bool = False
 
 
 def load_tasks(path: str | Path = "evals/sim/tasks.json") -> list[Task]:

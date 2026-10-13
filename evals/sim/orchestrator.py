@@ -13,7 +13,7 @@ from app.config import Settings
 from app.costs import usage_cost
 from app.model_errors import is_billing_error
 from evals.sim.config import SimSettings
-from evals.sim.env import build_db
+from evals.sim.env import task_backend
 from evals.sim.schema import Task
 from evals.sim.user_sim import OUT_OF_SCOPE, STOP, TRANSFER, SimTokens, SimulatorError, SimulatorQuotaError, UserSimulator
 from mcp_server.backends.sim import SimStoreBackend
@@ -88,7 +88,7 @@ async def run_conversation(
     tokens: SimTokens | None = None,
     meter: Meter | None = None,
 ) -> Conversation:
-    backend = SimStoreBackend(build_db(seed, task.initial_state))
+    backend = task_backend(seed, task)
     tools = InProcessTools(backend, include_writes=True)
     await tools.start()
     graph = build_graph(agent.settings(base_settings), store, tools, client=anthropic_client)
