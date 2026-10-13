@@ -242,3 +242,15 @@ def test_a_customer_still_without_a_number_hears_where_to_find_it_instead_of_the
     ]
     second = run(graph, history)
     assert second["response"] == ORDER_NUMBER_WHERE and second["response"].startswith("No problem. Your order number is in")
+
+
+def test_a_lookup_made_for_this_message_is_not_described_as_earlier_in_the_conversation() -> None:
+    from app.agent.facts import facts_block
+    from app.agent.prompts import FACTS_HEADER, FRESH_FACTS_HEADER
+
+    fresh = [{"name": "get_order_status", "args": {}, "result": json.dumps({"found": True, "order_number": "#1022", "total": "179.99 USD"})}]
+    first_turn = facts_block({"messages": []}, fresh)
+    assert FRESH_FACTS_HEADER in first_turn and FACTS_HEADER not in first_turn
+    carried = [{"tool": "get_order_status", "order_number": "#1023", "result": {"found": True, "order_number": "#1023"}}]
+    later = facts_block({"messages": [], "verified_facts": carried}, fresh)
+    assert later.index(FACTS_HEADER) < later.index("#1023") < later.index(FRESH_FACTS_HEADER) < later.index("#1022")

@@ -244,7 +244,9 @@ GATE_INPUT_RESPONSE = (
 
 NOT_FOUND_HINT = "Please double-check the order number and the email address on the order."
 
-FACTS_HEADER = "Order records from store tools in this conversation, oldest first. They count as tool results:"
+FACTS_HEADER = "Order records from store tools earlier in this conversation, oldest first. They count as tool results:"
+
+FRESH_FACTS_HEADER = "Order records from store tools, looked up just now for the customer's latest message. They count as tool results from this turn:"
 
 CONDITION_NOTE = "The customer said the item was {condition}. Store policy refuses that return in code: {reason} Tell the customer this plainly; do not offer the return or call it eligible."
 

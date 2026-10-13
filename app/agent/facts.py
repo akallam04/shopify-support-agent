@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from app.agent.prompts import FACTS_HEADER, HANDOFF_STATUS, PENDING_NOTE, RECEIPTS_HEADER, SYSTEM_MESSAGES_NOTE
+from app.agent.prompts import FACTS_HEADER, FRESH_FACTS_HEADER, HANDOFF_STATUS, PENDING_NOTE, RECEIPTS_HEADER, SYSTEM_MESSAGES_NOTE
 from app.agent.state import AgentState
 
 LOOKUP = "get_order_status"
@@ -31,11 +31,19 @@ def receipts(state: AgentState) -> list[str]:
     return [a["message"] for a in state.get("executed_actions") or [] if a.get("ok") and a.get("message")]
 
 
+def _records(facts: list[dict[str, Any]]) -> str:
+    return "".join(f"\n{f['order_number']}: {json.dumps(f['result'])}" for f in facts)
+
+
 def facts_block(state: AgentState, fresh: list[dict[str, Any]], records: bool = True) -> str | None:
     parts = []
-    facts = merge_facts(state.get("verified_facts") or [], fresh) if records else []
-    if facts:
-        parts.append(FACTS_HEADER + "".join(f"\n{f['order_number']}: {json.dumps(f['result'])}" for f in facts))
+    now = merge_facts([], fresh) if records else []
+    earlier = [f for f in merge_facts(state.get("verified_facts") or [], []) if f not in now] if records else []
+    if earlier:
+        parts.append(FACTS_HEADER + _records(earlier))
+    if now:
+        parts.append(FRESH_FACTS_HEADER + _records(now))
+    facts = earlier + now
     done = receipts(state)
     if done:
         parts.append(RECEIPTS_HEADER + "".join(f"\n- {m}" for m in done))
