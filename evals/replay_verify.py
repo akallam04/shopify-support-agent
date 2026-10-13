@@ -28,7 +28,8 @@ WRITE_NAMES = ("cancel_order", "update_shipping_address", "request_return", "tra
 STATIC = (
     prompts.DECLINED_RESPONSE, prompts.ADDRESS_ASK, prompts.REASON_ASK, prompts.GATE_INPUT_RESPONSE,
     prompts.HANDOFF_RESPONSE, prompts.HANDOFF_FOLLOWUP, prompts.HANDOFF_DEMO, prompts.HANDOFF_DEMO_FOLLOWUP,
-    prompts.ORDER_NUMBER_HELP, prompts.INJECTION_RESPONSE, prompts.OUT_OF_SCOPE_RESPONSE, prompts.SAFE_FALLBACK_RESPONSE,
+    prompts.ORDER_NUMBER_HELP, prompts.ORDER_NUMBER_WHERE, prompts.INJECTION_RESPONSE, prompts.OUT_OF_SCOPE_RESPONSE,
+    prompts.SAFE_FALLBACK_RESPONSE,
 )
 CONFIRM_RE = re.compile(r"I will (.+?) Should I go ahead\?", re.S)
 # removed after the headline runs: its results stayed in the model's context for the rest of the chat

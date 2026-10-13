@@ -228,7 +228,7 @@ The hit rate rose and the average price of a prompt token fell 6.5%, but cost pe
 - **Per conversation (headline, Haiku 4.5, gate on):** $0.0130 of agent model cost on average, $0.0137 per resolved conversation, 3.6 agent turns. Turn latency p50 1.96s, p95 4.54s.
 - **Per conversation now (Haiku 5.5, gate on, upgrade check):** $0.00065 of agent model cost on average, $0.00067 per resolved conversation, 3.1 agent turns. Turn latency p50 2.10s, p95 4.55s.
 - **Single-turn questions (53-case suite):** on Haiku 5.5 with caching, $0.013 per 100 conversations, mean 1.89s, p95 3.59s; on Haiku 4.5, $0.18, mean 2.25s, p95 4.28s.
-- **Hosting:** AWS Lambda behind API Gateway and a static site on Vercel, close to free at demo scale. A cold start takes about 3 to 5.5 seconds; a scheduled workflow ([keep-warm.yml](.github/workflows/keep-warm.yml)) calls the health check every 5 minutes, which makes no model call, the page calls it again on load, and `deploy/deploy.sh` warms each new image right after deploying it. Details in [deploy/README.md](deploy/README.md).
+- **Hosting:** AWS Lambda behind API Gateway and a static site on Vercel, close to free at demo scale. A cold start takes about 3 to 5.5 seconds; an EventBridge Scheduler schedule ([deploy/keep_warm.sh](deploy/keep_warm.sh)) invokes the health check on the Lambda every 5 minutes, which makes no model call, the page calls it again on load, and `deploy/deploy.sh` warms each new image right after deploying it. Details in [deploy/README.md](deploy/README.md).
 - **Prompt caching:** see [Prompt caching](#prompt-caching).
 
 ## Run it

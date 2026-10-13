@@ -102,7 +102,7 @@ def create_app(graph: Any = None, tools: ShopifyTools | None = None, sandbox: Sa
 
     @app.get("/release")
     def release_info() -> dict:
-        return {**manifest, "mode": settings.api_mode, "store_backend": settings.store_backend}
+        return manifest
 
     @app.post("/chat", response_model=ChatResponse)
     async def chat(req: ChatRequest) -> Any:

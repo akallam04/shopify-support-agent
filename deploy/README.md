@@ -116,7 +116,17 @@ Measured on the live function by forcing new execution environments (a descripti
 | First retrieval on a cold environment | not measured | up to 8.4s | 0.4 to 24s, two of seven over 20s | 0.75 to 1.1s |
 | First chat | 2.9 to 3.4s | 4.5 to 11.5s | 3.7 to 26.9s | 3.5 to 4.3s |
 
-The cost was Lambda loading container image layers lazily: on a host without the image cached, the embedding model's bytes were fetched on demand. The entrypoint used to copy all 167 MB of model files into `/tmp` during init, which sometimes pushed init past its 10 second limit. It now links the model read-only from the image, copies only onnxruntime's small telemetry folder, drops the unused 80 MB archive at build time, and reads the model and onnxruntime in the background as the container starts, so that fetch overlaps startup instead of the first question. All of it is free. Warm chats take about 3 to 3.5 seconds, most of it in the two model calls. A scheduled GitHub workflow (`.github/workflows/keep-warm.yml`) calls `/health` every 5 minutes so a visitor rarely meets a cold start; it makes no model call, and about 9,000 requests a month stay within the free tiers.
+The cost was Lambda loading container image layers lazily: on a host without the image cached, the embedding model's bytes were fetched on demand. The entrypoint used to copy all 167 MB of model files into `/tmp` during init, which sometimes pushed init past its 10 second limit. It now links the model read-only from the image, copies only onnxruntime's small telemetry folder, drops the unused 80 MB archive at build time, and reads the model and onnxruntime in the background as the container starts, so that fetch overlaps startup instead of the first question. All of it is free. Warm chats take about 3 to 3.5 seconds, most of it in the two model calls.
+
+## Keep warm
+
+An EventBridge Scheduler schedule invokes the function every 5 minutes with a `GET /health` event, so a visitor rarely meets a cold start:
+
+```
+sh deploy/keep_warm.sh
+```
+
+The script creates a role that may only invoke this function, limited to this schedule, and creates or updates the schedule. The event in `deploy/keep-warm-event.json` goes straight to Lambda, not through API Gateway, and the health check makes no model call. About 8,600 invocations a month fit inside the Scheduler and Lambda free tiers. Lambda still starts new environments for bursts of visitors, so this keeps one environment warm, not every request.
 
 ## Request limits
 

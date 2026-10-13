@@ -122,5 +122,5 @@ From the v2.2 review: finding 28 and the site additions in [review-fixes.md](rev
 - **Failure states.** When the API does not answer, the status line offers Retry. When How it
   works cannot load its chart data, each chart says so and offers Try again; the tables keep the
   same numbers.
-- **Cold starts.** A scheduled workflow calls the free health check every 5 minutes, which makes no
-  model call.
+- **Cold starts.** An EventBridge schedule invokes the health check on the Lambda every 5 minutes,
+  which makes no model call.

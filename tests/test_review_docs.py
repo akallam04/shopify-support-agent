@@ -26,3 +26,8 @@ def test_the_paid_workflows_read_only_ci_secrets() -> None:
         assert used and all(s.startswith("CI_") for s in used), (name, used)
     assert "secrets." not in Path(".github/workflows/ci.yml").read_text()
     assert "environment: paid-runs" in Path(".github/workflows/sim.yml").read_text()
+
+
+def test_only_the_daily_demo_check_runs_on_a_github_schedule() -> None:
+    scheduled = {p.name: re.findall(r'cron: "([^"]+)"', p.read_text()) for p in Path(".github/workflows").glob("*.yml")}
+    assert {name: crons for name, crons in scheduled.items() if crons} == {"demo-check.yml": ["17 14 * * *"]}

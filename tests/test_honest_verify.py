@@ -325,3 +325,10 @@ def test_naming_other_proof_as_enough_breaks_the_rule_even_across_two_sentences(
 
 def test_stating_that_only_the_email_works_is_fine() -> None:
     assert not breaks_lookup_rule("Without the email on the order, I can't look it up. If your wife can send it, I'll check right away.", {"order_number": "#1006"})
+
+
+def test_the_offline_replay_skips_the_order_number_help_built_in_code() -> None:
+    from app.agent.prompts import ORDER_NUMBER_WHERE
+    from evals.replay_verify import STATIC
+
+    assert ORDER_NUMBER_HELP in STATIC and ORDER_NUMBER_WHERE in STATIC

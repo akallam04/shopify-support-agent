@@ -1,4 +1,4 @@
-"""Read what the deployed API runs (models, thinking, gate, mode, release) and write it where the README and site show it.
+"""Read the release manifest of the deployed API (models, thinking, gate, release) and write it where the README and site show it.
 
     python -m scripts.live_config            # fetch /release, write frontend/data/live.json and the README box
     python -m scripts.live_config --check    # fail if the README box does not match frontend/data/live.json
@@ -34,14 +34,12 @@ def render(live: dict[str, Any]) -> str:
     same = models["router"] == models["answer"]
     model_line = f"{model_name(models['answer'])} for routing and answers" if same else f"{model_name(models['router'])} routes, {model_name(models['answer'])} answers"
     gate = live["gate"]
-    mode = "sandbox: each visitor gets a private copy of the store" if live["mode"] == "sandbox" else "live store"
     return "\n".join([
         START,
         f"> **What's live now**, read from the deployed API on {live['checked_on']}",
         ">",
         f"> - **Model:** {model_line}, thinking {on_off(live['thinking'])}",
         f"> - **Gate:** {on_off(gate['mutation_gate'])}, confirmation {on_off(gate['confirmation'])}, reflection {on_off(gate['reflection'])}; write actions {on_off(gate['write_actions'])}",
-        f"> - **Mode:** {mode}",
         f"> - **Release:** `{live['release']}` from commit `{live['git_sha'][:7]}`",
         END,
     ])
@@ -54,7 +52,7 @@ def readme_box(text: str) -> str:
 
 def fetch(api: str) -> dict[str, Any]:
     body = httpx.get(f"{api.rstrip('/')}/release", timeout=60).json()
-    keep = ("release", "git_sha", "prompts", "knowledge", "models", "thinking", "gate", "mode")
+    keep = ("release", "git_sha", "prompts", "knowledge", "models", "thinking", "gate")
     return {**{k: body[k] for k in keep}, "checked_on": f"{datetime.now():%B} {datetime.now().day}, {datetime.now().year}"}
 
 
