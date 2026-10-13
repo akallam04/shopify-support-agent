@@ -18,10 +18,10 @@ from app.agent.prompts import (
     SAFE_FALLBACK_RESPONSE,
     SELF_CONFIRM_FEEDBACK,
 )
-from app.agent.asks import asks_eligibility, current_ask
+from app.agent.asks import asks_eligibility, current_ask, requested_change
 from app.agent.facts import LOOKUP, facts_block, merge_facts
 from app.agent.models import call_options, carries_thinking, forced_tool, system_blocks
-from app.agent.reasons import customer_texts, stated_condition
+from app.agent.reasons import customer_texts, stated_condition, stated_reason
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -89,6 +89,18 @@ def system_extra(state: AgentState, nudged: bool = False, fresh: list[dict[str, 
     return "\n\n".join(parts) or None
 
 
+def forced_change(state: AgentState, gated: set[str]) -> str | None:
+    if not (state.get("order_number") and state.get("email")) or state.get("gate_feedback"):
+        return None
+    name = requested_change(current_ask(state["messages"]))
+    if name not in gated:
+        return None
+    texts = customer_texts(state)
+    if name == "request_return" and stated_reason(texts) is None and stated_condition(texts) is None:
+        return None
+    return name
+
+
 def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settings: Settings):
     base_system = order_system(tools, settings)
     can_nudge = bool(tools.gated_tool_names) and settings.mutation_gate and settings.gate_confirmation
@@ -115,7 +127,9 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
         offered = [t for t in tools.anthropic_tools if not (read_only and t["name"] in tools.write_tool_names)]
         draft = ""
         nudged = False
-        forced: str | None = None
+        forced = forced_change(state, tools.gated_tool_names) if can_nudge and not read_only else None
+        if forced:
+            trace.append({"step": "forced_change", "action": forced})
         rounds, limit = 0, MAX_TOOL_ROUNDS
 
         while rounds < limit:

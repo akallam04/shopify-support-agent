@@ -165,7 +165,7 @@ def test_a_draft_that_announces_the_change_goes_to_the_card(backend: SimStoreBac
 
     route = {"intent": "order", "search_query": "", "order_number": "#1022", "email": JORDAN}
     graph, _ = graph_for(backend, {"route": [route], "order_tools": [ANNOUNCED_RETURN, ANNOUNCED_RETURN], "forced": {"request_return": RETURN_CALL}})
-    state = run(graph, [{"role": "user", "content": "I need to return the rain jacket from order #1022, it is too big. jordan.lee@example.com"}])
+    state = run(graph, [{"role": "user", "content": "The rain jacket from order #1022 is too big for me. jordan.lee@example.com"}])
     assert state["pending_action"]["action"] == "request_return"
     assert {"step": "self_confirm_nudge", "forced": "request_return"} in state["gate_trace"]
 
@@ -189,3 +189,35 @@ def test_a_transfer_the_model_makes_itself_never_claims_someone_was_notified(bac
     result = execute(backend, "transfer_to_human", {"summary": "Wrong size arrived on order #1009", "order_number": "#1009"})
     assert result["ok"] and "no one is notified" in result["message"]
     assert "passed this to our support team" not in result["message"] and "will reply" not in result["message"]
+
+
+LIVE_RETURN_DRAFT = (
+    "I can help with that. The order record shows the Stormline Rain Jacket in size L on order #1022 is eligible for return, with "
+    "25 days left in the return window. Before I submit it, what is the reason in your own words? You mentioned it's too big, so "
+    "I'll use that, and I'll record the reason as \"size too large.\""
+)
+
+
+def test_the_return_button_reaches_the_card_in_one_reply_without_relying_on_the_draft(backend: SimStoreBackend) -> None:
+    from tests.test_review_fixes import RETURN_ASK, RETURN_CALL, RETURN_ROUTE
+
+    graph, client = graph_for(backend, {"route": [RETURN_ROUTE], "order_tools": [("request_return", RETURN_CALL), LIVE_RETURN_DRAFT]})
+    state = run(graph, [{"role": "user", "content": RETURN_ASK}])
+    assert state["pending_action"]["action"] == "request_return" and client.count("order_tools") == 1
+    assert client.of("order_tools")[0]["tool_choice"] == {"type": "tool", "name": "request_return"}
+    assert state["gate_trace"][0] == {"step": "forced_change", "action": "request_return"}
+
+
+@pytest.mark.parametrize(
+    ("said", "number", "email"),
+    [
+        ("I need to change the shipping address on order #1021. My email is jordan.lee@example.com.", "#1021", JORDAN),
+        ("Can I still cancel #1023? Until what time? maya.thompson@example.com", "#1023", MAYA),
+        ("I want to return the hiking boots from order #1016. My email is maya.thompson@example.com.", "#1016", MAYA),
+    ],
+)
+def test_requests_missing_a_detail_and_questions_are_left_to_the_model(backend: SimStoreBackend, said: str, number: str, email: str) -> None:
+    route = {"intent": "order", "search_query": "", "order_number": number, "email": email}
+    graph, client = graph_for(backend, {"route": [route], "order_tools": ["What is the new address?"]})
+    run(graph, [{"role": "user", "content": said}])
+    assert "tool_choice" not in client.of("order_tools")[0]

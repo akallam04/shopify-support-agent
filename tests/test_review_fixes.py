@@ -88,9 +88,11 @@ class DemoClient:
         if "tools" in kwargs:
             self.calls.append(("order_tools", kwargs))
             forced = (kwargs.get("tool_choice") or {}).get("name")
-            if forced:
+            if forced and forced in self.script.get("forced", {}):
                 return reply(tool_block(forced, self.script["forced"][forced]))
             step = self.script["order_tools"].pop(0)
+            if forced and not (isinstance(step, tuple) and step[0] == forced):
+                raise AssertionError(f"the call was forced to {forced} but the script gives {step!r}")
             return reply(tool_block(*step) if isinstance(step, tuple) else text_block(step))
         self.calls.append(("respond", kwargs))
         return reply(text_block(self.script.get("respond", ["(free text)"]).pop(0)))
@@ -416,7 +418,7 @@ def test_a_draft_that_asks_to_submit_the_return_is_sent_to_the_card(backend: Sim
 
     script = {"route": [RETURN_ROUTE], "order_tools": [LIVE_SUBMIT_DRAFT, LIVE_SUBMIT_DRAFT], "forced": {"request_return": RETURN_CALL}}
     graph, _ = graph_for(backend, script)
-    said = "I want to return the rain jacket from order #1022. It's unworn with tags, it is just too big. My email is jordan.lee@example.com."
+    said = "The rain jacket from order #1022 is unworn with tags, but it is just too big. My email is jordan.lee@example.com."
     state = run(graph, [{"role": "user", "content": said}])
     assert state["pending_action"]["action"] == "request_return"
     assert {"step": "self_confirm_nudge", "forced": "request_return"} in state["gate_trace"]

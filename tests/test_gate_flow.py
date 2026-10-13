@@ -316,8 +316,8 @@ def test_policy_refuses_before_reflection_or_confirmation(db: SimDB) -> None:
     assert "more than 2 hours ago" in state["response"]
     assert not state.get("pending_action")
     assert client.count("reflect") == 0
-    assert [t["step"] for t in state["gate_trace"]] == ["reason_check", "policy"]
-    assert state["gate_trace"][0]["found"] and state["gate_trace"][1]["code"] == "change_window_passed"
+    assert [t["step"] for t in state["gate_trace"]] == ["forced_change", "reason_check", "policy"]
+    assert state["gate_trace"][1]["found"] and state["gate_trace"][2]["code"] == "change_window_passed"
 
 
 def test_a_wrong_email_gets_the_not_found_answer(db: SimDB) -> None:

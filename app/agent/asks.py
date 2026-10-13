@@ -61,6 +61,24 @@ def demands_exception(text: str) -> bool:
     return bool(DEMAND_RE.search(text) and not PERSON_RE.search(text))
 
 
+CHANGE_REQUESTS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("cancel_order", re.compile(
+        r"\b(please cancel|cancel (my |the |this )?order|i want to cancel|i'd like to cancel|i would like to cancel|i need to cancel|"
+        r"(can|could|would) you (please )?cancel)\b", re.IGNORECASE)),
+    ("request_return", re.compile(
+        r"\b(i want to return|i'd like to return|i would like to return|i need to return|please return|(can|could|would) you (please )?return|"
+        r"start a return|file a return|return (the|my|this|these|both|one|it)\b[^.?!\n]{0,60}\bfrom order)\b", re.IGNORECASE)),
+    ("update_shipping_address", re.compile(r"\b(change|update)\b[^.?!\n]{0,50}\baddress\b[^.?!\n]{0,40}\bto\s+\S*\d", re.IGNORECASE)),
+)
+
+
+def requested_change(text: str) -> str | None:
+    if asks_eligibility(text):
+        return None
+    named = [name for name, pattern in CHANGE_REQUESTS if pattern.search(text)]
+    return named[0] if len(named) == 1 else None
+
+
 def asks_eligibility(text: str) -> bool:
     return bool(ELIGIBILITY_RE.search(text) and not REQUEST_RE.search(text))
 
