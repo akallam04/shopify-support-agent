@@ -30,6 +30,10 @@ class AgentState(TypedDict, total=False):
     # verify feedback for the single retry pass
     verify_feedback: str | None
     retry_count: int
+    # what each verify check found, for the trace
+    verify_checks: list[dict[str, Any]]
+    # the draft was written by code from store records, not by the model
+    system_draft: bool
 
     # what actually goes back to the customer
     response: str

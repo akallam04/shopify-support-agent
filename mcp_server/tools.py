@@ -12,11 +12,12 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from mcp_server import policy
 from mcp_server.backends.base import FoundOrder, StoreBackend, StoreWriteError, WritableStore
-from mcp_server.clock import format_instant
+from mcp_server.clock import STORE_TIMEZONE_NAME, days_until, format_instant, parse_instant, store_date, store_time
 from mcp_server.search import WORD_RE, prefix_hit, title_score, words
 from mcp_server.simdb import Address, LineItem, Order, Product
 
@@ -72,7 +73,7 @@ def delivered_on(order: Order) -> str | None:
     dates = [f.delivered_at for f in order.fulfillments]
     if not dates or not all(dates):
         return None
-    return max(d for d in dates if d)[:10]
+    return store_date(parse_instant(max(d for d in dates if d)))
 
 
 def shipping_status(order: Order) -> str:
@@ -99,7 +100,7 @@ def _order_status_view(order: Order, include_returns: bool = False) -> dict[str,
     view = {
         "found": True,
         "order_number": order.name,
-        "placed_at": order.processed_at,
+        "placed": placed_text(order),
         "cancelled": order.cancelled_at is not None,
         "fulfillment_status": order.fulfillment_status,
         "shipping": shipping_status(order),
@@ -125,12 +126,41 @@ def _minutes(n: int) -> str:
     return f"{n} more minute" + ("" if n == 1 else "s")
 
 
+def placed_text(order: Order) -> str:
+    placed = policy.placed_at(order)
+    return f"{store_date(placed)}, {store_time(placed)} {STORE_TIMEZONE_NAME}"
+
+
+def _days(n: int) -> str:
+    return f"{n} day" + ("" if n == 1 else "s")
+
+
+def refund_options(order: Order, line: LineItem, left: int) -> str:
+    country = order.shipping_address.country_code if order.shipping_address else None
+    options = []
+    for count in sorted({1, left}):
+        items_total = Decimal(line.unit_price) * count
+        refund = policy.refund_amount(items_total, "other", country)
+        if refund == items_total:
+            options.append(f"{count} returned: {items_total:.2f} {order.currency}, no label fee")
+        else:
+            options.append(
+                f"{count} returned: {refund:.2f} {order.currency} after the {policy.RETURN_SHIPPING_FEE} {order.currency} "
+                f"label fee, or {items_total:.2f} {order.currency} if it arrived wrong or not as described"
+            )
+    return "; ".join(options)
+
+
 def eligibility_view(backend: StoreBackend, order: Order) -> dict[str, Any]:
     now = backend.clock.now()
     change = policy.order_change(order, now, "cancelled or changed")
     if change.allowed:
-        left = int((policy.placed_at(order) + policy.ORDER_CHANGE_WINDOW - now).total_seconds() // 60)
-        changes = f"yes, for {_minutes(max(left, 1))}; a new address must be in the US or Canada"
+        ends = policy.placed_at(order) + policy.ORDER_CHANGE_WINDOW
+        left = int((ends - now).total_seconds() // 60)
+        changes = (
+            f"yes, for {_minutes(max(left, 1))}, until {store_time(ends)} {STORE_TIMEZONE_NAME}; "
+            "a new address must be in the US or Canada"
+        )
     else:
         changes = f"no: {change.reason}"
     products = backend.products_by_id({li.product_id for li in order.line_items if li.product_id})
@@ -139,11 +169,14 @@ def eligibility_view(backend: StoreBackend, order: Order) -> dict[str, Any]:
         left = policy.delivered_quantity(order, line) - policy.already_requested(order, line)
         decision = policy.can_return(order, [(line, max(left, 1))], products, "other", now)
         delivered = policy.delivered_at(order, line)
+        entry: dict[str, Any] = {"title": line.title, "variant": line.variant_title}
         if decision.allowed and delivered is not None:
-            status = f"yes, {left} until {delivered + policy.RETURN_WINDOW:%B %-d, %Y}"
+            deadline = delivered + policy.RETURN_WINDOW
+            entry["can_return"] = f"yes, {left} until {store_date(deadline)} ({_days(days_until(now, deadline))} left)"
+            entry["refund_if_returned"] = refund_options(order, line, left)
         else:
-            status = f"no: {decision.reason}"
-        returns.append({"title": line.title, "variant": line.variant_title, "can_return": status})
+            entry["can_return"] = f"no: {decision.reason}"
+        returns.append(entry)
     return {"cancel_or_change_address": changes, "returns": returns}
 
 
@@ -242,7 +275,7 @@ def _items_text(pairs: list[tuple[LineItem, int]]) -> str:
 def _order_facts(order: Order) -> dict[str, Any]:
     return {
         "order_number": order.name,
-        "placed_at": order.processed_at,
+        "placed": placed_text(order),
         "cancelled": order.cancelled_at is not None,
         "fulfillment_status": order.fulfillment_status,
         "financial_status": order.financial_status,
@@ -270,7 +303,7 @@ def passed_checks(action: str, order: Order, pairs: list[tuple[LineItem, int]], 
         delivered = [policy.delivered_at(order, line) for line, _ in pairs]
         first = min(d for d in delivered if d is not None)
         checks += [
-            f"Delivered {first:%B %-d}, inside the 30-day return window",
+            f"Delivered {first:%B %-d}, inside the 30-day return window, which ends {store_date(first + policy.RETURN_WINDOW)}",
             "Not a final sale item",
             "Those items are still available to return",
         ]
@@ -400,7 +433,9 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         if decision.allowed:
             products = backend.products_by_id({li.product_id for li, _ in pairs if li.product_id})
             decision = policy.can_return(order, pairs, products, reason, now, str(args.get("condition") or ""))
-        terms = policy.return_terms(reason, order.shipping_address.country_code if order.shipping_address else None)
+        items_total = sum((Decimal(li.unit_price) * qty for li, qty in pairs), Decimal("0"))
+        country = order.shipping_address.country_code if order.shipping_address else None
+        terms = policy.return_terms(reason, country, items_total if pairs else None, order.currency)
         normalized = {
             "order_number": name,
             "email": email.lower(),
@@ -410,8 +445,8 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
         reason_label = policy.RETURN_REASON_LABELS.get(reason, reason)
         summary = (
             f"request a return of {_items_text(pairs)} from order {name} (reason: {reason_label}). "
-            f"{RETURN_CONDITION} {terms['fee']} {terms['label']}"
-        )
+            f"{RETURN_CONDITION} {terms['fee']} {terms.get('amount', '')} {terms['label']}"
+        ).replace("  ", " ")
         facts = {**facts, "return_terms": terms}
 
     if not decision.allowed:

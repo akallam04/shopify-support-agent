@@ -49,7 +49,7 @@ def test_order_status_view(sim: RecordingBackend) -> None:
     assert result == {
         "found": True,
         "order_number": "#1001",
-        "placed_at": "2026-07-07T00:26:32Z",
+        "placed": "July 6, 2026, 6:26 pm Mountain Time",
         "cancelled": False,
         "fulfillment_status": "FULFILLED",
         "shipping": "shipped, not delivered yet",
@@ -237,7 +237,7 @@ def test_a_full_nested_page_fails_loudly_instead_of_truncating() -> None:
 def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_them() -> None:
     seed = load_db("data/sim/seed.json")
     view = get_order_status(SimStoreBackend(seed), "#1017", "jordan.lee@example.com")
-    assert view["delivered_on"] == "2026-09-29"
+    assert view["delivered_on"] == "September 29, 2026" and view["shipping"] == "delivered on September 29, 2026"
     assert view["returns"] == [{"title": "Stormline Rain Jacket", "variant": "L", "quantity": 1, "status": "REQUESTED"}]
     in_transit = get_order_status(SimStoreBackend(seed), "#1019", "maya.thompson@example.com")
     assert in_transit["delivered_on"] is None and in_transit["returns"] == []
@@ -251,7 +251,7 @@ def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_the
 @pytest.mark.parametrize(
     ("order", "email", "changes", "returns"),
     [
-        ("#1023", "maya.thompson@example.com", "yes, for 60 more minutes; a new address must be in the US or Canada", "not been delivered yet"),
+        ("#1023", "maya.thompson@example.com", "yes, for 60 more minutes, until 6:03 pm Mountain Time; a new address must be in the US or Canada", "not been delivered yet"),
         ("#1011", "priya.patel@example.com", "no: Order #1011 was placed more than 2 hours ago", "not been delivered yet"),
         ("#1018", "sofia.ramirez@example.com", "no: Order #1018 has already shipped", "FINAL SALE"),
         ("#1016", "maya.thompson@example.com", "no: Order #1016 has already shipped", "outside our 30-day return window"),
@@ -268,7 +268,7 @@ def test_order_status_shows_what_policy_allows_when_the_store_can_act(order: str
 @pytest.mark.parametrize(
     ("order", "email", "expected"),
     [
-        ("#1016", "maya.thompson@example.com", "delivered on 2026-08-20"),
+        ("#1016", "maya.thompson@example.com", "delivered on August 20, 2026"),
         ("#1019", "maya.thompson@example.com", "shipped, not delivered yet"),
         ("#1023", "maya.thompson@example.com", "not shipped yet"),
         ("#1020", "maya.thompson@example.com", "cancelled"),
@@ -286,7 +286,7 @@ def test_an_allowed_return_lists_the_checks_it_passed() -> None:
     args = {"order_number": "#1022", "email": "jordan.lee@example.com", "items": [{"title": "Stormline Rain Jacket"}], "reason": "size_too_large"}
     assert prepare(backend, "request_return", args).checks == [
         "The email matches the order",
-        "Delivered September 29, inside the 30-day return window",
+        "Delivered September 29, inside the 30-day return window, which ends October 29, 2026",
         "Not a final sale item",
         "Those items are still available to return",
     ]

@@ -39,7 +39,8 @@ def test_a_worn_item_is_refused_in_code_even_with_a_valid_reason(backend: SimSto
     state = run(graph, [{"role": "user", "content": WORN_ASK}])
     assert state.get("pending_action") is None
     assert "worn, washed, or used" in state["response"]
-    assert {"step": "condition_check", "action": "request_return", "condition": "worn"} in state["gate_trace"]
+    check = next(g for g in state["gate_trace"] if g["step"] == "condition_check")
+    assert (check["condition"], check["stated"]) == ("worn", "yes") and "worn my rain jacket" in check["quote"]
     assert backend.db.orders["#1022"].returns == []
 
 

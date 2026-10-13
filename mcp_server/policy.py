@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from mcp_server.clock import parse_instant
+from mcp_server.clock import parse_instant, store_date
 from mcp_server.simdb import Address, LineItem, Order, Product
 
 ORDER_CHANGE_WINDOW = timedelta(hours=2)
@@ -224,8 +224,8 @@ def can_return(
         if now - delivered > RETURN_WINDOW:
             return refuse(
                 "return_window_passed",
-                f"{line.title} was delivered on {delivered.strftime('%B %-d, %Y')}, more than 30 days ago, "
-                "so it is outside our 30-day return window.",
+                f"{line.title} was delivered on {store_date(delivered)}, more than 30 days ago, "
+                f"so it is outside our 30-day return window, which ended on {store_date(delivered + RETURN_WINDOW)}.",
             )
         requested_before = already_requested(order, line)
         returnable = delivered_quantity(order, line) - requested_before
@@ -243,7 +243,22 @@ def can_return(
     return ALLOWED
 
 
-def return_terms(reason: str, country_code: str | None) -> dict[str, str]:
+def label_fee_applies(reason: str, country_code: str | None) -> bool:
+    return (country_code or "").upper() != "CA" and reason not in FEE_WAIVED_REASONS
+
+
+def refund_amount(items_total: Decimal, reason: str, country_code: str | None) -> Decimal:
+    return items_total - (RETURN_SHIPPING_FEE if label_fee_applies(reason, country_code) else Decimal("0"))
+
+
+def refund_text(items_total: Decimal, reason: str, country_code: str | None, currency: str = "USD") -> str:
+    refund = refund_amount(items_total, reason, country_code)
+    if refund == items_total:
+        return f"Refund for these items: {items_total:.2f} {currency}."
+    return f"Refund for these items: {refund:.2f} {currency} ({items_total:.2f} {currency} minus the {RETURN_SHIPPING_FEE} {currency} label fee)."
+
+
+def return_terms(reason: str, country_code: str | None, items_total: Decimal | None = None, currency: str = "USD") -> dict[str, str]:
     if (country_code or "").upper() == "CA":
         fee = "No return shipping fee is deducted, because Canadian returns do not use our prepaid label."
         label = "Canadian returns ship at the customer's own cost to our Denver warehouse."
@@ -254,10 +269,13 @@ def return_terms(reason: str, country_code: str | None) -> dict[str, str]:
             else f"A flat {RETURN_SHIPPING_FEE} USD fee for the prepaid return label is deducted from the refund."
         )
         label = "We email a prepaid return label within 1 business day."
-    return {
+    terms = {
         "fee": fee,
         "label": label,
         "refund": "The refund goes to the original payment method within 5 to 7 business days after "
         "we receive and inspect the return.",
         "approval": "The return is requested, and the store confirms it once it is reviewed.",
     }
+    if items_total is not None:
+        terms["amount"] = refund_text(items_total, reason, country_code, currency)
+    return terms

@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
+from zoneinfo import ZoneInfo
 
 
 class Clock(Protocol):
@@ -21,6 +22,23 @@ class FrozenClock:
 
     def now(self) -> datetime:
         return self.at
+
+
+STORE_TIMEZONE = ZoneInfo("America/Denver")
+STORE_TIMEZONE_NAME = "Mountain Time"
+
+
+def store_date(moment: datetime) -> str:
+    return f"{moment.astimezone(STORE_TIMEZONE):%B %-d, %Y}"
+
+
+def store_time(moment: datetime) -> str:
+    local = moment.astimezone(STORE_TIMEZONE)
+    return f"{local:%-I:%M} {'am' if local.hour < 12 else 'pm'}"
+
+
+def days_until(now: datetime, moment: datetime) -> int:
+    return (moment.astimezone(STORE_TIMEZONE).date() - now.astimezone(STORE_TIMEZONE).date()).days
 
 
 def format_instant(moment: datetime) -> str:

@@ -31,7 +31,7 @@ from app.agent.prompts import (
 )
 from app.agent.models import call_options, response_text
 from app.agent.addresses import ungrounded_parts
-from app.agent.reasons import customer_texts, grounded, stated_condition, stated_reason
+from app.agent.reasons import condition_mentions, customer_texts, grounded, item_condition, stated_reason
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
@@ -79,7 +79,7 @@ def result_message(result: dict[str, Any], sandbox: bool = False) -> str:
         reason = result.get("reason", "")
         return f"{reason} {NOT_FOUND_HINT}" if result.get("code") == "order_not_found" else reason
     parts = [result["message"]]
-    parts += [result[k] for k in ("approval", "label", "fee", "refund") if result.get(k)]
+    parts += [result[k] for k in ("approval", "label", "fee", "amount", "refund") if result.get(k)]
     if sandbox and result.get("action") in MONEY_ACTIONS:
         parts.append(DEMO_RECEIPT_NOTE)
     text = " ".join(parts)
@@ -152,20 +152,26 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         name, args = candidate["name"], candidate["args"]
         trace = list(state.get("gate_trace", []))
         reason_given = False
-        condition = stated_condition(customer_texts(state)) if name in REASON_REQUIRED else None
-        if condition:
-            trace.append({"step": "condition_check", "action": name, "condition": condition})
-            args = {**args, "condition": condition}
+        condition = None
+        if name in REASON_REQUIRED:
+            found = item_condition(customer_texts(state))
+            mentions = condition_mentions(customer_texts(state))
+            shown = found or (mentions[0] if mentions else None)
+            if shown is not None:
+                trace.append({"step": "condition_check", "action": name, "condition": shown.condition, "stated": shown.stated, "quote": shown.quote[:200]})
+            if found is not None:
+                condition = found.condition
+                args = {**args, "condition": condition}
         if name == "update_shipping_address":
             missing = ungrounded_parts(args, customer_texts(state))
             trace.append({"step": "address_check", "action": name, "missing": missing})
             if missing:
-                return {"draft": ADDRESS_ASK, "candidate_action": None, "gate_trace": trace}
+                return {"draft": ADDRESS_ASK, "system_draft": True, "candidate_action": None, "gate_trace": trace}
         if name in REASON_REQUIRED and not condition:
             resolved = customer_reason(args, state)
             trace.append({"step": "reason_check", "action": name, "found": resolved is not None})
             if resolved is None:
-                return {"draft": REASON_ASK, "candidate_action": None, "gate_trace": trace}
+                return {"draft": REASON_ASK, "system_draft": True, "candidate_action": None, "gate_trace": trace}
             args, reason_given = resolved, True
         elif name in REASON_OPTIONAL and args.get("reason"):
             reason_given = reason_from_customer(str(args.get("reason_quote") or ""), state)
@@ -179,7 +185,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             retry = _retry(state, name, str(e))
             if retry is not None:
                 return {**retry, "candidate_action": None, "gate_trace": trace}
-            return {"draft": GATE_INPUT_RESPONSE, "candidate_action": None, "gate_trace": trace}
+            return {"draft": GATE_INPUT_RESPONSE, "system_draft": True, "candidate_action": None, "gate_trace": trace}
 
         tool_results = list(state.get("tool_results", [])) + [
             {"name": f"prepare:{name}", "args": args, "result": json.dumps(prepared.view())}
@@ -190,7 +196,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             if retry is not None:
                 return {**retry, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
             draft = result_message({"ok": False, "code": prepared.code, "reason": prepared.reason}, bool(state.get("sandbox")))
-            return {"draft": draft, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
+            return {"draft": draft, "system_draft": True, "candidate_action": None, "gate_trace": trace, "tool_results": tool_results}
 
         update: dict[str, Any] = {"candidate_action": None, "tool_results": tool_results}
         if settings.gate_reflection:
@@ -198,7 +204,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             update["usage"] = usage
             trace.append({"step": "reflection", "verdict": verdict["verdict"], "issues": verdict["issues"]})
             if verdict["verdict"] == "ask":
-                return {**update, "draft": verdict["question"], "gate_trace": trace}
+                return {**update, "draft": verdict["question"], "system_draft": False, "gate_trace": trace}
 
         key = idempotency_key(name, prepared.args)
         if settings.gate_confirmation:
@@ -216,6 +222,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
             }
             return {
                 **update,
+                "system_draft": True,
                 "draft": CONFIRMATION_TEMPLATE.format(summary=prepared.summary, note=f" {note}" if note else ""),
                 "pending_action": pending,
                 "gate_trace": trace,
@@ -224,7 +231,7 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
         result = tools.execute(name, args, key)
         trace.append({"step": "executed" if result.get("ok") else "refused", "action": name, "key": key})
         recorded = _record({**state, "tool_results": tool_results}, result, name, args)
-        return {**update, **recorded, "draft": result_message(result, bool(state.get("sandbox"))), "gate_trace": trace}
+        return {**update, **recorded, "draft": result_message(result, bool(state.get("sandbox"))), "system_draft": True, "gate_trace": trace}
 
     return gate
 
@@ -252,7 +259,7 @@ def make_confirm_node(client: AsyncAnthropic, model: str, thinking: bool = True)
             source = "model"
             update["usage"] = _usage(state, "confirm", model, response)
         trace.append({"step": "confirmation", "label": label, "source": source, "action": pending["action"]})
-        update.update({"confirmation": label, "gate_trace": trace})
+        update.update({"confirmation": label, "gate_trace": trace, "system_draft": True})
         if label == "decline":
             update.update({"pending_action": None, "draft": DECLINED_RESPONSE})
         elif label == "conditional":
@@ -275,7 +282,7 @@ def make_execute_node(tools: Any):
         trace = list(state.get("gate_trace", []))
         trace.append({"step": "executed" if result.get("ok") else "refused", "action": pending["action"], "key": pending["key"]})
         recorded = _record(state, result, pending["action"], pending["args"])
-        return {**recorded, "draft": result_message(result, bool(state.get("sandbox"))), "pending_action": None, "gate_trace": trace}
+        return {**recorded, "draft": result_message(result, bool(state.get("sandbox"))), "system_draft": True, "pending_action": None, "gate_trace": trace}
 
     return execute
 
@@ -284,8 +291,8 @@ def make_handoff_node(tools: Any):
     def handoff(state: AgentState) -> dict[str, Any]:
         sandbox = bool(state.get("sandbox"))
         if (state.get("handoff") or {}).get("recorded"):
-            return {"draft": HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP}
-        update: dict[str, Any] = {"draft": HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE}
+            return {"draft": HANDOFF_DEMO_FOLLOWUP if sandbox else HANDOFF_FOLLOWUP, "system_draft": True}
+        update: dict[str, Any] = {"draft": HANDOFF_DEMO if sandbox else HANDOFF_RESPONSE, "system_draft": True}
         if "transfer_to_human" in tools.write_tool_names:
             args = {
                 "summary": f"Customer asked for a person: {_last_user_text(state)[:300]}",

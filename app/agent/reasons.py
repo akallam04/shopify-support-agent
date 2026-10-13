@@ -58,19 +58,76 @@ def grounded(quote: str, customer_texts: list[str]) -> bool:
 
 
 CONDITION_PHRASES: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"\b(cut|removed|took|ripped|pulled) (off )?(the |its |their )?(original )?tags?\b|\b(no|without|missing) (the |its |their )?(original )?tags?\b|\btags? (are|is|were|was) (off|gone|removed|missing)\b", re.I), "tags_removed"),
-    (re.compile(r"\b(opened|used|applied) (the |some of the |my )?(\w+ )?(wax|consumables?)\b", re.I), "opened"),
-    (re.compile(r"\b(washed|laundered)\b", re.I), "washed"),
-    (re.compile(r"\b(worn|wore)\b", re.I), "worn"),
-    (re.compile(r"\b(used) (it|them|this|these|the \w+)\b|\bused (it )?(outdoors|outside)\b", re.I), "used"),
+    (re.compile(
+        r"\b(cut|removed|took|ripped|pulled|tore|lost) (off )?(the |its |their |all )?(original )?tags?\b|"
+        r"\b(no|without|missing) (the |its |their |any )?(original )?tags?\b|"
+        r"\btags? (are|is|were|was|have been|has been|came|fell) (off|gone|removed|missing|cut)\b", re.I), "tags_removed"),
+    (re.compile(r"\b(opened|used|applied|tried) (the |some of the |my |a bit of the )?(\w+ )?(wax|consumables?)\b|\bwax (is|was|has been) opened\b", re.I), "opened"),
+    (re.compile(r"(?<!un-)(?<!pre-)\b(washed|laundered)\b(?! out\b)", re.I), "washed"),
+    (re.compile(
+        r"(?<!un-)\b(worn|wore|wearing)\b"
+        r"(?! (a|an|size|sizes|xs|s|m|l|xl|xxl|small|medium|large|\d+)\b)(?! (this|that|your|the same) (brand|size|style|model|cut)\b)", re.I), "worn"),
+    (re.compile(
+        r"\bused (it|them|this|these|those)\b|\b(been|was|were|lightly|barely|gently|hardly) used\b|"
+        r"\bused (it |them )?(outdoors|outside|once|twice|a few times|several times)\b", re.I), "used"),
 )
-NEGATION_RE = re.compile(r"\b(not|never|haven't|hasn't|hadn't|didn't|don't|without|no)\W+(\w+\W+)?$", re.I)
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+CLAUSE_SPLIT_RE = re.compile(
+    r"[,;:()]|\b(but|though|although|however|so|then|until|after|because|since|while|when|once)\b|\band (?=(i|we|it|they|then)\b)",
+    re.I,
+)
+NEGATION_RE = re.compile(
+    r"\b(not|never|no|nor|neither|cannot|(ain|aren|can|couldn|didn|doesn|don|hadn|hasn|haven|isn|wasn|weren|won|wouldn)'?t)\b",
+    re.I,
+)
+HYPOTHETICAL_RE = re.compile(r"\b(if|whether|in case|suppose|supposing|hypothetically|what about)\b", re.I)
+FIRST_PERSON_RE = re.compile(r"\b(i|i've|i'd|we|we've|my|our)\b", re.I)
+TRY_ON_RE = re.compile(r"\b(try|tried|trying) (it |them )?on\b", re.I)
+
+
+@dataclass(frozen=True)
+class ItemCondition:
+    condition: str
+    stated: str
+    quote: str
+
+
+def _clauses(text: str) -> list[tuple[str, bool]]:
+    found = []
+    for sentence in SENTENCE_SPLIT_RE.split(text.replace("\u2019", "'")):
+        question = sentence.rstrip().endswith("?")
+        found += [(c.strip(), question) for c in CLAUSE_SPLIT_RE.split(sentence) if c and c.strip() and not CLAUSE_SPLIT_RE.fullmatch(c)]
+    return found
+
+
+def _stated(clause: str, question: bool, at: int) -> str:
+    if NEGATION_RE.search(clause[:at]):
+        return "no"
+    if HYPOTHETICAL_RE.search(clause) or TRY_ON_RE.search(clause) or (question and not FIRST_PERSON_RE.search(clause)):
+        return "unclear"
+    return "yes"
+
+
+def condition_mentions(customer_texts: list[str]) -> list[ItemCondition]:
+    latest: dict[str, ItemCondition] = {}
+    for text in customer_texts:
+        seen: dict[str, ItemCondition] = {}
+        for clause, question in _clauses(text):
+            for pattern, condition in CONDITION_PHRASES:
+                for match in pattern.finditer(clause):
+                    mention = ItemCondition(condition, _stated(clause, question, match.start()), clause)
+                    if condition not in seen or mention.stated == "yes":
+                        seen[condition] = mention
+        latest.update(seen)
+    return list(latest.values())
+
+
+def item_condition(customer_texts: list[str]) -> ItemCondition | None:
+    order = [c for _, c in CONDITION_PHRASES]
+    stated = sorted((m for m in condition_mentions(customer_texts) if m.stated == "yes"), key=lambda m: order.index(m.condition))
+    return stated[0] if stated else None
 
 
 def stated_condition(customer_texts: list[str]) -> str | None:
-    for text in reversed(customer_texts):
-        for pattern, condition in CONDITION_PHRASES:
-            for match in pattern.finditer(text):
-                if condition == "tags_removed" or not NEGATION_RE.search(text[: match.start()]):
-                    return condition
-    return None
+    found = item_condition(customer_texts)
+    return found.condition if found else None
