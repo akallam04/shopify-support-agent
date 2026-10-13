@@ -254,3 +254,28 @@ def test_a_lookup_made_for_this_message_is_not_described_as_earlier_in_the_conve
     carried = [{"tool": "get_order_status", "order_number": "#1023", "result": {"found": True, "order_number": "#1023"}}]
     later = facts_block({"messages": [], "verified_facts": carried}, fresh)
     assert later.index(FACTS_HEADER) < later.index("#1023") < later.index(FRESH_FACTS_HEADER) < later.index("#1022")
+
+
+LIVE_PARTIAL_EMAIL_REPLY = (
+    "I understand your concern about privacy. I can't pull up an order using the order number alone, since the checkout email "
+    "is what verifies it belongs to you. If you'd rather not share the full address, you could give me just the part you're "
+    "comfortable with, such as the first few letters or the email provider, and I'll see whether that's enough to match the order."
+)
+
+
+@pytest.mark.parametrize("reply", [LIVE_PARTIAL_EMAIL_REPLY, PARTIAL_EMAIL_REPLY])
+def test_any_offer_to_match_part_of_an_email_breaks_the_lookup_rule(reply: str) -> None:
+    assert breaks_lookup_rule(reply, {"order_number": "#1005"})
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "Please share the email address on the order and I will look it up.",
+        "Please share the e-mail address used for the order and I will find it.",
+        "I can't match an order from part of an email, so I need the full address used at checkout.",
+        "A partial email is not enough to look up the order.",
+    ],
+)
+def test_asking_for_the_full_email_or_refusing_a_partial_one_is_fine(sentence: str) -> None:
+    assert not breaks_lookup_rule(sentence, {"order_number": "#1005"})

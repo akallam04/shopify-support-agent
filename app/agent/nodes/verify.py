@@ -50,9 +50,14 @@ LOOKUP_VERB = r"(look(ing)? (it |them |this |that |your orders? |the orders? |or
 OTHER_ID = r"((full |first and last )?name|phone( number)?|(shipping |home |street |billing )?address|account)"
 MATCH_VERB = r"(look(ing)? (it |them |this |that )?up|find|locate|pull up|search for|track down|retrieve|match|verify|identify)"
 ASKED_ID = (
-    r"((full )?name|phone( number)?|(?<!new )(shipping |billing )?address (on|for|used for) the order|(?<!new )shipping address|"
-    r"(part|parts|piece|the first (few )?letters|the domain) of (your|the|their|her|his) e-?mail|partial e-?mail|first (few )?letters)"
+    r"((full )?name|phone( number)?|(?<!new )(?<!email )(?<!e-mail )(shipping |billing )?address (on|for|used for) the order|"
+    r"(?<!new )shipping address)"
 )
+PARTIAL_EMAIL_RE = re.compile(
+    r"\b(first (few )?letters|(the )?part (of|you)|parts of|partial|(e-?mail |the )provider|the domain|initials)\b", re.IGNORECASE
+)
+MATCH_OFFER_RE = re.compile(rf"\b{MATCH_VERB}\b|\benough to\b", re.IGNORECASE)
+CANNOT_RE = re.compile(r"\b(can't|cannot|can not|won't|unable|not able|isn't|is not|not enough)\b", re.IGNORECASE)
 OFFER_OTHER_RE = re.compile(
     rf"\b{LOOKUP_VERB}\b[^.?!\n]{{0,60}}\b(by|with|using|from|via|under|through) (just |only )?(your|the|their|her|his)? ?{OTHER_ID}\b"
     rf"|\b(share|send|give me|provide|tell me|what is|what's)\b[^?!\n]{{0,25}}\b{ASKED_ID}\b[^?!\n]{{0,100}}\b{MATCH_VERB}\b",
@@ -218,12 +223,18 @@ def _denies_lookup(sentence: str) -> bool:
     return any(DENY_RE.search(c) and not LOOKUP_CONDITION_RE.search(c) for c in CLAUSE_RE.split(sentence))
 
 
+def _offers_partial_email(sentence: str) -> bool:
+    if not re.search(r"e-?mail|address", sentence, re.IGNORECASE):
+        return False
+    return bool(PARTIAL_EMAIL_RE.search(sentence) and MATCH_OFFER_RE.search(sentence) and not CANNOT_RE.search(sentence))
+
+
 def breaks_lookup_rule(draft: str, state: AgentState) -> list[str]:
     known = bool(state.get("order_number"))
     found = []
     for sentence in sentences(draft):
         by_email = OFFER_EMAIL_RE.search(sentence) and not known and not NAMES_ORDER_RE.search(sentence)
-        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or _denies_lookup(sentence):
+        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or _offers_partial_email(sentence) or _denies_lookup(sentence):
             found.append(sentence.strip())
     return found
 
