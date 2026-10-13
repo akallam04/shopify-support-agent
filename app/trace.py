@@ -1,6 +1,7 @@
 """What one turn did inside the agent, compact enough to send back with the reply."""
 
 import json
+import re
 from typing import Any
 
 from app.agent.nodes.verify import UNCHECKED_INTENTS
@@ -9,7 +10,9 @@ from app.logs import request_cost, token_counts
 from app.privacy import masked
 
 MAX_RESULT_CHARS = 2500
+MAX_PASSAGE_CHARS = 1500
 HIDDEN_CALLS = ("pending_action",)
+CITATION_RE = re.compile(r"\[([a-z0-9][a-z0-9-]*)\]")
 
 
 def tool_view(call: dict[str, Any]) -> dict[str, Any]:
@@ -26,6 +29,8 @@ def tool_view(call: dict[str, Any]) -> dict[str, Any]:
 def verify_outcome(state: dict[str, Any]) -> str:
     if state.get("hard_injection") or state.get("intent") in UNCHECKED_INTENTS:
         return "not needed"
+    if state.get("system_draft"):
+        return "store-built"
     if state.get("response") == SAFE_FALLBACK_RESPONSE:
         return "fell back to a safe answer"
     return "passed after one rewrite" if state.get("retry_count") else "passed"
@@ -37,8 +42,9 @@ def turn_trace(state: dict[str, Any]) -> dict[str, Any]:
         "path": [t["node"] for t in state.get("timings", [])],
         "nodes": state.get("timings", []),
         "tools": [tool_view(c) for c in state.get("tool_results", []) if c["name"] not in HIDDEN_CALLS],
-        "gate": state.get("gate_trace", []),
+        "gate": masked(state.get("gate_trace", [])),
         "verify": verify_outcome(state),
+        "checks": state.get("verify_checks", []),
         "rewrites": int(state.get("retry_count") or 0),
         "blocked": bool(state.get("hard_injection")),
         "retrieved": [d["id"] for d in state.get("retrieved", [])][:5],
@@ -65,3 +71,25 @@ def pending_view(state: dict[str, Any]) -> dict[str, Any] | None:
     if not pending:
         return None
     return {"action": pending["action"], "summary": pending["summary"], "checks": pending.get("checks", []), "note": pending.get("note", "")}
+
+
+def source_title(doc: dict[str, Any]) -> str:
+    meta = doc.get("metadata") or {}
+    if meta.get("section"):
+        return f"{meta.get('title', '')}: {meta['section']}".strip(": ")
+    return str(meta.get("title") or doc["id"])
+
+
+def cited_sources(state: dict[str, Any]) -> list[dict[str, Any]]:
+    by_key: dict[str, dict[str, Any]] = {}
+    for doc in state.get("retrieved", []):
+        by_key[doc["id"]] = doc
+        handle = (doc.get("metadata") or {}).get("handle")
+        if handle:
+            by_key[handle] = doc
+    text = f"{state.get('lead') or ''} {state.get('response') or ''}"
+    cited = [c for c in dict.fromkeys(CITATION_RE.findall(text)) if c in by_key]
+    return [
+        {"id": c, "title": source_title(by_key[c]), "text": str(by_key[c].get("text", ""))[:MAX_PASSAGE_CHARS]}
+        for c in cited
+    ]

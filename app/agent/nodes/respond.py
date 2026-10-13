@@ -40,17 +40,17 @@ def _context_block(docs: list[dict[str, Any]]) -> str:
 def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True):
     async def respond(state: AgentState) -> dict[str, Any]:
         if state.get("hard_injection"):
-            return {"draft": INJECTION_RESPONSE}
+            return {"draft": INJECTION_RESPONSE, "system_draft": True}
         intent = state["intent"]
         if intent in STATIC_RESPONSES:
-            return {"draft": STATIC_RESPONSES[intent]}
+            return {"draft": STATIC_RESPONSES[intent], "system_draft": True}
 
         feedback = state.get("verify_feedback")
         if intent == "smalltalk":
             system = SMALLTALK_SYSTEM
         elif intent == "order":
             if not state.get("order_number") and not feedback:
-                return {"draft": ORDER_NUMBER_HELP}
+                return {"draft": ORDER_NUMBER_HELP, "system_draft": True}
             if state.get("tool_results") or feedback:
                 # verify retry, regenerate from stored tool results
                 context = "\n\n".join(
@@ -79,6 +79,6 @@ def make_respond_node(client: AsyncAnthropic, model: str, thinking: bool = True)
         draft = "".join(b.text for b in response.content if b.type == "text").strip()
         usage = list(state.get("usage", []))
         usage.append(usage_record("respond", model, response))
-        return {"draft": draft, "usage": usage}
+        return {"draft": draft, "system_draft": False, "usage": usage}
 
     return respond

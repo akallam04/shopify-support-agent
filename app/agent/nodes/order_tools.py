@@ -168,6 +168,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
             draft = SAFE_FALLBACK_RESPONSE
         return {
             "draft": draft,
+            "system_draft": False,
             "tool_results": tool_results,
             "executed_actions": executed,
             "verified_facts": merge_facts(state.get("verified_facts") or [], tool_results),

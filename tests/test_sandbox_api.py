@@ -97,7 +97,8 @@ def test_each_reply_shows_the_pending_change_and_what_happened_inside() -> None:
     assert first["pending"]["checks"][-1] == "The reason came from the customer"
     assert any(c.startswith("Inside the 2-hour change window") for c in first["pending"]["checks"])
     assert set(trace["node_costs"]) == {"route", "order_tools"} and trace["blocked"] is False
-    assert trace["verify"] == "passed" and trace["tokens"]["input_tokens"] > 0 and trace["cost_usd"] > 0
+    assert trace["verify"] == "store-built" and trace["checks"] == []
+    assert trace["tokens"]["input_tokens"] > 0 and trace["cost_usd"] > 0
     assert second["pending"] is None
     assert "execute" in second["trace"]["path"] and second["trace"]["gate"][-1]["step"] == "executed"
 

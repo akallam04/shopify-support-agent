@@ -62,6 +62,7 @@ ORDER_SYSTEM = """You are the customer support assistant for Aurora Outfitters. 
 Rules:
 - Looking up an order requires BOTH the order number and the email on the order. If either is missing, ask the customer to provide it right here in chat, then look it up yourself. Do not send the customer to email support for a routine status lookup, that is your job.
 - Never state an order detail (status, items, tracking, dates, totals) that did not come from a tool result in this conversation.
+- State amounts, dates, times, and days or minutes left exactly as the tool results give them. Never calculate a new one.
 - If a tool reports found false, tell the customer no match was found, suggest double-checking the order number and email, and offer support@auroraoutfitters.com.
 - If the order's payment is pending or failed, say so plainly, that usually needs the customer's action before anything ships.
 - Be concise and friendly: 1 to 4 sentences, plus tracking details when available.
@@ -120,6 +121,23 @@ ORDER_NUMBER_HELP = (
     "can see someone else's orders. Please share both here and I will look it up. The order number "
     "starts with # and is in your order confirmation email from Aurora Outfitters; if you cannot "
     "find it, the support team at support@auroraoutfitters.com can help."
+)
+
+CITATION_FEEDBACK = "these citations are not ids of the passages provided: {items}. Cite only the ids shown in the context."
+
+UNCITED_FEEDBACK = "the answer states amounts, dates, or durations without citing the passage they come from. Cite the passage id in square brackets right after each one."
+
+NUMBERS_FEEDBACK = (
+    "these amounts, dates, times, or durations are not in the tool results, receipts, or passages cited for them: {items}. "
+    "Use only numbers exactly as they appear there, and never calculate a new one. If the store data does not give a number, "
+    "say you do not have it. A number only the customer gave may be repeated only as theirs, for example: you mentioned ..."
+)
+
+IDENTIFIER_FEEDBACK = "these identifiers do not appear in the store tool results: {items}. State order numbers, tracking numbers, and links only as the tools returned them."
+
+LOOKUP_FEEDBACK = (
+    "order lookups need the order number and the email address on the order, and anyone who has both can look the order "
+    "up here. Do not offer to look orders up by name, phone, address, or email alone, and do not say you cannot look orders up."
 )
 
 SAFE_FALLBACK_RESPONSE = (

@@ -355,7 +355,9 @@ def test_a_reply_that_retracts_a_system_built_message_is_rewritten_then_stripped
     second = verify_node({**state, "retry_count": 1})
     assert "correct my last message" not in second["response"] and "never looked" not in second["response"]
     assert second["response"].startswith("Order #1021 is shipping to 1200 Larimer St")
-    assert verify_node({**state, "intent": "policy", "draft": "I don't have any record of an earlier conversation, but returns take 30 days.", "retrieved": []})["response"]
+    window = {"id": "policy-returns-return-window", "text": "You have 30 days from the delivery date to start a return.", "metadata": {}}
+    unrelated = "I don't have any record of an earlier conversation, but returns take 30 days [policy-returns-return-window]."
+    assert verify_node({**state, "intent": "policy", "draft": unrelated, "retrieved": [window]})["response"] == unrelated
 
 
 def test_a_correction_of_the_models_own_free_text_answer_is_kept() -> None:
@@ -369,7 +371,8 @@ def test_a_correction_of_the_models_own_free_text_answer_is_kept() -> None:
         {"role": "user", "content": "Are you sure?"},
     ]
     correction = "I need to correct my last message: the Stormline Rain Jacket costs 179.99 USD, not 159.99 USD [stormline-rain-jacket]."
-    state = {"intent": "product", "draft": correction, "messages": history, "retrieved": [{"id": "stormline-rain-jacket", "metadata": {"handle": "stormline-rain-jacket"}}]}
+    jacket = {"id": "product-1", "text": "Product: Stormline Rain Jacket\nPrice: 179.99 USD", "metadata": {"handle": "stormline-rain-jacket"}}
+    state = {"intent": "product", "draft": correction, "messages": history, "retrieved": [jacket]}
     assert verify_node(state)["response"] == correction
 
 

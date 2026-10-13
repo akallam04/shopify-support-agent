@@ -1,12 +1,17 @@
 """Unit tests for the grounding gate."""
 
+from app.agent.evidence import Evidence
 from app.agent.nodes.verify import (
     plain_text,
     check_citations,
-    check_order_facts,
+    identifier_check,
     verify_node,
 )
 from app.agent.prompts import SAFE_FALLBACK_RESPONSE
+
+
+def records(text: str, customer: str = "") -> Evidence:
+    return Evidence(text, "", [customer] if customer else [])
 
 
 def test_citations_must_come_from_context() -> None:
@@ -21,19 +26,16 @@ def test_citations_must_come_from_context() -> None:
     assert "made-up-product" in feedback
 
 
-def test_order_facts_must_come_from_grounding() -> None:
-    grounding = '{"order_number": "#1001", "tracking": "1Z999AA10123456784"} where is #1001'
-    ok, _ = check_order_facts("Order #1001 shipped, tracking 1Z999AA10123456784.", grounding)
-    assert ok
+def test_order_facts_must_come_from_store_tools() -> None:
+    found = records('{"order_number": "#1001", "tracking": "1Z999AA10123456784"}', "where is #1001")
+    assert identifier_check("Order #1001 shipped, tracking 1Z999AA10123456784.", found).ok
 
-    ok, feedback = check_order_facts("Your order #4242 has shipped!", grounding)
-    assert not ok
-    assert "#4242" in feedback
+    check = identifier_check("Your order #4242 has shipped!", found)
+    assert not check.ok and "#4242" in check.feedback
 
 
 def test_status_words_do_not_trip_the_tracking_regex() -> None:
-    ok, _ = check_order_facts("Your order is UNFULFILLED right now.", "no identifiers here")
-    assert ok
+    assert identifier_check("Your order is UNFULFILLED right now.", records("no identifiers here")).ok
 
 
 def test_verify_node_retry_then_fallback() -> None:
@@ -56,7 +58,7 @@ def test_verify_node_passes_clean_answer_through() -> None:
     state = {
         "intent": "policy",
         "draft": "You have 30 days [policy-returns-return-window].",
-        "retrieved": [{"id": "policy-returns-return-window", "metadata": {}}],
+        "retrieved": [{"id": "policy-returns-return-window", "text": "You have 30 days from the delivery date.", "metadata": {}}],
         "messages": [{"role": "user", "content": "return window?"}],
         "retry_count": 0,
     }
@@ -85,16 +87,17 @@ def test_verify_node_cleans_dashes_on_every_passing_path() -> None:
     assert static["response"] == "Happy to help - anytime."
 
 
-def test_order_facts_from_earlier_verified_replies_stay_grounded() -> None:
+def test_order_numbers_from_carried_lookups_stay_grounded_but_assistant_history_does_not() -> None:
     messages = [
-        {"role": "user", "content": "I don't have the order number, my email is jordan.lee@example.com"},
+        {"role": "user", "content": "Which of my orders had the jacket? My email is jordan.lee@example.com"},
         {"role": "assistant", "content": "I found two jacket orders, #1022 and #1017. Which one?"},
         {"role": "user", "content": "The one without a return."},
     ]
-    state = {"intent": "order", "draft": "Got it, I will start the return on #1022.", "tool_results": [], "messages": messages}
+    carried = [{"tool": "get_order_status", "order_number": "#1022", "result": {"found": True, "order_number": "#1022"}}]
+    state = {"intent": "order", "draft": "Got it, I will start the return on #1022.", "tool_results": [], "messages": messages, "verified_facts": carried}
     assert verify_node(state)["response"] == "Got it, I will start the return on #1022."
-    invented = verify_node({**state, "draft": "I will start the return on #1099."})
-    assert invented["response"] == "" and "#1099" in invented["verify_feedback"]
+    from_history = verify_node({**state, "draft": "Got it, I will start the return on #1017."})
+    assert from_history["response"] == "" and "#1017" in from_history["verify_feedback"]
 
 
 def test_emoji_are_removed_from_replies() -> None:
