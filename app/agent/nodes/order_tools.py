@@ -32,8 +32,9 @@ MAX_TOOL_ROUNDS = 3
 NUDGE_ROUNDS = 2
 
 SELF_CONFIRM_RE = re.compile(
-    r"\b(should i (go ahead|proceed)|shall i (go ahead|proceed)|would you like me to (go ahead|proceed)|"
-    r"want me to (go ahead|proceed)|(is|does) (that|this|everything|all of (that|this)) (look |sound )?(right|correct)|"
+    r"\b((should|shall) i (go ahead|proceed|submit|file|process|place|put (it|this|that) through)|"
+    r"(would you like|do you want|want) me to (go ahead|proceed|submit|file)|"
+    r"(is|does) (that|this|everything|all of (that|this)) (look |sound )?(right|correct)|"
     r"can you confirm|please confirm|just to confirm)",
     re.IGNORECASE,
 )

@@ -401,3 +401,23 @@ def test_the_answer_to_a_question_drops_its_own_yes_or_no_prompt() -> None:
 
     live = "Returns have a 30-day window [policy-returns-return-window]. Your order is still pending my confirmation: reply yes to cancel order #1023, or no to keep it."
     assert without_yes_question(live) == "Returns have a 30-day window [policy-returns-return-window]."
+
+
+LIVE_SUBMIT_DRAFT = (
+    "I can help with that. The order record shows the Stormline Rain Jacket, size L, was delivered on September 29, 2026, and it "
+    "is still eligible for return until October 29, 2026 (25 days left).\n\nHere is what the return would involve: 1 jacket "
+    "returned, with a refund of 172.49 USD after the 7.50 USD label fee. Since the jacket is too big, the reason is size too large."
+    "\n\nShall I submit the return request for order #1022 with that reason?"
+)
+
+
+def test_a_draft_that_asks_to_submit_the_return_is_sent_to_the_card(backend: SimStoreBackend) -> None:
+    from app.agent.nodes.order_tools import asks_for_yes
+
+    script = {"route": [RETURN_ROUTE], "order_tools": [LIVE_SUBMIT_DRAFT, LIVE_SUBMIT_DRAFT], "forced": {"request_return": RETURN_CALL}}
+    graph, _ = graph_for(backend, script)
+    said = "I want to return the rain jacket from order #1022. It's unworn with tags, it is just too big. My email is jordan.lee@example.com."
+    state = run(graph, [{"role": "user", "content": said}])
+    assert state["pending_action"]["action"] == "request_return"
+    assert {"step": "self_confirm_nudge", "forced": "request_return"} in state["gate_trace"]
+    assert not asks_for_yes("You can still cancel it for 60 more minutes. Would you like me to cancel it for you?")
