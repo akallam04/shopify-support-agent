@@ -62,6 +62,16 @@ def problems(expect: dict[str, Any], data: dict[str, Any]) -> list[str]:
     return found
 
 
+def percentile(values: list[float], q: float) -> float:
+    return values[min(len(values) - 1, int(round(q * (len(values) - 1))))]
+
+
+def latency_summary(values: list[float]) -> dict[str, Any]:
+    if not values:
+        return {"turns": 0}
+    return {"turns": len(values), "p50_s": percentile(values, 0.5), "p95_s": percentile(values, 0.95), "max_s": values[-1]}
+
+
 def run_scenario(client: httpx.Client, api: str, scenario: dict[str, Any]) -> dict[str, Any]:
     history: list[dict[str, str]] = []
     token = None
@@ -82,6 +92,7 @@ def run_scenario(client: httpx.Client, api: str, scenario: dict[str, Any]) -> di
             "intent": data.get("intent"),
             "pending": (data.get("pending") or {}).get("action"),
             "verify": (data.get("trace") or {}).get("verify"),
+            "latency_s": data.get("latency_s"),
             "problems": problems(turn["expect"], data),
         })
     return {"id": scenario["id"], "ok": all(not t["problems"] for t in turns), "cost_usd": round(cost, 6), "turns": turns}
@@ -107,11 +118,15 @@ def main() -> None:
             results.append(result)
             print(f"{'ok  ' if result['ok'] else 'FAIL'} {scenario['id']}" + "".join(f"\n     {p}" for t in result["turns"] for p in t["problems"]))
     passed = sum(r["ok"] for r in results)
-    report = {"api": args.api, "at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "passed": passed, "of": len(results), "cost_usd": round(spent, 6), "results": results}
+    latencies = sorted(t["latency_s"] for r in results for t in r["turns"] if t.get("latency_s") is not None)
+    report = {
+        "api": args.api, "at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "passed": passed, "of": len(results),
+        "cost_usd": round(spent, 6), "latency": latency_summary(latencies), "results": results,
+    }
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{datetime.now():%Y%m%d-%H%M%S}_{args.label}.json"
     path.write_text(json.dumps(report, indent=1) + "\n")
-    print(f"{passed} of {len(results)} scenarios passed, {spent:.4f} USD, wrote {path}")
+    print(f"{passed} of {len(results)} scenarios passed, {spent:.4f} USD, turn latency {report['latency']}, wrote {path}")
     sys.exit(0 if passed == len(results) else 1)
 
 

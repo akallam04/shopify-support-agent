@@ -63,7 +63,8 @@ def error_response(status: int, code: str, message: str, release: str) -> JSONRe
 
 def create_app(graph: Any = None, tools: ShopifyTools | None = None, sandbox: Sandbox | None = None) -> FastAPI:
     settings = get_settings()
-    release = release_manifest(settings)["release"]
+    manifest = release_manifest(settings)
+    release = manifest["release"]
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -98,6 +99,10 @@ def create_app(graph: Any = None, tools: ShopifyTools | None = None, sandbox: Sa
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok", "release": release}
+
+    @app.get("/release")
+    def release_info() -> dict:
+        return {**manifest, "mode": settings.api_mode, "store_backend": settings.store_backend}
 
     @app.post("/chat", response_model=ChatResponse)
     async def chat(req: ChatRequest) -> Any:

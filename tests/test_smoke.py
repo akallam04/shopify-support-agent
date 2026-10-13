@@ -1,5 +1,6 @@
 """API tests against an injected fake graph, so no live model or MCP calls."""
 
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -73,3 +74,12 @@ def test_last_message_must_be_user() -> None:
             },
         )
     assert resp.status_code == 422
+
+
+def test_release_shows_the_live_models_and_gate_settings_without_secrets() -> None:
+    with client_with({}) as client:
+        body = client.get("/release").json()
+        assert body["release"] == client.get("/health").json()["release"]
+    assert set(body) >= {"git_sha", "prompts", "knowledge", "models", "thinking", "gate", "mode", "store_backend"}
+    assert set(body["gate"]) == {"write_actions", "mutation_gate", "reflection", "confirmation"}
+    assert not any(word in json.dumps(body).lower() for word in ("key", "token", "secret"))
