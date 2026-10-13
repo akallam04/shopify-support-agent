@@ -56,12 +56,22 @@ OTHER_PROOF_RE = re.compile(
     re.IGNORECASE,
 )
 PROVIDE_RE = re.compile(
-    r"\b(tell me|share|give me|provide|send|let me know|if you have|if you know|if you can|you could|you can|i need|i'd need|i would need)\b",
+    r"\b(tell me|share|give me|provide|send|let me know|if you have|if you know|if you can|you could|you can|do you have|could you|can you|"
+    r"would you|i need|i'd need|i would need)\b",
     re.IGNORECASE,
 )
 CHECK_OFFER_RE = re.compile(
     r"\b(i'll|i will|i can|i could|i'd|let me)\b[^?!\n]{0,60}\b(see|check|try|look|find|locate|match|verify|confirm|use|work|search|pull up|identify)"
-    r"|\bmatch(es|ed|ing)?\b|\b(for|of) verification\b|\bto verify\b|\benough to\b|\bif that works\b|\bhelps? me (find|locate|verify)",
+    r"|\bmatch(es|ed|ing)?\b|\b(for|of) verification\b|\bto verify\b|\benough (for me )?to\b|\bif that works\b|\bhelps? me (find|locate|verify)"
+    r"|\b(might|would|could|will) help\b|\b(be enough|would work|will work|works too)\b",
+    re.IGNORECASE,
+)
+NEED_ONE_RE = re.compile(
+    r"\b(need|needs|require|requires) (one|any|either) of (those|these|them)( details)?\b|\b(either|any) (one )?(of (those|these) )?(should|would|will) (be enough|work)\b",
+    re.IGNORECASE,
+)
+ALTERNATIVE_PROOF_RE = re.compile(
+    r"\bwithout (the |your |her |his |their )?(checkout )?e-?mail( address)?,? (the |a )?(name|phone|shipping address|address)",
     re.IGNORECASE,
 )
 CANNOT_RE = re.compile(
@@ -232,17 +242,23 @@ def _denies_lookup(sentence: str) -> bool:
     return any(DENY_RE.search(c) and not LOOKUP_CONDITION_RE.search(c) for c in CLAUSE_RE.split(sentence))
 
 
-def offers_other_proof(sentence: str) -> bool:
-    asked = PROVIDE_RE.search(sentence) and OTHER_PROOF_RE.search(sentence)
-    return bool(asked and CHECK_OFFER_RE.search(sentence) and not CANNOT_RE.search(sentence))
+def offers_other_proof(sentence: str, following: str = "") -> bool:
+    if OTHER_PROOF_RE.search(sentence) and (NEED_ONE_RE.search(f"{sentence} {following}") or ALTERNATIVE_PROOF_RE.search(sentence)):
+        return True
+    if not (PROVIDE_RE.search(sentence) and OTHER_PROOF_RE.search(sentence)):
+        return False
+    return any(CHECK_OFFER_RE.search(text) and not CANNOT_RE.search(text) for text in (sentence, following))
 
 
 def breaks_lookup_rule(draft: str, state: AgentState) -> list[str]:
     known = bool(state.get("order_number"))
     found = []
-    for sentence in sentences(draft):
+    said = sentences(draft)
+    for i, sentence in enumerate(said):
+        following = said[i + 1] if i + 1 < len(said) else ""
         by_email = OFFER_EMAIL_RE.search(sentence) and not known and not NAMES_ORDER_RE.search(sentence)
-        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or offers_other_proof(sentence) or _denies_lookup(sentence):
+        other = offers_other_proof(sentence, following)
+        if OFFER_OTHER_RE.search(sentence) or LISTING_RE.search(sentence) or by_email or other or _denies_lookup(sentence):
             found.append(sentence.strip())
     return found
 
