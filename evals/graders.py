@@ -21,6 +21,7 @@ JUDGE_SYSTEM = (
 )
 
 JUDGE_ATTEMPTS = 3
+JUDGE_MAX_TOKENS = 2000
 
 JUDGE_SCHEMA = {
     "type": "object",
@@ -121,7 +122,7 @@ async def run_judge(
         for attempt in range(JUDGE_ATTEMPTS):
             result = await client.messages.create(
                 model=model,
-                max_tokens=500,
+                max_tokens=JUDGE_MAX_TOKENS,
                 system=JUDGE_SYSTEM,
                 messages=[
                     {
