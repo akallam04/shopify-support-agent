@@ -48,9 +48,11 @@ NEGATED_BEFORE_RE = re.compile(r"\b(not|rather than|instead of|isn't|wasn't|is n
 
 LOOKUP_VERB = r"(look(ing)? (it |them |this |that |your orders? |the orders? |orders )?up|find|locate|pull up|search for|track down|retrieve|list|show you)"
 OTHER_ID = r"((full |first and last )?name|phone( number)?|(shipping |home |street |billing )?address|account)"
+MATCH_VERB = r"(look(ing)? (it |them |this |that )?up|find|locate|pull up|search for|track down|retrieve|match|verify|identify)"
+ASKED_ID = r"((full )?name|phone( number)?|(?<!new )(shipping |billing )?address (on|for|used for) the order|(?<!new )shipping address)"
 OFFER_OTHER_RE = re.compile(
-    rf"\b{LOOKUP_VERB}\b[^.?!\n]{{0,60}}\b(by|with|using|from|via|under|through|that) (just |only )?(your|the|their|her|his)? ?{OTHER_ID}\b"
-    rf"|\b(share|send|give me|provide|tell me|what is|what's)\b[^.?!\n]{{0,25}}\b(full )?(name|phone number|phone)\b[^.?!\n]{{0,80}}\b{LOOKUP_VERB}\b",
+    rf"\b{LOOKUP_VERB}\b[^.?!\n]{{0,60}}\b(by|with|using|from|via|under|through) (just |only )?(your|the|their|her|his)? ?{OTHER_ID}\b"
+    rf"|\b(share|send|give me|provide|tell me|what is|what's)\b[^.?!\n]{{0,25}}\b{ASKED_ID}\b[^.?!\n]{{0,80}}\b{MATCH_VERB}\b",
     re.IGNORECASE,
 )
 OFFER_EMAIL_RE = re.compile(

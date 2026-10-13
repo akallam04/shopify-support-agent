@@ -195,3 +195,23 @@ def test_the_unsupported_claim_set_scores_citations_and_claims_apart() -> None:
     claims = summary["claim_correctness"]
     assert (claims["unsupported_caught"], claims["unsupported"], claims["supported_passed"], claims["supported"]) == (19, 21, 11, 11)
     assert claims["missed"] == ["policy-final-sale-contradiction", "policy-gift-card-contradiction"]
+
+
+IDENTITY_REPLY = (
+    "I understand your concern about privacy. I can't look up an order without the checkout email, since that's how I verify "
+    "the order belongs to you. If you'd prefer not to share it, you could also tell me the name on the order or the shipping "
+    "address, and I can try to match it that way. Once I've verified it, I'll check where order #1005 is."
+)
+
+
+def test_an_offer_to_match_an_order_by_name_or_address_is_rewritten_then_replaced_with_the_rule() -> None:
+    messages = [
+        {"role": "user", "content": "Where is order #1005?"},
+        {"role": "assistant", "content": "To look it up, could you share the email address you used at checkout?"},
+        {"role": "user", "content": "No, I'm not giving my email to a chatbot. Just check the order number and tell me where it is."},
+    ]
+    state = {"intent": "order", "draft": IDENTITY_REPLY, "messages": messages, "tool_results": [], "order_number": "#1005"}
+    first = verify_node(state)
+    assert first["response"] == "" and "name, phone, address" in first["verify_feedback"]
+    assert verify_node({**state, "retry_count": 1})["response"] == ORDER_NUMBER_HELP
+    assert not breaks_lookup_rule("Please share the new shipping address and I will confirm the change.", {"order_number": "#1011"})
