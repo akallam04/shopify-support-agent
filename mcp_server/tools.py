@@ -221,7 +221,11 @@ def check_inventory(backend: StoreBackend, product_query: str) -> dict[str, Any]
 
 WRITE_ACTIONS = ("cancel_order", "update_shipping_address", "request_return")
 HANDOFF_ACTION = "transfer_to_human"
-SUPPORT_HOURS = "Monday to Friday, 8 am to 5 pm Mountain Time, replying within 1 business day"
+HANDOFF_RECORDED = (
+    "The request is recorded for the support team, but no one is notified from this chat and no ticket is opened. "
+    "To reach a person, the customer can email support@auroraoutfitters.com (Monday to Friday, 8 am to 5 pm Mountain Time; "
+    "email replies within 1 business day)."
+)
 STORE_ERROR_REASON = (
     "The store could not complete that change just now, so nothing was changed. Please try again "
     "in a few minutes, or email support@auroraoutfitters.com."
@@ -481,7 +485,7 @@ def _apply(store: WritableStore, action: str, prepared: Prepared) -> dict[str, A
         store.request_return(name, lines, prepared.args["reason"])
         return {"message": f"A return is requested on order {name}.", **prepared.facts["return_terms"]}
     store.record_handoff({"at": format_instant(store.clock.now()), **prepared.args})
-    return {"message": f"I have passed this to our support team, who work {SUPPORT_HOURS}."}
+    return {"message": HANDOFF_RECORDED}
 
 
 def execute(backend: StoreBackend, action: str, args: dict[str, Any], key: str | None = None) -> dict[str, Any]:

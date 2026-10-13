@@ -181,3 +181,11 @@ def test_a_demand_beyond_policy_is_refused_and_recorded_without_claiming_they_as
     assert state["response"].startswith(HANDOFF_EXCEPTION_DEMO) and "Your change is still waiting" in state["response"]
     person = graph_for(backend, {"route": [{"intent": "handoff", "search_query": "", "order_number": "", "email": ""}]})[0]
     assert run(person, [{"role": "user", "content": "I want to talk to a real person."}], {"sandbox": True})["response"] == HANDOFF_DEMO
+
+
+def test_a_transfer_the_model_makes_itself_never_claims_someone_was_notified(backend: SimStoreBackend) -> None:
+    from mcp_server.tools import execute
+
+    result = execute(backend, "transfer_to_human", {"summary": "Wrong size arrived on order #1009", "order_number": "#1009"})
+    assert result["ok"] and "no one is notified" in result["message"]
+    assert "passed this to our support team" not in result["message"] and "will reply" not in result["message"]
