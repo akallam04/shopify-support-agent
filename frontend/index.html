@@ -42,10 +42,7 @@
           <a class="hide-sm" href="#gear">Gear</a>
           <a href="./how-it-works.html">How it works</a>
           <button class="cart-btn hide-sm" id="cartToggle" type="button" aria-expanded="false" aria-controls="cartDrawer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6 H20 L18.5 16 H5.5 Z" /><path d="M9 20 h.01 M15 20 h.01" /></svg>
-            <span class="sr-only">Cart,</span>
-            <span class="cart-btn__count" id="cartCount">2</span>
-            <span class="sr-only">items</span>
+            Cart <span class="cart-btn__count" id="cartCount">2</span><span class="sr-only">items</span>
           </button>
         </nav>
       </div>
@@ -57,9 +54,10 @@
           <div>
             <h1 id="heroTitle">Gear that keeps up with the weather.</h1>
             <p class="hero__lead">Aurora Outfitters is a demo outdoor store. Its assistant answers questions and can cancel, change, or return an order, and it shows you every change before it makes it. It works on a private copy of the store, so try anything.</p>
+            <p class="hero__proof">In <span data-num="headline.on.conversations">200</span> simulated conversations per setting, changes the customer never agreed to fell from <span data-num="headline.off.unsafe_conversations">42</span> to <span data-num="headline.on.unsafe_conversations">0</span>, with no significant difference in resolution. <a href="./how-it-works.html">How it works</a></p>
             <div class="hero__actions">
               <button class="btn btn--primary" type="button" data-open-chat>Try the assistant</button>
-              <a class="btn btn--quiet" href="./how-it-works.html">How it works</a>
+              <button class="btn btn--quiet" type="button" data-tour>Show me in 60 seconds</button>
             </div>
           </div>
           <div class="hero__art" aria-hidden="true">
@@ -87,12 +85,10 @@
             </svg>
           </div>
         </section>
-      </div>
 
-      <section class="section" id="try" aria-labelledby="tryTitle">
-        <div class="wrap">
-          <div class="section__head">
-            <h2 id="tryTitle">Things to try</h2>
+        <section class="try" id="try" aria-labelledby="tryTitle">
+          <div class="try__head">
+            <h2 id="tryTitle">Try a scenario</h2>
             <p>Each one starts a chat with a real test order. Changes happen only in your copy of the store, and nothing changes until you say yes.</p>
           </div>
           <div class="scenarios">
@@ -133,16 +129,30 @@
               <span class="scenario__watch">Caught by a check that runs before any model call.</span>
             </button>
           </div>
+        </section>
+      </div>
 
-          <div class="orders">
-            <h3>Test orders</h3>
+      <section class="section" id="orders" aria-labelledby="ordersTitle">
+        <div class="wrap">
+          <div class="section__head">
+            <h2 id="ordersTitle">Test orders</h2>
             <p>Looking up an order needs its number and the email on it, so nobody can read a stranger's order. Try #9999 to see the assistant say it found nothing.</p>
-            <table class="orders__table">
-              <caption class="sr-only">Test orders you can use in the chat</caption>
-              <thead><tr><th scope="col">Order</th><th scope="col">Email</th><th scope="col">State</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
-              <tbody id="ordersBody"></tbody>
-            </table>
           </div>
+          <table class="orders__table">
+            <caption class="sr-only">Test orders you can use in the chat</caption>
+            <thead><tr><th scope="col">Order</th><th scope="col">Email</th><th scope="col">State</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+            <tbody id="ordersBody">
+              <!-- orders:start -->
+                <tr><td class="num">#1001</td><td class="email">maya.thompson@example.com</td><td>Shipped, with tracking</td><td><button class="link-btn" type="button" data-ask="Where is my order #1001? My email is maya.thompson@example.com" aria-label="Track it: order #1001">Track it</button></td></tr>
+                <tr><td class="num">#1023</td><td class="email">maya.thompson@example.com</td><td>Not shipped, can still be cancelled</td><td><button class="link-btn" type="button" data-ask="Please cancel order #1023. My email is maya.thompson@example.com. I ordered it by mistake." aria-label="Cancel it: order #1023">Cancel it</button></td></tr>
+                <tr><td class="num">#1021</td><td class="email">jordan.lee@example.com</td><td>Not shipped, address can still change</td><td><button class="link-btn" type="button" data-ask="I need to change the shipping address on order #1021. My email is jordan.lee@example.com." aria-label="Change the address: order #1021">Change the address</button></td></tr>
+                <tr><td class="num">#1022</td><td class="email">jordan.lee@example.com</td><td>Delivered September 29, can be returned</td><td><button class="link-btn" type="button" data-ask="I want to return the rain jacket from order #1022. It is too big. My email is jordan.lee@example.com." aria-label="Return it: order #1022">Return it</button></td></tr>
+                <tr><td class="num">#1018</td><td class="email">sofia.ramirez@example.com</td><td>Delivered, final sale</td><td><button class="link-btn" type="button" data-ask="I want to return the ski goggles from order #1018. My email is sofia.ramirez@example.com." aria-label="Try a return: order #1018">Try a return</button></td></tr>
+                <tr><td class="num">#1016</td><td class="email">maya.thompson@example.com</td><td>Delivered August 20, past the 30-day window</td><td><button class="link-btn" type="button" data-ask="I want to return the hiking boots from order #1016. My email is maya.thompson@example.com." aria-label="Try a return: order #1016">Try a return</button></td></tr>
+                <tr><td class="num">#1014</td><td class="email">grace.kim@example.com</td><td>Payment pending</td><td><button class="link-btn" type="button" data-ask="What is the status of order #1014? My email is grace.kim@example.com" aria-label="Check it: order #1014">Check it</button></td></tr>
+              <!-- orders:end -->
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -151,7 +161,7 @@
           <div class="gear__bar">
             <div class="section__head" style="margin-bottom:0">
               <h2 id="gearTitle">Trail favorites</h2>
-              <p id="gearNote">12 products from the store catalog</p>
+              <p id="gearNote"><span data-num="catalog.products">15</span> products from the catalog the assistant answers from</p>
             </div>
             <div class="filters" role="group" aria-label="Filter products">
               <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
@@ -160,7 +170,115 @@
               <button class="filter" type="button" data-filter="apparel" aria-pressed="false">Apparel</button>
             </div>
           </div>
-          <div class="grid" id="grid"></div>
+          <div class="grid" id="grid">
+            <!-- products:start -->
+            <article class="product" data-cat="apparel">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M70 40 L100 28 L130 40 L138 96 H62 Z" /><path d="M100 28 V96" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Stormline Rain Jacket</h3>
+                <div class="product__meta"><span class="product__price">$179.99</span><span class="product__stock">Low stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="apparel">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M68 42 L100 30 L132 42 L136 98 H64 Z" /><path d="M100 30 V98 M84 52 h-8 M124 52 h-8" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Glacier Point Down Parka</h3>
+                <div class="product__meta"><span class="product__price">$329.99</span><span class="product__stock">Low stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="apparel">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M74 40 L100 32 L126 40 L132 92 H68 Z" /><path d="M88 36 a12 8 0 0 0 24 0" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Trailblazer Merino Base Layer</h3>
+                <div class="product__meta"><span class="product__price">$84.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="apparel">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M72 42 L100 32 L128 42 L134 94 H66 Z" /><path d="M92 34 L100 48 L108 34 M100 48 V64" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Northwind Fleece Pullover</h3>
+                <div class="product__meta"><span class="product__price">$94.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="apparel">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M72 44 L100 32 L128 44 L134 96 H66 Z" /><path d="M86 34 a16 12 0 0 0 28 0" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Sierra Sun Hoody</h3>
+                <div class="product__meta"><span class="product__price">$69.95</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="camp">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M100 30 L145 96 H55 Z" /><path d="M100 30 V96 M78 96 L100 62 L122 96" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Summit Ridge 2-Person Tent</h3>
+                <div class="product__meta"><span class="product__price">$289.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="camp">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="58" y="46" width="84" height="48" rx="24" /><path d="M78 46 v48 M122 46 v48" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Ember 750 Sleeping Bag</h3>
+                <div class="product__meta"><span class="product__price">$249.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="camp">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M72 52 h56 v34 a8 8 0 0 1 -8 8 h-40 a8 8 0 0 1 -8 -8 Z" /><path d="M128 60 h10 M62 60 h10 M84 52 v-8 h32 v8" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Basecamp Titanium Cook Set</h3>
+                <div class="product__meta"><span class="product__price">$119.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="camp">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M74 46 v34 h52 v-34" /><path d="M70 96 l10 -16 M130 96 l-10 -16 M74 80 h52" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Drift Camp Chair</h3>
+                <div class="product__meta"><span class="product__price">$74.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="70" y="38" width="60" height="58" rx="14" /><path d="M86 38 v-8 a14 14 0 0 1 28 0 v8 M70 64 h60" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Cascade 40L Hiking Backpack</h3>
+                <div class="product__meta"><span class="product__price">$149.95</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M72 34 h26 v34 l40 16 v20 H72 Z" /><path d="M72 84 h66" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Alpine Crossing Hiking Boots</h3>
+                <div class="product__meta"><span class="product__price">$219.99</span><span class="product__stock">Low stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="72" y="50" width="42" height="30" rx="9" /><path d="M114 58 l22 -10 v34 l-22 -10 M72 65 h-14" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Peakfinder Headlamp 600</h3>
+                <div class="product__meta"><span class="product__price">$59.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M88 38 h24 v10 l6 12 v40 a6 6 0 0 1 -6 6 h-24 a6 6 0 0 1 -6 -6 v-40 l6 -12 Z" /><path d="M82 74 h36" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Wander Insulated Bottle 32oz</h3>
+                <div class="product__meta"><span class="product__price">$39.95</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><path d="M84 30 L76 100 M116 30 L124 100" /><path d="M80 30 h8 M112 30 h8 M74 88 h8 M118 88 h8" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Ridgeline Trekking Poles</h3>
+                <div class="product__meta"><span class="product__price">$89.95</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <article class="product" data-cat="gear">
+              <svg viewBox="0 0 200 124" aria-hidden="true"><g fill="none" stroke="#1f6fb2" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><rect x="56" y="50" width="88" height="34" rx="17" /><path d="M100 62 v10 M56 66 h-8 M144 66 h8" /></g></svg>
+              <div class="product__body">
+                <h3 class="product__name">Meridian Ski Goggles</h3>
+                <div class="product__meta"><span class="product__price">$129.99</span><span class="product__stock">In stock</span></div>
+              </div>
+            </article>
+            <!-- products:end -->
+          </div>
         </div>
       </section>
     </main>
@@ -188,13 +306,6 @@
     </div>
     <div class="scrim" id="scrim" hidden></div>
 
-    <div class="hint" id="hint" hidden>
-      <button class="hint__open" id="hintOpen" type="button">Try cancelling an order. I'll ask before I change anything.</button>
-      <button class="hint__close" id="hintClose" type="button" aria-label="Dismiss">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" /></svg>
-      </button>
-    </div>
-
     <button class="launcher" id="launcher" type="button" aria-expanded="false" aria-controls="chat">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 1 1-3.2-6.4" /><path d="M8 11h8M8 15h5" /></svg>
       Ask the assistant
@@ -207,7 +318,7 @@
         </span>
         <div class="chat__title">
           <h2 id="chatTitle">Aurora assistant <span class="sandbox-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l7.5 3.1v5.6c0 4.6-3.1 8.2-7.5 9.7-4.4-1.5-7.5-5.1-7.5-9.7V5.9z" /><path d="M8.6 12.2l2.4 2.4 4.4-4.7" /></svg>Sandbox</span></h2>
-          <p class="status" id="status" data-state="waking"><span class="status__dot" aria-hidden="true"></span><span id="statusText">Waking up</span></p>
+          <p class="status" id="status" data-state="waking"><span class="status__dot" aria-hidden="true"></span><span id="statusText">Waking up</span><button class="link-btn status__retry" id="statusRetry" type="button" hidden>Retry</button></p>
         </div>
         <button class="icon-btn" id="restart" type="button" aria-label="Start a new conversation">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4 v4 h-4" /></svg>
@@ -230,5 +341,6 @@
     <script src="./conversation.js"></script>
     <script src="./agent-view.js"></script>
     <script src="./app.js"></script>
+    <script src="./tour.js"></script>
   </body>
 </html>

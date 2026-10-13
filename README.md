@@ -2,22 +2,45 @@
 
 [![CI](https://github.com/akallam04/shopify-support-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/akallam04/shopify-support-agent/actions/workflows/ci.yml) [![Live demo check](https://github.com/akallam04/shopify-support-agent/actions/workflows/demo-check.yml/badge.svg)](https://github.com/akallam04/shopify-support-agent/actions/workflows/demo-check.yml)
 
-**An AI support agent that asks before it acts.** It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Every change goes through a gate written in code, and nothing runs until the customer says yes.
+**An AI support agent for a Shopify store that asks before it acts.** It answers questions about the store and can cancel an order, change a shipping address, or start a return. Every change goes through a gate written in code, and nothing runs until the customer says yes.
 
 **[Try the live demo](https://shopify-support-agent.vercel.app)** | **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** | [Technical write-up](docs/write-up.md)
 
 <img src="docs/demo.gif" width="100%" alt="On the desktop store, with the assistant panel open, the customer asks to cancel an order. The assistant shows the exact change and the policy checks it passed, the step rail holds at the gate, the customer says yes, and a new Done message confirms the order is cancelled." />
 
-**The result, in plain words.** Tested against simulated customers on 50 tasks, 4 tries each, the gate did not cost resolution: 190 of 200 conversations resolved with it and 185 without, a difference of +0.025 with a 95% interval of -0.045 to +0.105. It did remove unsafe changes: conversations with a change the customer never agreed to, or one they did not want, went from 42 to 0, and safe pass^1 (resolved, and every change had a clear yes) rose from 0.755 to 0.950, a difference of +0.195 with an interval of +0.090 to +0.310.
+## The headline
 
-**Stack:** Python, LangGraph, FastAPI, Claude Haiku 5.5 (Haiku 4.5 in the headline runs), a self-built MCP server over the Shopify Admin GraphQL API, Chroma, AWS Lambda, and a vanilla JavaScript site on Vercel. Tested with a tau-bench-style simulator (Qwen 3.8 Flash as the customer, Claude Sonnet 5.5 as the judge).
+Measured on a simulated, sandboxed copy of this store: 50 tasks, each played 4 times by a simulated customer, so 200 conversations per setting. The baseline, **gate off**, is the same agent with confirmation asked for in the prompt: the prompt still tells the model to describe the change and wait for a yes, and nothing enforces it. **Gate on** enforces the yes in code.
+
+| | Gate off: asked in the prompt | Gate on: enforced in code |
+|---|---|---|
+| Conversations with a change the customer never agreed to, or did not want | 42 of 200 | 0 of 200 |
+| Resolved | 185 of 200 | 190 of 200 |
+| Resolved safely, pass^1 | 0.755 | 0.950 |
+| Resolved safely, pass^4 (all 4 tries of a task) | 0.640 | 0.860 |
+
+There was no significant difference in resolution: +0.025, with a 95% paired interval of -0.045 to +0.105. Resolved safely rose by +0.195 [+0.090, +0.310]. These results were observed in this benchmark, with simulated customers on one demo store's tasks; they are not production measurements. The headline ran on Haiku 4.5 with the tool set of the time, which included an email-only order listing tool that was removed afterwards (see [Honesty notes](#honesty-notes)).
+
+## Three guarantees
+
+1. **Nothing changes until you say yes.** A change is shown exactly as it will run, and it runs once, only after a clear yes. Code: [`app/agent/nodes/gate.py`](app/agent/nodes/gate.py).
+2. **Store policy is enforced in code.** Change windows, final sale, item condition, quantities, and addresses are checked before a change is shown. Code: [`mcp_server/policy.py`](mcp_server/policy.py).
+3. **Facts come from the store.** Amounts, dates, order numbers, and tracking numbers in a reply are checked against store data or the cited policy. Code: [`app/agent/nodes/verify.py`](app/agent/nodes/verify.py).
+
+<!-- live-config:start -->
+<!-- live-config:end -->
+
+A reply the model writes took 2.3 to 3.6 seconds (median 2.8s over 9 replies) when the scenario check ran on the live demo on October 13, 2026; a yes that runs a change comes back at once.
+
+**Stack:** Python, LangGraph, FastAPI, Claude Haiku 5.5 with thinking off (Haiku 4.5 in the headline runs), a self-built MCP server over the Shopify Admin GraphQL API, Chroma, AWS Lambda, and a vanilla JavaScript site on Vercel. Tested with a tau-bench-style simulator (Qwen 3.8 Flash as the customer, Claude Sonnet 5.5 as the judge).
 
 ## What it does
 
-- **Answers from the store's own data.** Product and policy questions are answered from retrieval over the catalog and policy pages, with a citation for every claim. Order questions are answered from store tools, and only after the customer gives the order number and the email on the order.
-- **Changes orders safely.** Cancel, change the shipping address, or request a return. Code checks the store policy (the 2-hour change window, the 30-day return window, final sale, shipping state, US and Canada addresses) and the identity match. The customer then sees the exact change and the checks it passed. The change runs once, after a clear yes, with an idempotency key.
-- **Explains refusals and hands off when it should.** A request policy refuses is explained, not passed on. Warranty claims, damaged items, and customers who ask for a person get a recorded handoff.
-- **Shows its work.** On the live site, a rail under every reply lights up the steps that turn took (guard, route, look up, gate, verify, reply) with its tool calls. Tapping it shows the time and model cost of each step.
+- **Answers from the store's own data.** Product and policy questions are answered from retrieval over the catalog and policy pages, with citations to the passages used. Order questions are answered from store tools, and only with the order number and the email on the order.
+- **Changes orders safely.** Cancel, change the shipping address, or request a return. Code checks the store policy (the 2-hour change window, the 30-day return window, final sale, item condition, quantities, address formats, US and Canada) and the identity match. The customer sees the exact change, the checks it passed, and the refund it will bring. It runs once, after a clear yes, with an idempotency key.
+- **Answers questions without pushing a change.** "Can I still cancel?" gets the deadline and an offer, not a confirmation card; the card comes when the customer asks for the change.
+- **Explains refusals and hands off when it should.** A request policy refuses is explained with its rule. Warranty and damage claims and customers who ask for a person get a recorded handoff, and the demo says plainly that no one is notified.
+- **Shows its work.** On the live site, a rail under every reply lights up the steps that turn took (guard, route, look up, gate, sources, reply) with its tool calls. Tapping it shows each step's time, model cost, and source checks, and citation chips open the cited passage.
 - **Keeps visitors safe from each other.** The public demo gives every visitor a private sandbox copy of the store. The changes ride in a signed session token, so nothing reaches the real store or another visitor's chat. Emails are masked in the reply trace and the logs.
 
 ## Architecture
@@ -25,53 +48,57 @@
 ```mermaid
 flowchart TD
     U[customer message] --> SAN[sanitize: fixed-pattern input guard]
-    SAN -->|injection pattern| RESP[respond]
+    SAN -->|injection pattern| FIXED[fixed reply, no model call]
     SAN --> CTX[context: digest of older turns]
     CTX -->|a change is waiting for a yes| CONF[confirm: read the reply]
     CTX --> ROUTE[route: intent, order number, email]
     ROUTE -->|product or policy| RET[retrieve: catalog or policies]
-    ROUTE -->|order| TOOLS[order tools: status, order list, stock]
-    ROUTE -->|handoff| HAND[handoff record]
-    ROUTE -->|other| RESP
+    ROUTE -->|order| TOOLS[order tools: status and stock]
+    ROUTE -->|person, warranty, or exception| HAND[handoff record]
+    ROUTE -->|other| RESP[respond]
     RET --> RESP
-    TOOLS -->|proposes a change| GATE[gate: reason check, policy engine, confirmation]
+    TOOLS -->|proposes a change| GATE[gate: reason and condition checks, policy engine, confirmation; reflection off by default]
     GATE -->|correctable mistake, once| TOOLS
     GATE -->|held for a yes, or refused| VER
     CONF -->|yes| EXEC[execute once with an idempotency key]
-    CONF -->|something else| ROUTE
-    CONF -->|no or unclear| VER
-    TOOLS -->|answer| VER[verify: grounding checks]
+    CONF -->|question, or yes and also| ROUTE
+    CONF -->|a different change| ROUTE
+    CONF -->|no, unclear, or conditional: nothing runs| VER
+    TOOLS -->|answer| VER[verify: source checks]
     EXEC --> VER
     HAND --> VER
     RESP --> VER
     VER -->|fails once| RESP
+    VER -->|after a question| RECONF[ask about the same change again]
     VER --> OUT[reply]
+    RECONF --> OUT
+    FIXED --> OUT
 ```
 
 Key decisions:
 
 - **A state machine, not one big prompt.** Control flow lives in typed LangGraph nodes and conditional edges, so routing is auditable and guardrails are code. The whole graph is on one page in `app/agent/graph.py`.
-- **The gate is code, not a request.** A proposed change goes through the policy engine in `mcp_server/policy.py`, then a fixed confirmation template, then waits in graph state. Only the next turn's clear yes runs it. A return needs the reason in the customer's own words; a cancellation reason is optional and never guessed. The headline compares this against asking for confirmation in the prompt.
+- **The gate is code, not a request.** A proposed change goes through the policy engine in `mcp_server/policy.py`, then a fixed confirmation template, then waits in graph state. Only the next turn's clear yes runs it. A complete request goes straight to the card; a return needs the reason in the customer's own words; a cancellation reason is optional and never guessed. The headline compares this against asking for confirmation in the prompt.
 - **One tool contract, two backends.** The same tools run against the live Shopify Admin GraphQL API or a simulated store built from a snapshot of it, and contract tests check that both return identical results. The simulated store has a frozen clock, so time windows never go stale.
-- **Grounding is enforced.** The verify node rejects a reply that states an order number or tracking number that no tool returned, or that cites a document that was not retrieved. A failing reply gets one rewrite, then a safe fallback.
+- **Facts are checked against their sources.** The verify node checks that citations point to retrieved passages, that every amount, date, and duration appears in store data or the cited policy, that order numbers, tracking numbers, and links come from store tools, and that a reply never offers a lookup by name, phone, or email alone. Numbers a reply needs, such as the refund after the fee, are calculated in code. A failing reply gets one rewrite, then a safe fallback.
 - **Stateless serving with a signed session.** Lambda keeps nothing between requests. The pending change and the sandbox's changes travel in an HMAC-signed token the browser holds, and a pending change is re-checked against the rebuilt store before it can run.
-- **Every response names its release.** A manifest of the git commit, prompt and knowledge hashes, models, and gate settings is stamped on every reply, log line, and eval run. Logs are one JSON line per request with per-node timing, tokens, and cost.
+- **Every response names its release.** A manifest of the git commit, prompt and knowledge hashes, models, and gate settings is stamped on every reply, log line, and eval run, and `/release` shows it for the deployed API.
 
 ## How it is tested
 
-Two suites, run on every change that matters.
-
-**A 53-case single-turn suite** covers order lookups, product and policy questions, out-of-scope traps, prompt injection, and handoff requests. It grades intent, retrieval, tool success, and refusals deterministically, and answer quality with a judge model that sees the tool outputs. It runs read-only against the live store and must stay at 53 of 53 (it is at 53 of 53, `evals/results/20261006-120702_phase6c-cancel-reason.json`).
+**A 53-case single-turn suite** covers order lookups, product and policy questions, out-of-scope traps, prompt injection, and handoff requests. It grades intent, retrieval, tool success, and refusals deterministically, and answer quality with a judge model that sees the tool outputs. It runs read-only and must stay at 53 of 53 (it is at 53 of 53, `evals/results/20261012-231915_v2-2-step4-final.json`).
 
 **A tau-bench-style simulation** (`evals/sim/`) measures the agent over whole conversations:
 
-- **Tasks.** 50 tasks in the tau-bench format: a customer scenario (persona, reason for contacting, what the customer knows, instructions) and evaluation criteria (reference actions, facts the agent must state, judged assertions, forbidden writes). They cover lookups, cancellations, address changes, returns, refusals, identity checks, someone else's order, injection, angry customers, and customers who say no, ask a question, or correct a detail at the confirmation.
+- **Tasks.** 50 main tasks in the tau-bench format: a customer scenario (persona, reason for contacting, what the customer knows, instructions) and evaluation criteria (reference actions, facts the agent must state, judged assertions, forbidden writes). They cover lookups, cancellations, address changes, returns, refusals, identity checks, someone else's order, injection, angry customers, and customers who say no, ask a question, or correct a detail at the confirmation. A separate set of 30 tasks from the v2.2 review covers store failures, tricky confirmations, item edge cases, and injection variants.
 - **Simulated customers.** Qwen 3.8 Flash plays the customer from the scenario against the real agent and a fresh copy of the store. It comes from a different model family than the agent, so the agent is not talking to a copy of itself.
 - **Grading.** Each conversation is graded on the store's end state (a canonical hash compared with replaying the reference actions on a fresh copy), the facts the agent had to give, judged assertions (Claude Sonnet 5.5, with tool outputs as ground truth), and forbidden writes. A separate yes-check judge reads every write, even in failed conversations, to decide whether the customer clearly agreed to it.
 - **pass^k.** The chance that all k tries of a task succeed, averaged over tasks. Differences come with 95% paired bootstrap intervals over tasks.
-- **Task validation.** Every task's reference actions are replayed through the policy engine before use, and failures were read for task bugs before any agent fix.
+- **Task validation.** Every task's reference actions are replayed through the policy engine before use (a gold replay), and failures were read for task bugs before any agent fix.
 - **A held-out set.** Ten more tasks were written and committed before the first fix and run only after the code was frozen.
 - **A grader audit.** After the headline, every passing gate-off conversation with a write and a random 10 percent of the other passes were read by hand.
+
+**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, and the browser tests. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
 
 ## Results
 
@@ -96,8 +123,14 @@ Same agent code, same 50 tasks, 4 tries each, 200 conversations per setting. Gat
 - **Which parts of the gate matter:** on the 32 tasks with a proposed change, 2 tries each, turning off confirmation gave 20 writes without a yes and 4 forbidden writes, while turning off the reflection check changed nothing measurable. Reflection is now off by default, which saves an average of 0.57 model calls per conversation.
 - **Haiku 4.5 or Sonnet 5.5:** on 20 tasks, 2 tries each, Sonnet resolved 39 of 40 safely and Haiku 36 of 40, a difference of +0.075 [-0.025, +0.175] that is not distinguishable from noise. Sonnet was cheaper per resolved conversation ($0.0145 against $0.0154) only because its prompts are cached, and its median turn took twice as long. The demo used Haiku 4.5 until the model upgrade check below.
 
+### Notes on the results
+
+- **Plain resolution when every try must succeed.** Gate on resolves slightly less than gate off at pass^3 and pass^4: 0.880 and 0.860 against 0.890 and 0.880. Gate off fails the two tasks where the customer says no on every try, because it cancels before the customer can answer, but passes all four tries on 44 tasks. Gate on misses at least one try on 7 tasks and fails no task on every try. On resolved safely, gate on leads at every k.
+- **Two categories dip.** Address changes resolved 18 of 20 with the gate on against 20 of 20 without it: twice the agent handed a UK address to the support team instead of saying only US and Canada addresses are allowed; it now explains the rule. Someone else's order resolved 6 of 8 against 7 of 8: one reply offered to find the order by name or phone, which the source check now blocks, and one was a judge error. Which-order tasks also dip on plain resolution, 11 against 12, from one guessed return reason, while staying ahead on resolved safely, 11 against 7.
+
 ### Honesty notes
 
+- **The headline used the older tool set.** An email-only order listing tool let an email alone list every order on it; it was removed after the headline runs, which include conversations that used it. Results after its removal are in the Hardening section.
 - **Resolved safely was added after the partial headline was seen.** It is built only from the yes-check and forbidden-write checks that were already part of grading.
 - **The fixes did not move the overall pass rate.** Eleven general fixes after the baseline took the same 50 tasks from 94 to 93 of 100 resolved at 2 tries each, a difference of -0.010 [-0.060, +0.040]. The failures they targeted went away and write recall rose from 0.895 to 0.974, but other tasks failed some tries instead.
 - **Fixing the judge shrank the gate's lead.** The audit read 114 conversations and found no resolved grade wrong, but the yes-check judge was wrong on 19 of 88 verdicts: it flagged gate-off returns the customer had agreed to because the return fee was never mentioned. With that fixed and the saved conversations regraded, gate off went from 132 to 151 resolved safely, and the gate's lead fell from +0.285 [+0.160, +0.420] to +0.195 [+0.090, +0.310].
@@ -112,7 +145,9 @@ A round of fixes from review findings, made after the headline. The headline abo
 | Reply and confirmation flow | Return reasons from the customer's own words; a forced change tool when a draft asks for a yes; automatic lookup when the order number and email are known; questions and conditional answers at the confirmation; receipts and handoffs that say exactly what happened | 53 of 53 on the 53-case suite. 50 tasks, 1 try each: 49 of 50 resolved safely, 0 unsafe writes |
 | Store policy in code | Item condition, damaged items, missing product data failing closed, quantities, address formats, and Canadian return terms enforced in code; every written rule mapped in [docs/policy-parity.md](docs/policy-parity.md) | 53 of 53. 13 return, address and Canada tasks, 2 tries each: 25 of 26 resolved safely, 0 unsafe writes; the miss came from a return reason change in this step, and after the fix the affected tasks passed 6 of 6 |
 | Honest source check | Condition detection that ignores negations; refunds, deadlines and time left calculated in code; every number, identifier and lookup offer checked against typed evidence; the step renamed to what it checks | 53 of 53. 50 tasks, 2 tries each: 97 of 100 resolved safely, 0 unsafe writes, write precision and recall 1.0. Of the three misses, one was a lookup offer the check then learned to catch, one was a warranty question routed as a policy question (also seen before this round), and one was a simulated customer who never looked for the order number it was told where to find. Live checks and reruns kept finding new wordings of lookup offers, so the lookup check now works by meaning, not phrasing. On the final version, the six identity and order-number tasks passed 23 of 24 at 4 tries each; the miss suggested the customer try their own email, which the judge counted as misleading |
-| Every finding as a test | 30 new simulation tasks from the findings, kept apart from the main 50; store failure injection; metrics for extra questions, one-turn cards and false refusals; scenario checks for every homepage button on the deployed agent; browser tests; CI tiers; a written model switch rule. Fixes these runs led to: questions about a change get an answer and an offer, not a card; warranty claims record a request for a person; "yes, and also ..." keeps the change waiting; a complete change request goes straight to the card | Hardening tasks, 2 tries each: 59 of 60 resolved safely, 0 unsafe writes, write precision and recall 1.0; 8 of 8 complete first messages reached the card in one reply, 0 questions for details already given, 0 false refusals. Main 50 tasks, 1 try each: 50 of 50. 53 of 53. Scenario check on the deployed agent: 10 of 10. The miss was a worn jacket where no return was filed but the refusal of an exception did not name the unworn rule |
+| Every finding as a test | 30 new simulation tasks from the findings, kept apart from the main 50; store failure injection; metrics for extra questions, one-turn cards and false refusals; scenario checks for every homepage button on the deployed agent; browser tests; CI tiers; a written model switch rule. Fixes these runs led to: questions about a change get an answer and an offer, not a card; warranty claims record a request for a person; "yes, and also ..." keeps the change waiting; a complete change request goes straight to the card | Hardening tasks, 2 tries each: 59 of 60 resolved safely, 0 unsafe writes, write precision and recall 1.0; 8 of 8 complete first messages reached the card in one reply, 0 questions for details already given, 0 false refusals. Main 50 tasks, 1 try each: 50 of 50. 53 of 53. Scenario check on the deployed agent: 10 of 10. The miss was a worn jacket where no return was filed but the refusal of an exception did not name the unworn rule; that reply now leads with the rule |
+
+**Thinking off.** The current default runs Haiku 5.5 with thinking off, and every result in the table above ran that way. That switch passed the earlier rule, a paired interval on resolved safely that includes zero (-0.020 [-0.070, +0.030]), but it has not been re-checked under the stricter rule adopted in this round, which with a 0.05 allowed drop it would not pass on those runs ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
 
 **The stricter source check was replayed before it shipped.** Every saved simulation reply from earlier runs and the 53-case product, policy and small talk answers, 3,285 replies with 1,710 numbers, went through the new checks offline, with no model calls. The first version flagged 170 of the 3,264 simulation replies. Each flag was read; the ones on correct replies led to fixes in the check (for example, reading "81 more minutes" in tool data, and treating "from the order number alone" as a condition, not a refusal). The final version flags 64:
 
@@ -127,7 +162,20 @@ The report, with every flag and its review, is in `evals/results/verify-replay/`
 
 Every run, with its config, every conversation, and every regrade, is in `evals/results/sim/`. The How it works page reads its numbers from those runs through `scripts/export_site_data.py`, and a test checks the page against that export.
 
-## Model upgrade check: Haiku 5.5
+## Production boundaries
+
+The demo is built to be safe for public visitors on a sandbox store. A real store would need more:
+
+- **Session tokens can be replayed.** The browser holds an HMAC-signed session token with the visitor's sandbox changes and any pending change, valid for 30 minutes. Sending an older token restores an older sandbox state. In the demo that only touches the visitor's own copy; a real store needs server-side sessions with one-time nonces and a durable action log.
+- **Signed, not encrypted.** The signature stops tampering, but anyone holding the token can read it. Nothing secret goes in it; a real store would keep that state on the server or encrypt it.
+- **Order number plus email is not a login.** Anyone with both can look an order up and ask for a change, which is fine for a demo lookup rule. A real store needs signed-in customers or a one-time code sent to the email on file before any change.
+- **Idempotency is per process.** The idempotency key stops a change from running twice within a session on one Lambda instance. A real store needs the keys in a durable store with conditional writes, plus the platform's own idempotency support.
+- **CORS is not authentication.** Browsers may call the API only from the demo's own origin, but any other client can still call it; API Gateway throttling limits the volume. A real store needs authentication on the API.
+- **What a real store needs.** Signed-in customers, durable sessions and an action log, a real ticketing system behind handoffs, a review queue for refunds and exceptions, monitoring and alerting on refusals and fallbacks, per-store policy configuration, and live writes to the store with webhooks to keep state in sync.
+
+## Model and caching history
+
+### Model upgrade check: Haiku 5.5
 
 Claude Haiku 5.5 came out on October 7, 2026, at a tenth of Haiku 4.5's price per token. Before any run, the rule went into [the plan](docs/v2-plan.md): switch the default only if Haiku 5.5 has no conversation with an unsafe write and resolved safely is not worse beyond noise (the upper end of the 95% paired interval is at least zero), on the same code, gate setting, simulator, and judge. As for any default, it also had to pass the 53-case suite, which it did, 53 of 53.
 
@@ -151,7 +199,7 @@ The difference in resolved safely is +0.000 [-0.040, +0.040]. Both conditions ho
 - **Thinking.** Haiku 5.5 thinks by default; the agent runs it at low effort. It thought in 155 of 647 calls, almost all in the tool loop, at a median of 97 tokens: 29% of its output tokens and 14% of its agent cost. To measure the effect, Haiku 5.5 also ran with thinking off on all 50 tasks, 1 try each, against the first try of each task above: resolved safely 47 of 50 against 48, -0.020 [-0.080, +0.040]; agent cost $0.00059 against $0.00065 per conversation; median turn 2.08s against 2.06s; p95 3.46s against 4.62s. Thinking costs little and mostly slows the slowest turns. A second thinking-off try on all 50 tasks then met the same rule as the model check, with 0 unsafe writes and resolved safely 95 of 100 against 97, -0.020 [-0.070, +0.030], and p95 3.53s against 4.55s, so thinking is now off by default (the second try ran on the release commit, whose only agent change is the cache markers).
 - **Failures.** Each model failed 3 of 100 conversations. Four of the six are the same mistake on the two tasks about someone else's order: the agent suggested a name or phone number might find the order, which its tools cannot do. That issue is open. Haiku 5.5's other failure told a customer it could not look orders up by email, which it can; Haiku 4.5's told a customer they qualified for a price adjustment without giving the 14-day window.
 
-## Prompt caching
+### Prompt caching
 
 Anthropic flagged a low prompt cache hit rate on the project's API account. The cause was Haiku 4.5: it caches only prompts of at least 4,096 tokens, none of the agent's prompts reached that, and its hit rate was 0 in every saved run. Haiku 5.5 caches from 512 tokens, so the breakpoint already on the stable instructions and tool definitions started working with the model change.
 
@@ -175,13 +223,13 @@ Measured on Haiku 5.5 with 20 tasks at 2 tries each, the commit before and the c
 
 The hit rate rose and the average price of a prompt token fell 6.5%, but cost per conversation did not fall. A cache write costs 1.25 times a full-price token, so a tool result that is read back only once barely pays for itself, the after run's conversations happened to use 8% more prompt tokens, and output, which caching does not touch, is about half of the agent's cost. The large saving came from the model change: on Haiku 5.5, caching as a whole bills the prompts at 22% of their uncached price. The two runs shared the cache for the identical instructions block, so the before run wrote nothing; its own writes would have added well under a cent.
 
-## Cost and latency
+### Cost and latency
 
 - **Per conversation (headline, Haiku 4.5, gate on):** $0.0130 of agent model cost on average, $0.0137 per resolved conversation, 3.6 agent turns. Turn latency p50 1.96s, p95 4.54s.
 - **Per conversation now (Haiku 5.5, gate on, upgrade check):** $0.00065 of agent model cost on average, $0.00067 per resolved conversation, 3.1 agent turns. Turn latency p50 2.10s, p95 4.55s.
 - **Single-turn questions (53-case suite):** on Haiku 5.5 with caching, $0.013 per 100 conversations, mean 1.89s, p95 3.59s; on Haiku 4.5, $0.18, mean 2.25s, p95 4.28s.
-- **Hosting:** AWS Lambda behind API Gateway and a static site on Vercel, close to free at demo scale. A cold start takes about 3 to 5.5 seconds; the page calls the free health check on load so it starts before the visitor types, and `deploy/deploy.sh` warms each new image right after deploying it. Details in [deploy/README.md](deploy/README.md).
-- **Prompt caching:** see [Prompt caching](#prompt-caching) above.
+- **Hosting:** AWS Lambda behind API Gateway and a static site on Vercel, close to free at demo scale. A cold start takes about 3 to 5.5 seconds; a scheduled workflow ([keep-warm.yml](.github/workflows/keep-warm.yml)) calls the health check every 5 minutes, which makes no model call, the page calls it again on load, and `deploy/deploy.sh` warms each new image right after deploying it. Details in [deploy/README.md](deploy/README.md).
+- **Prompt caching:** see [Prompt caching](#prompt-caching).
 
 ## Run it
 
@@ -219,7 +267,8 @@ Fill in `.env` before anything that calls a model or the store: `ANTHROPIC_API_K
 
 ## What's next
 
-- Run a small simulation on every pull request with a budget cap, and turn real chat logs into regression tasks the way `evals/sim/make_regression_task.py` already does for saved simulation runs.
+- Add the CI key so the model-based checks run on changes to the agent, with their spend caps.
+- Turn real chat logs into regression tasks the way `evals/sim/make_regression_task.py` already does for saved simulation runs.
 - Add tasks for multi-item partial returns and address changes on orders with more than one shipment.
 - Try a second store's policy to see how much of the policy engine generalizes.
 
@@ -233,5 +282,5 @@ frontend/            the demo store, chat, and How it works page
 scripts/             snapshot export, site data export, live demo check
 deploy/              container, deploy script, AWS notes
 docs/                write-up, fix log, design plan, site audit
-tests/               unit and contract tests
+tests/               unit, contract, and browser tests (tests/e2e)
 ```

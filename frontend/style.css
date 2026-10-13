@@ -230,8 +230,8 @@ button { font: inherit; color: inherit; }
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--mist);
+  color: var(--granite);
   font-size: 12px;
   font-weight: 600;
   line-height: 20px;
@@ -275,6 +275,17 @@ button { font: inherit; color: inherit; }
   font-size: 17px;
 }
 
+.hero__proof {
+  max-width: 34rem;
+  margin-top: 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--glacier);
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.hero__proof a { white-space: nowrap; font-weight: 600; }
+
 .hero__actions {
   display: flex;
   flex-wrap: wrap;
@@ -299,6 +310,12 @@ button { font: inherit; color: inherit; }
 @media (max-width: 480px) {
   .hero__art { display: none; }
 }
+
+/* scenarios right under the hero */
+.try { padding-bottom: clamp(32px, 5vw, 56px); }
+.try__head { max-width: 40rem; margin-bottom: 16px; }
+.try__head h2 { font-size: clamp(22px, 3vw, 26px); font-weight: 800; }
+.try__head p { margin-top: 6px; color: var(--granite); }
 
 /* sections */
 .section { padding: clamp(36px, 6vw, 72px) 0; }
@@ -616,6 +633,7 @@ button { font: inherit; color: inherit; }
 }
 
 .status__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.status__retry { min-height: 28px; margin-left: 4px; font-size: 13px; }
 .status[data-state="ready"] .status__dot { background: var(--pine); }
 .status[data-state="waking"] .status__dot { background: var(--amber); }
 .status[data-state="offline"] .status__dot { background: var(--rose); }
@@ -932,30 +950,130 @@ button { font: inherit; color: inherit; }
 .gate-lines .stop::before { background: #f08a80; }
 .gate-lines .hold::before { background: #f2c46d; }
 
-/* phone hint */
-.hint {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px);
-  z-index: 41;
-  display: flex;
-  align-items: flex-start;
-  max-width: min(300px, calc(100vw - 32px));
-  border: 1px solid var(--line);
-  border-radius: 16px 16px 6px 16px;
-  background: var(--paper);
-  box-shadow: var(--shadow-panel);
-  opacity: 0;
-  transform: translateY(10px) scale(0.96);
-  transform-origin: bottom right;
-  transition: opacity 0.35s var(--ease-out), transform 0.45s var(--ease-pop);
+/* desktop: the chat docks beside the store instead of covering it */
+@media (min-width: 1024px) {
+  body.chat-docked { padding-right: 420px; }
+  body.chat-docked .chat {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    height: 100dvh;
+    border-width: 0 0 0 1px;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
-.hint.is-in { opacity: 1; transform: none; }
-.hint[hidden] { display: none; }
-.hint__open { flex: 1; min-height: 44px; padding: 12px 4px 12px 14px; border: 0; background: none; color: var(--ink); font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; }
-.hint__close { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--granite); cursor: pointer; }
-.hint__close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+/* phones and tablets: a half-height card first, full screen once tapped */
+@media (max-width: 1023px) {
+  .chat.is-peek {
+    inset: auto 0 0 0;
+    width: 100%;
+    height: min(56dvh, 480px);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -18px 50px -24px rgba(19, 32, 42, 0.45);
+    cursor: pointer;
+  }
+  .chat.is-peek .chat__bar,
+  .chat.is-peek .composer,
+  .chat.is-peek #restart,
+  .chat.is-peek .starter:nth-child(n + 4) { display: none; }
+  .chat.is-peek .welcome p { display: none; }
+  .chat.is-peek .welcome .tour-btn { margin-top: 10px; }
+  .chat.is-peek .starters { margin-top: 10px; }
+}
+
+/* the 60-second tour */
+.tour-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--glacier);
+  border-radius: 999px;
+  background: var(--glacier-soft);
+  color: var(--glacier-deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tour-btn svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+
+.tour-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: -4px -4px 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-m);
+  background: var(--amber-soft);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.tour-bar p { flex: 1 1 14rem; margin: 0; }
+.tour-bar strong { font-weight: 700; }
+.tour-bar__actions { display: flex; gap: 6px; }
+
+.caption {
+  position: relative;
+  max-width: 36ch;
+  margin: 2px 0 6px 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.caption::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 18px;
+  width: 12px;
+  height: 12px;
+  background: var(--ink);
+  transform: rotate(45deg);
+}
+
+.is-spotlight { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: var(--radius-m); }
+
+.tour-end {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--mist);
+}
+
+.tour-end h3 { font-size: 18px; }
+.tour-end ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: var(--ink); font-size: 14px; }
+.tour-end__links { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; }
+.tour-end__links a { font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .chat.is-peek.has-entrance { animation: peek-in 0.5s var(--ease-out) both; }
+  body.chat-docked .chat.has-entrance { animation: dock-in 0.5s var(--ease-out) both; }
+  body.chat-docked { transition: padding-right 0.45s var(--ease-out); }
+  .caption { animation: rise 0.35s var(--ease-out) both; }
+}
+
+@keyframes peek-in { from { transform: translateY(100%); } }
+@keyframes dock-in { from { transform: translateX(100%); } }
 
 /* motion, only when the visitor has not asked for less */
 @media (prefers-reduced-motion: no-preference) {

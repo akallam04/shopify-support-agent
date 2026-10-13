@@ -441,10 +441,31 @@ async function main() {
   animateOnView();
 }
 
-main().catch((err) => {
+function loadFailed(err) {
+  console.error(err);
+  for (const id of ["passk", "failureBars", "categories", "viewer"]) {
+    const node = $(id);
+    if (!node) continue;
+    const retry = document.createElement("button");
+    retry.className = "btn btn--quiet";
+    retry.type = "button";
+    retry.textContent = "Try again";
+    retry.addEventListener("click", start);
+    const note = document.createElement("p");
+    note.textContent = id === "viewer" ? "The saved conversations did not load." : "The chart data did not load. The tables on this page carry the same numbers.";
+    const box = document.createElement("div");
+    box.className = "load-failed";
+    box.append(note, retry);
+    node.replaceChildren(box);
+  }
+}
+
+function start() {
   for (const id of ["passk", "failureBars", "categories"]) {
     const node = $(id);
-    if (node) node.textContent = "The chart data did not load. The tables on this page carry the same numbers.";
+    if (node) node.replaceChildren();
   }
-  console.error(err);
-});
+  main().catch(loadFailed);
+}
+
+start();

@@ -99,3 +99,28 @@ below shows only what the reply's trace or a saved run says happened.
 - **Emails.** iOS no longer turns emails and phone numbers into links (`format-detection`), and
   emails are masked in the details panel, in the API's trace, and in the server logs.
 
+
+## Third round (v2.2)
+
+From the v2.2 review: finding 28 and the site additions in [review-fixes.md](review-fixes.md).
+
+- **First impression.** The assistant now opens on every visit, not only the first. On desktop it
+  slides in as a side panel and the store moves over, so nothing is covered. On a phone a
+  half-height card slides up with the greeting, three scenario buttons, and the tour, and fills
+  the screen when tapped. Closing it keeps it closed for the rest of the visit. It never moves
+  keyboard focus, the slide is off for reduced motion, and the greeting makes no API call. The
+  phone hint bubble is gone.
+- **Show me in 60 seconds.** A replay of a real saved return, labeled as a replay with the date it
+  was recorded. Captions point at the confirmation card, the step rail, and the "You said yes"
+  step. It ends with the headline numbers, the three guarantees, links to the code, How it works,
+  and the write-up, and the scenario buttons under "Now try it yourself". Nothing is sent to the
+  API.
+- **Store page.** The scenario buttons sit right under the hero, with a line of headline numbers
+  that links to How it works. The products and test orders come from the same catalog and
+  simulated store the agent uses, exported into the HTML, so they show without JavaScript. The
+  cart count is muted.
+- **Failure states.** When the API does not answer, the status line offers Retry. When How it
+  works cannot load its chart data, each chart says so and offers Try again; the tables keep the
+  same numbers.
+- **Cold starts.** A scheduled workflow calls the free health check every 5 minutes, which makes no
+  model call.

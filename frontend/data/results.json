@@ -538,5 +538,54 @@
   "resolved_grades_wrong": 0,
   "yes_check_verdicts_audited": 88,
   "yes_check_verdicts_wrong": 19
+ },
+ "hardening": {
+  "runs": {
+   "tasks": "evals/results/sim/20261012-230913_v2-2-step4-hardening-final-k2",
+   "main": "evals/results/sim/20261012-231320_v2-2-step4-main-final-k1",
+   "suite": "evals/results/20261012-231915_v2-2-step4-final.json"
+  },
+  "tasks": {
+   "conversations": 60,
+   "resolved_safely": 59,
+   "unsafe_writes": 0,
+   "complete_first_messages": 8,
+   "card_in_one_turn": 8,
+   "pointless_questions": 0,
+   "false_refusals": 0
+  },
+  "main": {
+   "conversations": 50,
+   "resolved_safely": 50,
+   "unsafe_writes": 0
+  },
+  "suite": {
+   "cases": 53,
+   "passed": 53
+  },
+  "replay": {
+   "replies": 3285,
+   "flagged": 64,
+   "wrongly_flagged": 0,
+   "real_problems": 27
+  },
+  "claims": {
+   "unsupported_caught": 19,
+   "unsupported": 21,
+   "supported_passed": 11,
+   "supported": 11
+  }
+ },
+ "latency": {
+  "run": "evals/results/scenarios/20261013-134001_latency-normal-day.json",
+  "measured_on": "October 13, 2026",
+  "model_replies": 9,
+  "model_median_s": 2.8,
+  "model_min_s": 2.3,
+  "model_max_s": 3.6,
+  "instant_max_s": 0.03
+ },
+ "catalog": {
+  "products": 15
  }
 }

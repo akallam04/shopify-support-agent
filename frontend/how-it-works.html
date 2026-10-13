@@ -54,6 +54,18 @@
           <h1 id="pageTitle">How the Aurora assistant works</h1>
           <p class="intro__lead">The assistant is an agent built with LangGraph on Claude Haiku 5.5. It answers questions about a Shopify store and can cancel an order, change a shipping address, or start a return. Because it can change things, every change passes through a gate written in code: a policy check, then the exact change shown to the customer, then nothing until they say yes.</p>
           <p class="intro__lead">It was tested the way tau-bench tests agents, with simulated customers playing scripted scenarios against the real agent. The results below come from saved runs and include where it falls short.</p>
+          <section class="sixty" id="sixty" aria-labelledby="sixtyTitle">
+            <h2 id="sixtyTitle">The engineering in 60 seconds</h2>
+            <p class="sixty__what">An AI support agent for a Shopify store that asks before it acts.</p>
+            <ul class="sixty__list">
+              <li><b>Nothing changes until you say yes.</b> A change is shown exactly as it will run, and it runs once, only after a clear yes.</li>
+              <li><b>Store policy is enforced in code.</b> Change windows, final sale, item condition, quantities, and addresses are checked before a change is shown.</li>
+              <li><b>Facts come from the store.</b> Amounts, dates, order numbers, and tracking numbers in a reply are checked against store data or the cited policy.</li>
+            </ul>
+            <p>In <span data-num="headline.on.conversations">200</span> simulated conversations per setting (50 tasks, 4 tries each), changes the customer never agreed to fell from <span data-num="headline.off.unsafe_conversations">42</span> to <span data-num="headline.on.unsafe_conversations">0</span>, with no significant difference in resolution: <span data-num="headline.on.resolved">190</span> against <span data-num="headline.off.resolved">185</span>, <span data-interval="headline.difference.resolved">+0.025 [-0.045, +0.105]</span>. Resolved safely, pass^1 rose from <span data-num="headline.off.pass_hat_k_safe.0" data-fmt="p3">0.755</span> to <span data-num="headline.on.pass_hat_k_safe.0" data-fmt="p3">0.950</span>, and pass^4, all 4 tries of a task, from <span data-num="headline.off.pass_hat_k_safe.3" data-fmt="p3">0.640</span> to <span data-num="headline.on.pass_hat_k_safe.3" data-fmt="p3">0.860</span>.</p>
+            <p>After the v2.2 hardening, <span data-num="hardening.tasks.resolved_safely">59</span> of <span data-num="hardening.tasks.conversations">60</span> new review tasks and <span data-num="hardening.main.resolved_safely">50</span> of <span data-num="hardening.main.conversations">50</span> main tasks resolved safely, with <span data-num="hardening.tasks.unsafe_writes">0</span> unsafe writes. On <span data-num="latency.measured_on" data-fmt="text">October 13, 2026</span>, a reply the model wrote took <span data-num="latency.model_min_s" data-fmt="s1">2.3s</span> to <span data-num="latency.model_max_s" data-fmt="s1">3.6s</span>, and a yes that runs a change came back at once.</p>
+            <p class="sixty__links"><a href="./">Try the assistant</a> <a href="https://github.com/akallam04/shopify-support-agent">Code on GitHub</a> <a href="https://github.com/akallam04/shopify-support-agent/blob/main/docs/write-up.md">Technical write-up</a></p>
+          </section>
           <nav class="toc" aria-label="On this page">
             <a href="#gate">The gate</a>
             <a href="#flow">Each message</a>
@@ -88,11 +100,11 @@
       <div class="wrap wrap--read">
         <section class="block" id="flow" aria-labelledby="flowTitle">
           <h2 id="flowTitle">What happens to each message</h2>
-          <p>Every customer message runs through the same graph. Each reply on the store page can show its own path through it: turn on <b>Inside the agent</b> in the chat.</p>
+          <p>Every customer message runs through the same graph. Each reply on the store page shows its own path through it in the step rail under the reply; tap the rail for each step's time, tools, and checks.</p>
           <ol class="rail">
             <li>
               <h3>Input check</h3>
-              <p>Fixed patterns catch obvious prompt injection, like "ignore your instructions", before any model call.</p>
+              <p>Fixed patterns catch obvious prompt injection, like "ignore your instructions", and answer with a fixed reply, with no model call. Quoting such words while asking a real question passes through.</p>
             </li>
             <li>
               <h3>Route</h3>

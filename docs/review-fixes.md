@@ -54,8 +54,23 @@ Found while running these tests, and fixed in the same round:
 | A question about a change ("Can I still cancel #1023? Until what time?") got a cancel card instead of an answer. | 26de00a, 7507651 | `test_a_question_about_a_change_is_answered_with_an_offer_and_no_card`, `test_a_question_whose_email_comes_in_the_next_message_is_still_a_question` |
 | A warranty claim the router called a policy question recorded no request for a person. | 26de00a | `test_a_warranty_claim_the_router_calls_a_policy_question_records_a_handoff` |
 | Drafts that asked for a yes in new words ("Shall I submit", "Could you confirm", "I'll submit") skipped the card. | 30489fc, 4e60b77, 7507651 | `test_a_draft_that_asks_to_submit_the_return_is_sent_to_the_card`, `test_could_you_confirm_counts_as_asking_for_a_yes`, `test_a_draft_that_announces_the_change_goes_to_the_card` |
+| Refusing an exception for a worn item did not say which rule applied. | db94c8c | `test_asking_for_an_exception_after_saying_the_item_was_worn_names_the_unworn_rule` |
 
 ## Docs and site
 
-Findings 24 to 28 (README top, diagram, result notes, production boundaries, and site changes) are
-handled in the next part of this round and added here when they are fixed.
+Findings 26 and 27 change only README text and have no test of their own.
+
+| # | Finding | Fix | Tests |
+|---|---|---|---|
+| 24 | The README top did not define the baseline, link the guarantees to code, or say what is deployed. | README top: one line on what it is, the gate-off baseline defined, pass^4 next to pass^1, three guarantees with code links, and a box read from `/release` by `scripts/live_config.py`; 01016f1 (`/release`) | `test_the_readme_headline_and_latency_match_the_export`, `test_the_three_guarantees_read_the_same_on_the_page_in_the_readme_and_in_the_tour`, `test_release_shows_the_live_models_and_gate_settings_without_secrets` |
+| 25 | The diagram sent injections through the model, did not label the path where nothing runs, and showed reflection as on. | README diagram | `test_the_readme_diagram_shows_the_fixed_reply_and_the_path_where_nothing_runs` |
+| 26 | The results did not explain why gate on resolves slightly less at pass^3 and pass^4, or the two category dips. | README, Notes on the results | |
+| 27 | Nothing said what the demo does not protect against. | README, Production boundaries | |
+| 28 | The scenario buttons sat far below the hero, the headline was not on the store page, the cart competed with the chat, the products were not the agent's catalog, store content was drawn by JavaScript with no failure state, and cold starts were slow. | Scenario buttons under the hero, a headline line linking to How it works, a quiet cart, products and test orders exported from the agent's catalog as static HTML (`scripts/export_site_data.py`), retry states on both pages, "The engineering in 60 seconds" on How it works, and a health ping every 5 minutes (`.github/workflows/keep-warm.yml`) | `test_the_store_page_shows_the_catalog_and_test_orders_as_static_html`, `test_every_number_on_the_page_matches_the_export`, `test_an_unreachable_api_shows_a_retry_that_recovers`, `test_how_it_works_offers_a_retry_when_its_data_does_not_load` |
+
+Added to the site in the same round:
+
+| Change | Tests |
+|---|---|
+| The assistant opens on every visit: a side panel beside the store on desktop, a half-height card on a phone that fills the screen when tapped. Closing it keeps it closed for the visit. It never takes keyboard focus, skips the slide for reduced motion, and the greeting makes no API call. | `test_the_assistant_opens_beside_the_store_on_desktop_without_taking_focus`, `test_the_phone_card_shows_the_greeting_and_three_scenarios_and_fills_the_screen_when_tapped`, `test_closing_keeps_it_closed_for_the_visit_and_a_new_visit_opens_it_again`, `test_reduced_motion_opens_the_assistant_without_the_slide` |
+| "Show me in 60 seconds" replays a real saved return through the card and a yes, with captions, then ends with the headline numbers, the three guarantees, and the scenario buttons. Nothing is sent to the API. | `test_the_tour_replays_a_real_conversation_without_sending_anything_and_ends_with_the_numbers`, `test_the_tour_on_a_phone_opens_the_card_to_full_screen`, `test_the_tour_replays_a_saved_conversation_through_the_card_and_a_yes` |
