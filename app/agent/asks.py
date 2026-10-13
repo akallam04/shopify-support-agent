@@ -27,6 +27,40 @@ REMEDY_RE = re.compile(r"\b(replace|replacement|repair|fix it|fixed|warranty|exc
 QUESTION_ONLY_RE = re.compile(r"^\s*(what|does|do|is|are|how|which|when)\b[^.!\n]*\?\s*$", re.IGNORECASE)
 
 
+PERSON_RE = re.compile(
+    r"\b(human|person|people|agent|representative|rep|manager|supervisor|someone (real|else)|live (chat|support)|talk to|speak (to|with))\b",
+    re.IGNORECASE,
+)
+DEMAND_RE = re.compile(
+    r"\b(refund|discount|compensation|credit|free|waive|exception|extend|money back|reimburse)\b|\$\s?\d+|\b\d+ (dollars|usd)\b",
+    re.IGNORECASE,
+)
+DETAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[a-z]{2,}|#\s?\d+|\b\d{3,}\b", re.IGNORECASE)
+FILLER = frozenset(
+    "my the email address is it's its it here sure ok okay and order number i used at checkout was for that this "
+    "e-mail you go thanks thank a an of on".split()
+)
+
+
+def details_only(text: str) -> bool:
+    if not DETAIL_RE.search(text):
+        return False
+    rest = [w for w in re.findall(r"[a-z']+", DETAIL_RE.sub(" ", text).lower()) if w not in FILLER]
+    return len(rest) <= 2
+
+
+def current_ask(messages: list[dict]) -> str:
+    said = [str(m["content"]) for m in messages if m["role"] == "user"]
+    for text in reversed(said):
+        if not details_only(text):
+            return text
+    return said[-1] if said else ""
+
+
+def demands_exception(text: str) -> bool:
+    return bool(DEMAND_RE.search(text) and not PERSON_RE.search(text))
+
+
 def asks_eligibility(text: str) -> bool:
     return bool(ELIGIBILITY_RE.search(text) and not REQUEST_RE.search(text))
 

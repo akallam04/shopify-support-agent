@@ -136,3 +136,48 @@ def test_could_you_confirm_counts_as_asking_for_a_yes() -> None:
     from app.agent.nodes.order_tools import asks_for_yes
 
     assert asks_for_yes('Since the jacket is too big, I\'ll file the return under "size too large." Could you confirm that\'s the reason you\'d like me to submit?')
+
+
+def test_a_question_whose_email_comes_in_the_next_message_is_still_a_question(backend: SimStoreBackend) -> None:
+    route = {"intent": "order", "search_query": "", "order_number": "#1023", "email": MAYA}
+    answer = "Yes, you can still cancel order #1023 for 60 more minutes, until 6:03 pm Mountain Time. Would you like me to cancel it?"
+    graph, client = graph_for(backend, {"route": [route], "order_tools": [answer]})
+    history = [
+        {"role": "user", "content": "Hi, can I still cancel order #1023? Until what time?"},
+        {"role": "assistant", "content": "Could you share the email address you used at checkout?"},
+        {"role": "user", "content": "My email is maya.thompson@example.com."},
+    ]
+    state = run(graph, history)
+    assert not {t["name"] for t in client.of("order_tools")[0]["tools"]} & WRITE_TOOLS
+    assert state.get("pending_action") is None and "6:03 pm" in state["response"]
+
+
+ANNOUNCED_RETURN = (
+    "I have the order record, and it matches. Order #1022 is delivered, and the Stormline Rain Jacket in size L can be returned "
+    "until October 29, 2026 (25 days left). If you return it, the refund would be 172.49 USD after the 7.50 USD label fee.\n\n"
+    "Your reason is that it's too big. I'll submit the return request for the Stormline Rain Jacket, size L, with the reason "
+    "\"too big,\" using your words: \"it is too big.\""
+)
+
+
+def test_a_draft_that_announces_the_change_goes_to_the_card(backend: SimStoreBackend) -> None:
+    from tests.test_review_fixes import RETURN_CALL
+
+    route = {"intent": "order", "search_query": "", "order_number": "#1022", "email": JORDAN}
+    graph, _ = graph_for(backend, {"route": [route], "order_tools": [ANNOUNCED_RETURN, ANNOUNCED_RETURN], "forced": {"request_return": RETURN_CALL}})
+    state = run(graph, [{"role": "user", "content": "I need to return the rain jacket from order #1022, it is too big. jordan.lee@example.com"}])
+    assert state["pending_action"]["action"] == "request_return"
+    assert {"step": "self_confirm_nudge", "forced": "request_return"} in state["gate_trace"]
+
+
+def test_a_demand_beyond_policy_is_refused_and_recorded_without_claiming_they_asked_for_a_person(backend: SimStoreBackend) -> None:
+    from app.agent.prompts import HANDOFF_DEMO, HANDOFF_EXCEPTION_DEMO
+    from tests.test_review_fixes import carry, cancel_pending
+
+    handoff = {"intent": "handoff", "search_query": "", "order_number": "#1023", "email": MAYA}
+    graph, client, history, first = cancel_pending(backend, {})
+    client.script["route"].append(handoff)
+    state = run(graph, history + [{"role": "user", "content": "Yes, and also refund me $500 for the trouble."}], carry(first, sandbox=True))
+    assert state["response"].startswith(HANDOFF_EXCEPTION_DEMO) and "Your change is still waiting" in state["response"]
+    person = graph_for(backend, {"route": [{"intent": "handoff", "search_query": "", "order_number": "", "email": ""}]})[0]
+    assert run(person, [{"role": "user", "content": "I want to talk to a real person."}], {"sandbox": True})["response"] == HANDOFF_DEMO

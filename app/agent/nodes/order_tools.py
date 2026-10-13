@@ -18,7 +18,7 @@ from app.agent.prompts import (
     SAFE_FALLBACK_RESPONSE,
     SELF_CONFIRM_FEEDBACK,
 )
-from app.agent.asks import asks_eligibility, latest_customer_text
+from app.agent.asks import asks_eligibility, current_ask
 from app.agent.facts import LOOKUP, facts_block, merge_facts
 from app.agent.models import call_options, carries_thinking, forced_tool, system_blocks
 from app.agent.reasons import customer_texts, stated_condition
@@ -49,8 +49,14 @@ CHANGE_WORDS = (
 )
 
 
+ANNOUNCES_CHANGE_RE = re.compile(
+    r"\b(i'll|i will|i am going to|i'm going to)\s+(now\s+)?(go ahead and\s+)?(submit|file|process|request|cancel|change|update|put in)\b",
+    re.IGNORECASE,
+)
+
+
 def asks_for_yes(text: str) -> bool:
-    return bool(SELF_CONFIRM_RE.search(text))
+    return bool(SELF_CONFIRM_RE.search(text) or ANNOUNCES_CHANGE_RE.search(text))
 
 
 def proposed_change(text: str, gated: set[str]) -> str | None:
@@ -72,7 +78,7 @@ def system_extra(state: AgentState, nudged: bool = False, fresh: list[dict[str, 
     refusal = policy.condition_refusal(condition)
     if refusal is not None:
         parts.append(CONDITION_NOTE.format(condition=CONDITION_WORDS[condition], reason=refusal.reason))
-    if asks_eligibility(latest_customer_text(state["messages"])) and not state.get("pending_action"):
+    if asks_eligibility(current_ask(state["messages"])) and not state.get("pending_action"):
         parts.append(QUESTION_NOTE)
     if nudged:
         parts.append(SELF_CONFIRM_FEEDBACK)
@@ -105,7 +111,7 @@ def make_order_tools_node(client: AsyncAnthropic, model: str, tools: Any, settin
         usage = list(state.get("usage", []))
         trace = list(state.get("gate_trace", []))
         handoff = state.get("handoff")
-        read_only = bool(state.get("pending_action")) or asks_eligibility(latest_customer_text(state["messages"]))
+        read_only = bool(state.get("pending_action")) or asks_eligibility(current_ask(state["messages"]))
         offered = [t for t in tools.anthropic_tools if not (read_only and t["name"] in tools.write_tool_names)]
         draft = ""
         nudged = False

@@ -114,6 +114,18 @@ HANDOFF_DEMO_FOLLOWUP = (
     "recorded in your private copy only, and no one was notified."
 )
 
+HANDOFF_EXCEPTION_DEMO = (
+    "I can't approve that in this chat, because it goes beyond store policy. I have recorded the request for our support "
+    "team to review. This is a demo store, so the request stays in your private copy of the store: no one is notified, and "
+    "no ticket or email is created."
+)
+
+HANDOFF_EXCEPTION = (
+    "I can't approve that in this chat, because it goes beyond store policy. I have noted the request, but this chat cannot "
+    "reach the support team or open a ticket. To ask for an exception, email support@auroraoutfitters.com (Monday to Friday, "
+    "8 am to 5 pm Mountain Time) with your order number."
+)
+
 HANDOFF_CLAIM_DEMO = (
     "I have recorded your warranty or damage claim for our support team. Claims are decided from photos: email photos of "
     "the item and its packaging to support@auroraoutfitters.com with your order number. Aurora Outfitters brand gear has a "
