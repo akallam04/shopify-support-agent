@@ -53,6 +53,9 @@ CHECK_JS = """
       problems.push({ kind: /(hidden|clip)/.test(s.overflowX) ? "clipped text" : "text outside its box", detail: `${name(n)} ${n.scrollWidth} > ${n.clientWidth}`, text: text(n) });
     }
   }
+  for (const box of document.querySelectorAll(".table-scroll")) {
+    if (box.scrollWidth > box.clientWidth + 1) problems.push({ kind: "table wider than its box", detail: `${box.scrollWidth} > ${box.clientWidth}`, text: text(box) });
+  }
   const chat = document.querySelector("#chat.is-open");
   if (chat) {
     const parts = [...chat.children].filter((c) => c.checkVisibility()).map((c) => [name(c), c.getBoundingClientRect()]);

@@ -1,7 +1,7 @@
 {
- "release": "f3cb43f1f210",
- "git_sha": "1f10aa30d282",
- "prompts": "12c1a695b1c1",
+ "release": "8a19a662a0e1",
+ "git_sha": "32e9fd1495c6",
+ "prompts": "6b6207e604cd",
  "knowledge": "e948ba6116ae",
  "models": {
   "router": "claude-haiku-5-5",

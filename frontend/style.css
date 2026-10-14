@@ -626,13 +626,15 @@ button { font: inherit; color: inherit; }
 
 .status {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0 6px;
   color: var(--granite);
   font-size: 13px;
 }
 
 .status__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+#statusText { white-space: nowrap; }
 .status__retry { min-height: 28px; margin-left: 4px; font-size: 13px; }
 .status[data-state="ready"] .status__dot { background: var(--pine); }
 .status[data-state="waking"] .status__dot { background: var(--amber); }

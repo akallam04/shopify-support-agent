@@ -12,6 +12,7 @@ from typing import Any
 from app.costs import usage_cost
 from evals.sim.compare_runs import compare, paired_interval, task_rates
 from evals.sim.metrics import graded_file, recorded, resolved_safely, summarize
+from zoneinfo import ZoneInfo
 
 RUNS = Path("evals/results/sim")
 OUT = Path("frontend/data")
@@ -324,7 +325,7 @@ def latency() -> dict[str, Any]:
     report = json.loads(path.read_text())
     model = sorted(t["latency_s"] for r in report["results"] for t in r["turns"] if t["latency_s"] >= 0.5)
     instant = [t["latency_s"] for r in report["results"] for t in r["turns"] if t["latency_s"] < 0.5]
-    day = datetime.fromisoformat(report["at"])
+    day = datetime.fromisoformat(report["at"]).astimezone(ZoneInfo("America/Denver"))
     return {
         "run": str(path),
         "measured_on": f"{day:%B} {day.day}, {day.year}",

@@ -313,3 +313,13 @@ def test_how_it_works_offers_a_retry_when_its_data_does_not_load(browser: Any, s
     up.append(True)
     page.locator("#passk .load-failed button").click()
     expect(page.locator(".load-failed")).to_have_count(0)
+
+
+@pytest.mark.parametrize("width", [320, 375, 390])
+def test_every_how_it_works_table_fits_its_box_on_a_phone(browser: Any, site: str, width: int) -> None:
+    page = browser.new_context(viewport={"width": width, "height": 800}, is_mobile=True).new_page()
+    page.goto(f"{site}/how-it-works.html")
+    expect(page.locator(".table-scroll").first).to_be_visible()
+    widths = page.evaluate("[...document.querySelectorAll('.table-scroll')].map(s => s.scrollWidth - s.clientWidth)")
+    assert widths and max(widths) <= 1
+    assert page.evaluate("document.documentElement.scrollWidth") <= width

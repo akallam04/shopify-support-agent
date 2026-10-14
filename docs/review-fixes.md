@@ -94,4 +94,6 @@ check plus 22 live conversations read reply by reply, a code pass, and a docs pa
 Layout fixes with no test of their own, checked in the audit screenshots: the "Time" column header
 wrapped in the details panel, the headline broke into five lines at 1024 pixels with the chat docked,
 the offline status wrapped to three lines at 320 pixels ("Can't connect" now), the text box
-placeholder was cut off at 320 pixels, and the last tour step hid its numbers on short screens.
+placeholder was cut off at 320 pixels, and the last tour step hid its numbers on short screens. The
+five-column table on How it works ran past its box on phones; every table now fits at 320, 375, and
+390 pixels (`test_every_how_it_works_table_fits_its_box_on_a_phone`).

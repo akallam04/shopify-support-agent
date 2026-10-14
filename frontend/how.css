@@ -209,11 +209,25 @@
 @media (max-width: 480px) {
   .data { font-size: 14px; }
   .data th, .data td { padding: 9px 8px; }
+  .data thead th { white-space: normal; vertical-align: bottom; }
+  .data:has(thead th:nth-child(5)) { font-size: 13px; }
+  .data:has(thead th:nth-child(5)) thead th { font-size: 12px; }
+  .data:has(thead th:nth-child(5)) th,
+  .data:has(thead th:nth-child(5)) td { padding: 9px 3px; }
+  .data:has(thead th:nth-child(5)) th:first-child,
+  .data:has(thead th:nth-child(5)) td:first-child { padding-left: 10px; }
 }
 
 @media (max-width: 359px) {
   .data { font-size: 13px; }
-  .data th, .data td { padding: 8px 5px; }
+  .data thead th { font-size: 12px; }
+  .data th, .data td { padding: 8px 4px; }
+  .data:has(thead th:nth-child(5)) { font-size: 12px; }
+  .data:has(thead th:nth-child(5)) thead th { font-size: 11px; }
+  .data:has(thead th:nth-child(5)) th,
+  .data:has(thead th:nth-child(5)) td { padding: 8px 2px; }
+  .data:has(thead th:nth-child(5)) th:first-child,
+  .data:has(thead th:nth-child(5)) td:first-child { padding-left: 4px; }
 }
 
 /* forest plot */
