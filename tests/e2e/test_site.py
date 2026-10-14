@@ -320,6 +320,7 @@ def test_every_how_it_works_table_fits_its_box_on_a_phone(browser: Any, site: st
     page = browser.new_context(viewport={"width": width, "height": 800}, is_mobile=True).new_page()
     page.goto(f"{site}/how-it-works.html")
     expect(page.locator(".table-scroll").first).to_be_visible()
+    assert page.evaluate("document.fonts.ready.then(() => document.fonts.status)") == "loaded"
     widths = page.evaluate("[...document.querySelectorAll('.table-scroll')].map(s => s.scrollWidth - s.clientWidth)")
     assert widths and max(widths) <= 1
     assert page.evaluate("document.documentElement.scrollWidth") <= width

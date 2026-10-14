@@ -110,6 +110,7 @@ def open_page(browser: Browser, site: str, width: int, path: str = "/", health: 
     if block:
         page.route(f"**/{block}", lambda route: route.abort())
     page.goto(site + path)
+    page.evaluate("document.fonts.ready.then(() => true)")
     page.wait_for_timeout(900)
     return page
 
