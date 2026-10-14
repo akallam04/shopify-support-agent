@@ -130,7 +130,7 @@ function gateLine(g) {
     case "confirmation":
       return [g.label === "confirm" ? "ok" : "hold", `Customer reply read as ${g.label} (${g.source === "pattern" ? "fixed pattern" : "model"})`];
     case "executed":
-      return ["ok", `Ran the ${action} on the sandbox store`];
+      return ["ok", `Ran the ${action} on the demo store`];
     case "refused":
       return ["stop", `The store refused the ${action}`];
     case "self_confirm_nudge":
@@ -302,9 +302,14 @@ function buildConfirmCard(pending, onAnswer) {
     el("div", { class: "confirm__head" }, [
       el("span", { class: "shield" }, svg(SHIELD)),
       el("p", { class: "confirm__title", id: titleId, text: "Confirm this change" }),
-      el("span", { class: "sandbox-tag", text: "Sandbox" }),
+      el("span", { class: "sandbox-tag", text: "Demo store" }),
     ]),
-    el("p", { class: "confirm__summary", "data-summary": pending.summary, text: `I will ${pending.summary}` }),
+    pending.title
+      ? el("p", { class: "confirm__summary confirm__lead", "data-summary": pending.summary, text: pending.title })
+      : el("p", { class: "confirm__summary", "data-summary": pending.summary, text: `I will ${pending.summary}` }),
+    pending.rows && pending.rows.length
+      ? el("dl", { class: "confirm__rows" }, pending.rows.flatMap(([label, value]) => [el("dt", { text: label }), el("dd", { text: value })]))
+      : null,
     pending.checks && pending.checks.length ? checks : null,
     pending.note ? el("p", { class: "confirm__note", text: pending.note }) : null,
     el("div", { class: "confirm__actions" }, [yes, no]),

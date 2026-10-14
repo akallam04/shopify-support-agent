@@ -101,6 +101,10 @@ def has_shipped(order: Order) -> bool:
     return order.fulfillment_status != "UNFULFILLED" or bool(order.fulfillments)
 
 
+def payment_pending(order: Order) -> bool:
+    return (order.financial_status or "").upper() == "PENDING"
+
+
 def order_change(order: Order, now: datetime, verb: str) -> Decision:
     if order.cancelled_at:
         return refuse("already_cancelled", f"Order {order.name} is already cancelled.")
@@ -110,6 +114,12 @@ def order_change(order: Order, now: datetime, verb: str) -> Decision:
             f"Order {order.name} has already shipped, so it can no longer be {verb}. {AFTER_SHIPPING}",
         )
     if now - placed_at(order) > ORDER_CHANGE_WINDOW:
+        if payment_pending(order):
+            return refuse(
+                "change_window_passed",
+                f"Order {order.name} was placed more than 2 hours ago, so it can no longer be {verb} here. "
+                f"Orders can only be {verb} within 2 hours of being placed.",
+            )
         return refuse(
             "change_window_passed",
             f"Order {order.name} was placed more than 2 hours ago, so it has entered processing and "

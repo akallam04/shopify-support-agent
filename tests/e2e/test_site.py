@@ -324,3 +324,93 @@ def test_every_how_it_works_table_fits_its_box_on_a_phone(browser: Any, site: st
     widths = page.evaluate("[...document.querySelectorAll('.table-scroll')].map(s => s.scrollWidth - s.clientWidth)")
     assert widths and max(widths) <= 1
     assert page.evaluate("document.documentElement.scrollWidth") <= width
+
+
+def expect_greeting(page: Any) -> None:
+    expect(page.locator("#chat.is-open #welcome")).to_be_visible()
+    expect(page.locator("#welcome .starter").first).to_be_visible()
+    expect(page.locator("#welcome .tour-btn")).to_be_visible()
+
+
+def test_leaving_the_tour_with_exit_shows_the_greeting(browser: Any, site: str) -> None:
+    page = load(browser, site, viewport=DESKTOP, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    page.locator(".tour-panel__exit").click()
+    expect_greeting(page)
+
+
+def test_closing_the_chat_during_the_tour_reopens_on_the_greeting(browser: Any, site: str) -> None:
+    page = load(browser, site, viewport=DESKTOP, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    expect(page.locator(".tour-panel")).to_be_visible()
+    page.click("#close")
+    page.click("#launcher")
+    expect_greeting(page)
+    expect(page.locator(".tour-panel")).to_have_count(0)
+
+
+def test_starting_over_shows_the_greeting(browser: Any, site: str) -> None:
+    page = open_page(browser, site, viewport=DESKTOP)
+    starter(page, "Track an order")
+    expect(page.locator(".msg--agent .bubble", has_text="1Z999AA10123456784")).to_be_visible()
+    page.click("#restart")
+    expect_greeting(page)
+
+
+def test_closing_and_reopening_keeps_the_greeting(browser: Any, site: str) -> None:
+    for context in ({"viewport": DESKTOP}, PHONE):
+        page = load(browser, site, **context)
+        page.click("#close")
+        page.click("#launcher")
+        expect_greeting(page)
+
+
+def test_a_failed_health_check_still_shows_the_greeting(browser: Any, site: str) -> None:
+    page = browser.new_context(viewport=DESKTOP).new_page()
+    page.route("**/health", lambda route: route.abort())
+    page.goto(site)
+    expect(page.locator("#statusText")).to_have_text("Can't connect")
+    expect_greeting(page)
+    page.click("#close")
+    page.click("#launcher")
+    expect_greeting(page)
+
+
+def test_closing_while_the_tour_is_still_loading_reopens_on_the_greeting(browser: Any, site: str) -> None:
+    held: list = []
+    page = browser.new_context(viewport=DESKTOP, reduced_motion="reduce").new_page()
+    page.route("**/health", lambda route: route.fulfill(json=HEALTH))
+    page.route("**/data/tour.json", lambda route: held.append(route))
+    page.goto(site)
+    page.locator("#welcome .tour-btn").click()
+    page.wait_for_function("document.querySelector('#chat').classList.contains('is-touring')")
+    page.click("#close")
+    for route in held:
+        route.continue_()
+    page.wait_for_timeout(300)
+    page.click("#launcher")
+    expect_greeting(page)
+    expect(page.locator(".tour-panel")).to_have_count(0)
+
+
+def test_a_slow_health_check_never_hides_the_greeting(browser: Any, site: str) -> None:
+    held: list = []
+    page = browser.new_context(**PHONE).new_page()
+    page.route("**/health", lambda route: held.append(route))
+    page.goto(site)
+    expect(page.locator("#statusText")).to_have_text("Waking up")
+    expect(page.locator("#welcome .starter").first).to_be_visible()
+    page.locator("#welcome h3").tap()
+    expect_greeting(page)
+
+
+def test_a_scenario_button_during_the_tour_ends_it_and_sends_the_request(browser: Any, site: str) -> None:
+    sent: list = []
+    page = load(browser, site, sent=sent, viewport=DESKTOP, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    expect(page.locator(".tour-panel")).to_be_visible()
+    page.locator("[data-ask]").first.click()
+    expect(page.locator(".tour-panel")).to_have_count(0)
+    expect(page.locator("#input")).to_be_enabled()
+    expect(page.locator(".msg--user")).to_have_count(1)
+    assert len(sent) == 1

@@ -67,10 +67,18 @@ function statCard(h) {
   ]));
 }
 
-function scrollToShow(target, edge = "top") {
-  const box = target.getBoundingClientRect();
+function scrollToShow(targets, keep = "top") {
+  const boxes = [].concat(targets).filter(Boolean).map((n) => n.getBoundingClientRect());
+  if (!boxes.length) return;
+  const top = Math.min(...boxes.map((b) => b.top));
+  const bottom = Math.max(...boxes.map((b) => b.bottom));
   const view = logEl.getBoundingClientRect();
-  const delta = edge === "top" ? box.top - view.top - 12 : box.bottom - view.bottom + 12;
+  const viewTop = view.top + 12;
+  const viewBottom = view.bottom - 12;
+  let delta = 0;
+  if (bottom - top > viewBottom - viewTop) delta = keep === "bottom" ? bottom - viewBottom : top - viewTop;
+  else if (bottom > viewBottom) delta = bottom - viewBottom;
+  else if (top < viewTop) delta = top - viewTop;
   logEl.scrollTo({ top: logEl.scrollTop + delta, behavior: REDUCED_MOTION.matches ? "auto" : "smooth" });
 }
 
@@ -94,14 +102,14 @@ function renderScene(at, animate, prev) {
     else logEl.append(node);
     return node;
   };
-  logEl.replaceChildren(el("p", { class: "tour-label", text: `Replay of a real conversation, recorded ${conversation.recorded_on}` }));
+  logEl.replaceChildren(el("p", { class: "tour-label", title: `Recorded from the live demo on ${conversation.recorded_on}`, text: "Replay of a real conversation in the demo store" }));
   const asked = add(userBubble(ask.user), 0);
-  if (at === 0) return scrollToShow(asked);
+  if (at === 0) return scrollToShow(asked, "top");
   const card = replayCard(ask.response.pending);
   const cardMsg = add(el("div", { class: "msg msg--agent msg--card" }, card), 1);
   if (at === 1) {
     mark([asked, cardMsg], [cardMsg]);
-    return scrollToShow(cardMsg);
+    return scrollToShow(cardMsg, "bottom");
   }
   const yesSaid = () => {
     settleCard(card, "confirmed");
@@ -110,20 +118,20 @@ function renderScene(at, animate, prev) {
   if (at === 2) {
     mark([asked, cardMsg], [cardMsg]);
     if (animate && !REDUCED_MOTION.matches) {
-      scrollToShow(card.querySelector(".confirm__actions"), "bottom");
-      return tapYes(card, () => scrollToShow(yesSaid(), "bottom"));
+      scrollToShow(cardMsg, "bottom");
+      return tapYes(card, () => scrollToShow([card, yesSaid()], "bottom"));
     }
-    return scrollToShow(yesSaid(), "bottom");
+    return scrollToShow([card, yesSaid()], "bottom");
   }
   const said = yesSaid();
   const outcome = add(el("div", { class: "msg msg--agent msg--card" }, buildOutcome("done", cleanText(yes.response.response).clean)), 3);
   if (at === 3) {
     mark([asked, cardMsg, said, outcome], [outcome]);
-    return scrollToShow(outcome);
+    return scrollToShow(outcome, "top");
   }
   const stat = add(statCard(results.headline), 4);
   mark([asked, cardMsg, said, outcome, stat], [stat]);
-  scrollToShow(stat.querySelector(".tour-stat__tiles"), "bottom");
+  scrollToShow(stat, "bottom");
 }
 
 function iconButton(cls, label, markup, onClick, after = false) {
@@ -148,7 +156,7 @@ function buildPanel(data) {
   const controls = el("div", { class: "tour-panel__controls" }, [back, play, next]);
   const tryIt = el("button", { class: "btn btn--primary", type: "button", text: "Try it yourself" });
   tryIt.addEventListener("click", () => {
-    stopTour({ welcome: true });
+    stopTour();
     logEl.querySelector(".starter")?.focus({ preventScroll: true });
   });
   const finish = el("div", { class: "tour-panel__finish", hidden: "" }, [
@@ -157,7 +165,7 @@ function buildPanel(data) {
     el("a", { class: "btn btn--quiet", href: REPO, target: "_blank", rel: "noopener noreferrer", text: "View the code" }),
   ]);
   const exit = el("button", { class: "link-btn tour-panel__exit", type: "button", text: "Exit tour" });
-  exit.addEventListener("click", () => stopTour({ welcome: true }));
+  exit.addEventListener("click", () => stopTour());
   const panel = el("div", { class: "tour-panel", id: "tourPanel", role: "region", "aria-labelledby": "tourTitle" }, [
     el("div", { class: "tour-panel__top" }, [count, el("div", { class: "tour-progress", "aria-hidden": "true" }, segments), exit]),
     el("div", { class: "tour-panel__copy", "aria-live": "polite" }, [title, text]),
@@ -229,7 +237,7 @@ function lockComposer(on) {
   inputEl.placeholder = on ? "Tour playing" : PLACEHOLDER;
 }
 
-function stopTour({ welcome = false } = {}) {
+function stopTour({ welcome = true } = {}) {
   if (!tour) return;
   clearTimeout(tour.timer);
   clearTimeout(tour.anim);
@@ -238,14 +246,14 @@ function stopTour({ welcome = false } = {}) {
   chatEl.classList.remove("is-touring");
   lockComposer(false);
   clearChat();
-  if (welcome) renderWelcome();
+  if (welcome) ensureWelcome();
 }
 
 function tourFailed() {
   const retry = el("button", { class: "btn btn--primary", type: "button", text: "Try again" });
   const exit = el("button", { class: "btn btn--quiet", type: "button", text: "Exit tour" });
   retry.addEventListener("click", startTour);
-  exit.addEventListener("click", () => stopTour({ welcome: true }));
+  exit.addEventListener("click", () => stopTour());
   const panel = el("div", { class: "tour-panel", id: "tourPanel", role: "alert" }, [
     el("p", { class: "tour-panel__title", text: "The tour didn't load." }),
     el("p", { class: "tour-panel__text", text: "Check your connection and try again." }),
@@ -258,7 +266,7 @@ function tourFailed() {
 async function startTour() {
   if (!chatEl.classList.contains("is-open")) openChat({ focus: false });
   expandChat();
-  stopTour();
+  stopTour({ welcome: false });
   tour = { at: -1, playing: !REDUCED_MOTION.matches, timer: null, anim: null, remaining: 0, startedAt: 0 };
   chatEl.classList.add("is-touring");
   clearChat();
@@ -289,6 +297,7 @@ document.addEventListener(
       return;
     }
     if (tour && e.target.closest("#close")) stopTour();
+    if (tour && e.target.closest("[data-ask]")) stopTour({ welcome: false });
   },
   true,
 );
@@ -299,7 +308,7 @@ document.addEventListener(
     if (!tour || !tour.ui?.steps) return;
     if (e.key === "Escape") {
       e.stopImmediatePropagation();
-      stopTour({ welcome: true });
+      stopTour();
     } else if (e.key === "ArrowRight" && !e.target.closest("input, textarea")) go(tour.at + 1);
     else if (e.key === "ArrowLeft" && !e.target.closest("input, textarea")) go(tour.at - 1);
   },

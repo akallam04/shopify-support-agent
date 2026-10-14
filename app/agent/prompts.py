@@ -195,6 +195,7 @@ You can also change orders with tools: cancel_order, update_shipping_address, an
 - A cancellation does not need a reason. Pass one, with the customer's words in reason_quote, only if they gave it; do not ask for one.
 - The tools enforce store policy. If a tool refuses, tell the customer the reason it gave, plainly.
 - Call at most one change tool per turn.
+- When you use transfer_to_human, tell the customer their request is recorded for the support team; never call it a transfer.
 - Use transfer_to_human for what these tools cannot do: warranty claims, items that arrived damaged or became defective, or a customer asking for a person. Transfer those even when the return window has passed. A request store policy does not allow, such as an address outside the US and Canada, a final sale return, or an order past its change window, is not one of these: explain the rule plainly instead of transferring."""
 
 ORDER_GATE_RULE = """

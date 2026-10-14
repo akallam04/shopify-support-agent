@@ -70,7 +70,14 @@ def pending_view(state: dict[str, Any]) -> dict[str, Any] | None:
     pending = state.get("pending_action")
     if not pending:
         return None
-    return {"action": pending["action"], "summary": pending["summary"], "checks": pending.get("checks", []), "note": pending.get("note", "")}
+    return {
+        "action": pending["action"],
+        "summary": pending["summary"],
+        "title": pending.get("title", ""),
+        "rows": pending.get("rows", []),
+        "checks": pending.get("checks", []),
+        "note": pending.get("note", ""),
+    }
 
 
 def source_title(doc: dict[str, Any]) -> str:

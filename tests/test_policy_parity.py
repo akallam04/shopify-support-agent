@@ -266,3 +266,41 @@ def test_refusal_reasons_read_naturally_for_plural_product_names() -> None:
 
     reasons = re.findall(r'f"([^"]*\{line\.title\}[^"]*)"', Path("mcp_server/policy.py").read_text())
     assert reasons and not [r for r in reasons if re.search(r"\{line\.title\} (was|has|is)\b", r)]
+
+
+def test_the_card_rows_split_the_return_into_fee_refund_and_timing(backend: SimStoreBackend) -> None:
+    prepared = prepare(backend, "request_return", RETURN_CALL)
+    rows = dict(prepared.rows)
+    assert prepared.title == "Return 1 x Stormline Rain Jacket (L) from order #1022"
+    assert list(rows) == ["Reason", "Condition", "Fee", "Refund", "Timing"]
+    assert rows["Fee"].startswith("7.50 USD") and rows["Refund"] == "172.49 USD (179.99 minus the 7.50 fee)"
+    assert "1 business day" in rows["Timing"] and "5 to 7 business days" in rows["Timing"]
+    for value in ("7.50", "172.49", "179.99"):
+        assert value in prepared.summary
+
+
+def test_canadian_and_fee_waived_returns_show_no_fee_on_the_card(backend: SimStoreBackend) -> None:
+    rows = dict(prepare(canadian(backend), "request_return", {**RETURN_CALL, "reason_quote": "It is too big"}).rows)
+    assert rows["Fee"].startswith("None") and "own cost" in rows["Fee"] and "label" not in rows["Timing"].lower()
+    from mcp_server.tools import return_rows
+    from decimal import Decimal
+
+    waived = dict(return_rows("wrong_item", "US", Decimal("50.00"), "USD"))
+    assert waived["Fee"].startswith("None") and waived["Refund"] == "50.00 USD"
+
+
+def test_cancel_and_address_cards_get_short_rows(backend: SimStoreBackend) -> None:
+    from tests.test_review_fixes import CANCEL_CALL
+
+    cancel = prepare(backend, "cancel_order", CANCEL_CALL)
+    assert cancel.title == "Cancel order #1023" and [r[0] for r in cancel.rows] == ["Items", "Total", "Refund"]
+    address = prepare(backend, "update_shipping_address", ADDRESS_CALL)
+    assert address.title == "Change the shipping address on order #1021" and dict(address.rows)["To"].startswith("1200 Larimer St")
+
+
+def test_a_pending_payment_order_past_its_window_is_not_said_to_ship_as_placed(backend: SimStoreBackend) -> None:
+    from mcp_server.policy import can_cancel
+
+    order = backend.db.orders["#1014"]
+    decision = can_cancel(order, "", parse_instant("2026-10-04T23:03:00Z"))
+    assert not decision.allowed and "ship as placed" not in decision.reason and "2 hours" in decision.reason

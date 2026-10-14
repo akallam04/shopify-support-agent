@@ -13,7 +13,6 @@ const statusTextEl = $("statusText");
 
 let history = [];
 let sessionState = null;
-let started = false;
 let warm = false;
 let openCard = null;
 let openBrain = null;
@@ -168,10 +167,7 @@ function openChat({ focus = true, entrance = false, peek = false } = {}) {
   launcherEl.setAttribute("aria-expanded", "true");
   document.body.classList.toggle("chat-docked", DOCK.matches);
   cover(MOBILE.matches && !chatEl.classList.contains("is-peek"));
-  if (!started) {
-    started = true;
-    renderWelcome();
-  }
+  ensureWelcome();
   if (focus) inputEl.focus({ preventScroll: true });
 }
 
@@ -216,6 +212,10 @@ function renderWelcome() {
   ]);
   renderStarters(wrap);
   logEl.append(wrap);
+}
+
+function ensureWelcome() {
+  if (!logEl.children.length && !chatEl.classList.contains("is-touring")) renderWelcome();
 }
 
 const conversation = createConversation();

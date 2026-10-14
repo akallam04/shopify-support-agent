@@ -230,6 +230,8 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
                 "args": args,
                 "order_number": prepared.order_name,
                 "summary": prepared.summary,
+                "title": prepared.title,
+                "rows": prepared.rows,
                 "checks": checks,
                 "key": key,
                 "note": note,

@@ -815,6 +815,10 @@ button { font: inherit; color: inherit; }
 .confirm__checks li { display: flex; gap: 8px; align-items: flex-start; }
 .confirm__checks svg { flex: none; width: 15px; height: 15px; margin-top: 2px; fill: none; stroke: var(--pine); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 
+.confirm__lead { font-weight: 600; }
+.confirm__rows { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 0; padding: 6px 14px 0; font-size: 14px; line-height: 1.4; }
+.confirm__rows dt { color: var(--granite); font-weight: 600; }
+.confirm__rows dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
 .confirm__actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px 0; }
 .confirm__actions .btn { flex: 1 1 auto; }
 .confirm__hint { padding: 10px 14px 12px; color: var(--ink); font-size: 13px; font-weight: 600; }

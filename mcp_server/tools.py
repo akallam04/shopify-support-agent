@@ -243,6 +243,8 @@ class Prepared:
     summary: str = ""
     facts: dict[str, Any] = field(default_factory=dict)
     checks: list[str] = field(default_factory=list)
+    title: str = ""
+    rows: list[list[str]] = field(default_factory=list)
 
     def view(self) -> dict[str, Any]:
         return {
@@ -254,6 +256,8 @@ class Prepared:
             "summary": self.summary,
             "facts": self.facts,
             "checks": self.checks,
+            "title": self.title,
+            "rows": self.rows,
         }
 
 
@@ -398,6 +402,27 @@ def _address_from(args: dict[str, Any], found: FoundOrder) -> Address:
     )
 
 
+def return_rows(reason: str, country: str | None, items_total: Decimal, currency: str) -> list[list[str]]:
+    canada = (country or "").upper() == "CA"
+    fee_applies = policy.label_fee_applies(reason, country)
+    refund = policy.refund_amount(items_total, reason, country)
+    if canada:
+        fee = "None. You ship it back at your own cost"
+    elif fee_applies:
+        fee = f"{policy.RETURN_SHIPPING_FEE} {currency} for the prepaid return label, taken from the refund"
+    else:
+        fee = "None, because the item did not arrive as ordered or as described"
+    paid = f" ({items_total:.2f} minus the {policy.RETURN_SHIPPING_FEE} fee)" if fee_applies else ""
+    timing = ("" if canada else "Return label by email within 1 business day. ") + "Refund 5 to 7 business days after we receive the return"
+    return [
+        ["Reason", policy.RETURN_REASON_LABELS.get(reason, reason)],
+        ["Condition", "Unworn and unused, with original tags"],
+        ["Fee", fee],
+        ["Refund", f"{refund:.2f} {currency}{paid}"],
+        ["Timing", timing],
+    ]
+
+
 def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepared:
     if action == HANDOFF_ACTION:
         summary = str(args.get("summary") or "").strip()[:500]
@@ -423,6 +448,12 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             f"cancel order {name} ({_items_text([(li, li.quantity) for li in order.line_items])}, "
             f"total {order.total} {order.currency}), with any amount paid going back to the original payment method."
         )
+        title = f"Cancel order {name}"
+        rows = [
+            ["Items", _items_text([(li, li.quantity) for li in order.line_items])],
+            ["Total", f"{order.total} {order.currency}"],
+            ["Refund", "Any amount paid goes back to the original payment method"],
+        ]
     elif action == "update_shipping_address":
         address = _address_from(args, found)
         decision = policy.can_change_address(order, address, now)
@@ -431,6 +462,8 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             f"change the shipping address on order {name} from {format_address(order.shipping_address)} "
             f"to {format_address(address)}."
         )
+        title = f"Change the shipping address on order {name}"
+        rows = [["From", format_address(order.shipping_address)], ["To", format_address(address)]]
     else:
         reason = str(args.get("reason") or "").strip()
         pairs, decision = _resolve_items(order, args.get("items"), str(args.get("reason") or ""))
@@ -452,10 +485,12 @@ def prepare(backend: StoreBackend, action: str, args: dict[str, Any]) -> Prepare
             f"{RETURN_CONDITION} {terms['fee']} {terms.get('amount', '')} {terms['label']}"
         ).replace("  ", " ")
         facts = {**facts, "return_terms": terms}
+        title = f"Return {_items_text(pairs)} from order {name}"
+        rows = return_rows(reason, country, items_total, order.currency) if pairs else []
 
     if not decision.allowed:
         return Prepared(action, False, decision.code, decision.reason, normalized, name, "", facts)
-    return Prepared(action, True, "ok", "", normalized, name, summary, facts, passed_checks(action, order, pairs, now))
+    return Prepared(action, True, "ok", "", normalized, name, summary, facts, passed_checks(action, order, pairs, now), title, rows)
 
 
 def _audit(backend: WritableStore, action: str, prepared: Prepared, outcome: str, key: str) -> None:
