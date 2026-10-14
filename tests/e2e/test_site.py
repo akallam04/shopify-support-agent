@@ -437,3 +437,17 @@ def test_each_tour_step_shows_its_focus_fully_above_the_panel(browser: Any, site
             assert box["y"] >= log["y"] - 1 and box["y"] + box["height"] <= log["y"] + log["height"] + 1, (step + 1, selector)
         if step < 4:
             page.locator(".tour-panel__next").click()
+
+
+@pytest.mark.parametrize("size", [(1440, 900), (1366, 768)], ids=["1440x900", "1366x768"])
+def test_the_whole_card_fits_during_the_tour_on_laptop_screens(browser: Any, site: str, size: tuple[int, int]) -> None:
+    page = load(browser, site, viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    for step, selectors in ((2, [".confirm"]), (3, [".confirm", ".msg--user >> nth=-1"])):
+        page.locator(".tour-panel__next").click()
+        expect(page.locator(".tour-panel__count")).to_have_text(f"{step} of 5")
+        page.wait_for_timeout(150)
+        log = page.locator("#log").bounding_box()
+        for selector in selectors:
+            box = page.locator(selector).bounding_box()
+            assert box["y"] >= log["y"] - 1 and box["y"] + box["height"] <= log["y"] + log["height"] + 1, (step, selector, box, log)

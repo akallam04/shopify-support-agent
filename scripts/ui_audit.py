@@ -1,11 +1,13 @@
-"""Screenshot every page and state of the site at six widths and report layout problems.
+"""Screenshot every page and state of the site at seven screen sizes and report layout problems.
 
     python -m scripts.ui_audit [--out audit-screenshots] [--widths 320 375] [--fail]
 
-Chat replies come from tests/e2e/fixtures.json, so nothing reaches the API. Writes one PNG per state
-and width, a contact sheet per state with every width side by side, and report.json with each
-problem found: sideways scroll, text outside its box, clipped text, overlapping chat parts, and tables
-wider than their box. With --fail it exits with an error when any problem is found, which is how CI runs it.
+Chat replies come from tests/e2e/fixtures.json, so nothing reaches the API. The sizes run from a
+320-pixel phone to 1366 by 768 and 1440 by 900 laptops. Writes one PNG per state and width, a contact
+sheet per state with every width side by side, and report.json with each problem found: sideways
+scroll, text outside its box, clipped text, overlapping chat parts, tables wider than their box, and
+a tour card that is not fully visible on a laptop. With --fail it exits with an error when any
+problem is found, which is how CI runs it.
 """
 
 import argparse
@@ -23,8 +25,8 @@ from playwright.sync_api import Browser, Page, sync_playwright
 
 FRONTEND = Path("frontend")
 FIXTURES = json.loads(Path("tests/e2e/fixtures.json").read_text())
-WIDTHS = (320, 375, 390, 768, 1024, 1440)
-HEIGHTS = {320: 568, 375: 812, 390: 844, 768: 1024, 1024: 768, 1440: 900}
+WIDTHS = (320, 375, 390, 768, 1024, 1366, 1440)
+HEIGHTS = {320: 568, 375: 812, 390: 844, 768: 1024, 1024: 768, 1366: 768, 1440: 900}
 HEALTH = {"status": "ok", "release": "audit"}
 FAILED = {"error": "internal", "message": "That reply did not come through.", "release": "audit"}
 
@@ -56,6 +58,12 @@ CHECK_JS = """
   }
   for (const box of document.querySelectorAll(".table-scroll")) {
     if (box.scrollWidth > box.clientWidth + 1) problems.push({ kind: "table wider than its box", detail: `${box.scrollWidth} > ${box.clientWidth}`, text: text(box) });
+  }
+  const step = document.querySelector(".tour-panel")?.dataset.step;
+  const card = document.querySelector("#log .confirm");
+  if (innerWidth >= 1024 && card && (step === "2" || step === "3")) {
+    const c = card.getBoundingClientRect(), l = document.querySelector("#log").getBoundingClientRect();
+    if (c.top < l.top - 1 || c.bottom > l.bottom + 1) problems.push({ kind: "tour card not fully visible", detail: `card ${Math.round(c.top)} to ${Math.round(c.bottom)}, chat ${Math.round(l.top)} to ${Math.round(l.bottom)}` });
   }
   const chat = document.querySelector("#chat.is-open");
   if (chat) {

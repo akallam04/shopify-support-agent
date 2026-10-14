@@ -105,7 +105,7 @@ Key decisions:
 - **A held-out set.** Ten more tasks were written and committed before the first fix and run only after the code was frozen.
 - **A grader audit.** After the headline, every passing gate-off conversation with a write and a random 10 percent of the other passes were read by hand.
 
-**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, the browser tests, and the UI audit at six widths. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
+**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, the browser tests, and the UI audit at seven screen sizes. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
 
 ## Results
 
@@ -265,7 +265,7 @@ Fill in `.env` before anything that calls a model or the store: `ANTHROPIC_API_K
 - **Compare two runs:** `.venv/bin/python -m evals.sim.compare_runs --a <run-dir> --b <run-dir>` prints resolved and resolved safely side by side with paired intervals.
 - **Deploy:** `sh deploy/deploy.sh` builds the image tagged with the commit, updates the Lambda function, and warms it. The function holds only a read-only Shopify token.
 - **The tour and the GIF above:** `.venv/bin/python -m scripts.record_demo` records one return and a yes on the deployed API, saves it for the 60-second tour, and plays the same conversation on the local site to record `docs/demo.gif`, so the two always show the same release. `--gif-only` rebuilds the GIF without an API call.
-- **Screenshots of every page and state:** `.venv/bin/python -m scripts.ui_audit` captures the site at 320 to 1440 pixels wide from recorded replies and lists any sideways scroll, clipped text, or overlap.
+- **Screenshots of every page and state:** `.venv/bin/python -m scripts.ui_audit` captures the site at seven sizes, from 320-pixel phones to 1366 by 768 and 1440 by 900 laptops, from recorded replies and lists any sideways scroll, clipped text, or overlap.
 
 ## Limitations
 

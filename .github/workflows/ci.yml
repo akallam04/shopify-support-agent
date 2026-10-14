@@ -48,7 +48,7 @@ jobs:
         run: python -m playwright install --with-deps chromium-headless-shell
       - name: Browser tests on recorded replies
         run: python -m pytest -q tests/e2e
-      - name: UI audit at six widths
+      - name: UI audit at seven screen sizes
         run: python -m scripts.ui_audit --out audit-screenshots --fail
       - name: Keep the audit screenshots when it fails
         if: failure()

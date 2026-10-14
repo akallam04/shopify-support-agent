@@ -1031,6 +1031,17 @@ button { font: inherit; color: inherit; }
 .chat.is-touring .composer input:disabled::placeholder { color: var(--granite); font-weight: 600; }
 
 .confirm--replay .confirm__actions .btn { pointer-events: none; }
+.chat.is-touring .confirm__head { gap: 8px; padding-top: 8px; }
+.chat.is-touring .shield { width: 28px; height: 28px; }
+.chat.is-touring .confirm__summary { padding-top: 4px; font-size: 14px; }
+.chat.is-touring .confirm__rows { gap: 1px 10px; padding-top: 4px; font-size: 13px; line-height: 1.35; }
+.chat.is-touring .confirm__checks { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 8px; padding: 6px 10px; font-size: 12px; line-height: 1.35; }
+.chat.is-touring .confirm__checks li { gap: 4px; }
+.chat.is-touring .confirm__checks svg { width: 13px; height: 13px; margin-top: 1px; }
+.chat.is-touring .confirm__note { display: none; }
+.chat.is-touring .confirm__actions { padding-top: 10px; }
+.chat.is-touring .confirm__actions .btn { min-height: 40px; padding: 8px 14px; }
+.chat.is-touring .confirm__hint { padding: 8px 14px 10px; }
 .confirm__actions .btn.is-tapping { position: relative; overflow: visible; }
 
 .tap {
@@ -1085,6 +1096,15 @@ button { font: inherit; color: inherit; }
 .tour-panel__next { font-size: 16px; }
 .tour-panel .btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .tour-panel__finish { display: grid; gap: 8px; }
+
+@media (max-height: 800px) {
+  .tour-panel { gap: 8px; padding: 10px 14px 12px; }
+  .tour-panel__controls .btn,
+  .tour-panel__finish .btn { min-height: 44px; }
+  .chat.is-touring .composer { padding-top: 6px; padding-bottom: 6px; }
+  .chat.is-touring .composer input { min-height: 40px; }
+  .chat.is-touring .send { width: 40px; height: 40px; }
+}
 
 @media (max-height: 640px) {
   .chat.is-touring .tour-stat__head { display: none; }
