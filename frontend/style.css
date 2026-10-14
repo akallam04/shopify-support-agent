@@ -1094,6 +1094,9 @@ button { font: inherit; color: inherit; }
   .tour-panel { gap: 8px; padding: 10px 14px 12px; }
   .tour-panel__controls .btn,
   .tour-panel__finish .btn { min-height: 44px; }
+  .tour-panel__finish { grid-template-columns: 1fr 1fr; }
+  .tour-panel__finish .btn { padding: 8px 10px; font-size: 14px; text-align: center; }
+  .tour-panel__finish .btn:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 359px) {

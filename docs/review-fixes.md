@@ -97,3 +97,16 @@ the offline status wrapped to three lines at 320 pixels ("Can't connect" now), t
 placeholder was cut off at 320 pixels, and the last tour step hid its numbers on short screens. The
 five-column table on How it works ran past its box on phones; every table now fits at 320, 375, and
 390 pixels (`test_every_how_it_works_table_fits_its_box_on_a_phone`).
+
+## After the audit (v2.2.1)
+
+| Finding | Fix | Tests |
+|---|---|---|
+| CI failed: the five-column table ran 13 pixels past its box at 320 pixels, measured before the web fonts loaded. | At 420 pixels and below each setting is a short block of labeled rows; the browser test and the UI audit wait for the fonts. | `test_every_how_it_works_table_fits_its_box_on_a_phone` |
+| On tour step 2 the card's "Nothing changes until you say yes" sat below the visible area, above the panel. | Each step scrolls its focus fully into view above the panel; a card taller than the space keeps its buttons and that line in view. | `test_each_tour_step_shows_its_focus_fully_above_the_panel` |
+| The chat could open blank: after closing it during the tour, or while the tour was loading. A scenario button pressed during the tour also mixed into it. | An empty chat always shows the greeting and the scenario buttons; leaving the tour redraws them; a scenario button ends the tour first. | `test_leaving_the_tour_with_exit_shows_the_greeting`, `test_closing_the_chat_during_the_tour_reopens_on_the_greeting`, `test_starting_over_shows_the_greeting`, `test_closing_and_reopening_keeps_the_greeting`, `test_a_failed_health_check_still_shows_the_greeting`, `test_closing_while_the_tour_is_still_loading_reopens_on_the_greeting`, `test_a_slow_health_check_never_hides_the_greeting`, `test_a_scenario_button_during_the_tour_ends_it_and_sends_the_request` |
+| Two dates confused visitors: the store clock and the tour's recording date. | The chat says the demo store runs on a fixed date so its test orders always work; the tour label drops the recording date, which stays in its tooltip and in `docs/demo.json`. | `test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything` |
+| A handoff was sometimes described as "the transfer was recorded". | The order prompt says to call it a request recorded for the support team. 0 of 4 local tries used the word afterwards. | 53 of 53 (`evals/results/20261013-214946_v2-2-1-wording.json`) |
+| A pending-payment order past its window was said to have "entered processing" and to "ship as placed". | That refusal no longer says so when the payment is pending. | `test_a_pending_payment_order_past_its_window_is_not_said_to_ship_as_placed` |
+| Visitors saw "Sandbox", and the card was one long paragraph. | "Demo store", and the card shows a short title with rows built in code: reason, condition, fee, refund, and timing for a return. | `test_the_card_rows_split_the_return_into_fee_refund_and_timing`, `test_canadian_and_fee_waived_returns_show_no_fee_on_the_card`, `test_cancel_and_address_cards_get_short_rows`, `test_return_then_confirm_files_the_return` |
+| Layout problems could reach the live site. | The UI audit runs in the free CI tier and fails on any problem. | `.github/workflows/ci.yml` |

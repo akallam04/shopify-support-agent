@@ -1,10 +1,11 @@
 """Screenshot every page and state of the site at six widths and report layout problems.
 
-    python -m scripts.ui_audit [--out audit-screenshots] [--widths 320 375]
+    python -m scripts.ui_audit [--out audit-screenshots] [--widths 320 375] [--fail]
 
 Chat replies come from tests/e2e/fixtures.json, so nothing reaches the API. Writes one PNG per state
 and width, a contact sheet per state with every width side by side, and report.json with each
-problem found: sideways scroll, text outside its box, clipped text, and overlapping chat parts.
+problem found: sideways scroll, text outside its box, clipped text, overlapping chat parts, and tables
+wider than their box. With --fail it exits with an error when any problem is found, which is how CI runs it.
 """
 
 import argparse
@@ -247,6 +248,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default="audit-screenshots")
     parser.add_argument("--widths", nargs="*", type=int, default=list(WIDTHS))
+    parser.add_argument("--fail", action="store_true")
     args = parser.parse_args()
     audit = Audit(Path(args.out))
     with serve() as site, sync_playwright() as p:
@@ -260,6 +262,8 @@ def main() -> None:
     (audit.out / "report.json").write_text(json.dumps(audit.problems, indent=1) + "\n")
     total = sum(len(v) for widths in audit.problems.values() for v in widths.values())
     print(f"{total} problems in {len(audit.problems)} states, report in {audit.out / 'report.json'}")
+    if args.fail and total:
+        raise SystemExit(json.dumps(audit.problems, indent=1))
 
 
 if __name__ == "__main__":

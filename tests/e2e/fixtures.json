@@ -6,15 +6,30 @@
   "response": {
    "response": "Just to confirm, I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method. This is a demo store, so nothing is emailed and no money moves. Should I go ahead? Please reply yes or no.",
    "intent": "order",
-   "latency_s": 2.57,
+   "latency_s": 2.62,
    "tokens": 193,
-   "release": "846abec68132",
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "cancel-decline-1",
+   "session_state": null,
    "session_reset": false,
    "pending": {
     "action": "cancel_order",
     "summary": "cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method.",
+    "title": "Cancel order #1023",
+    "rows": [
+     [
+      "Items",
+      "1 x Trailblazer Merino Base Layer (L)"
+     ],
+     [
+      "Total",
+      "84.99 USD"
+     ],
+     [
+      "Refund",
+      "Any amount paid goes back to the original payment method"
+     ]
+    ],
     "checks": [
      "The email matches the order",
      "Not shipped yet",
@@ -45,11 +60,11 @@
      },
      {
       "node": "route",
-      "ms": 1434.4
+      "ms": 1721.1
      },
      {
       "node": "order_tools",
-      "ms": 1104.9
+      "ms": 838.5
      },
      {
       "node": "gate",
@@ -94,7 +109,7 @@
          {
           "title": "Trailblazer Merino Base Layer",
           "variant": "L",
-          "can_return": "no: Trailblazer Merino Base Layer from order #1023 has not been delivered yet. Returns open once it arrives."
+          "can_return": "no: Order #1023 has not been delivered yet, so the Trailblazer Merino Base Layer cannot be returned until it arrives."
          }
         ]
        }
@@ -137,6 +152,21 @@
         "The email matches the order",
         "Not shipped yet",
         "Inside the 2-hour change window, 60 minutes left"
+       ],
+       "title": "Cancel order #1023",
+       "rows": [
+        [
+         "Items",
+         "1 x Trailblazer Merino Base Layer (L)"
+        ],
+        [
+         "Total",
+         "84.99 USD"
+        ],
+        [
+         "Refund",
+         "Any amount paid goes back to the original payment method"
+        ]
        ]
       }
      }
@@ -172,14 +202,14 @@
     "tokens": {
      "input_tokens": 25,
      "output_tokens": 168,
-     "cache_creation_input_tokens": 0,
-     "cache_read_input_tokens": 5249,
+     "cache_creation_input_tokens": 5374,
+     "cache_read_input_tokens": 0,
      "thinking_tokens": 0
     },
-    "cost_usd": 0.000139,
+    "cost_usd": 0.000758,
     "node_costs": {
-     "route": 3.1e-05,
-     "order_tools": 0.000108
+     "route": 0.000166,
+     "order_tools": 0.000593
     }
    }
   }
@@ -191,11 +221,11 @@
   "response": {
    "response": "No problem, I have not changed anything. Is there anything else I can help with?",
    "intent": "order",
-   "latency_s": 0.02,
+   "latency_s": 0.03,
    "tokens": 0,
-   "release": "846abec68132",
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "cancel-decline-2",
+   "session_state": null,
    "session_reset": false,
    "pending": null,
    "lead": null,
@@ -218,7 +248,7 @@
      },
      {
       "node": "confirm",
-      "ms": 0.0
+      "ms": 0.1
      },
      {
       "node": "verify",
@@ -258,15 +288,38 @@
   "response": {
    "response": "Just to confirm, I will request a return of 1 x Stormline Rain Jacket (L) from order #1022 (reason: too large). The items must be unworn and unused, with their original tags. A flat 7.50 USD fee for the prepaid return label is deducted from the refund. Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee). We email a prepaid return label within 1 business day. This is a demo store, so nothing is emailed and no money moves. Should I go ahead? Please reply yes or no.",
    "intent": "order",
-   "latency_s": 2.66,
-   "tokens": 237,
-   "release": "846abec68132",
+   "latency_s": 2.19,
+   "tokens": 236,
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "return-confirm-1",
+   "session_state": null,
    "session_reset": false,
    "pending": {
     "action": "request_return",
     "summary": "request a return of 1 x Stormline Rain Jacket (L) from order #1022 (reason: too large). The items must be unworn and unused, with their original tags. A flat 7.50 USD fee for the prepaid return label is deducted from the refund. Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee). We email a prepaid return label within 1 business day.",
+    "title": "Return 1 x Stormline Rain Jacket (L) from order #1022",
+    "rows": [
+     [
+      "Reason",
+      "too large"
+     ],
+     [
+      "Condition",
+      "Unworn and unused, with original tags"
+     ],
+     [
+      "Fee",
+      "7.50 USD for the prepaid return label, taken from the refund"
+     ],
+     [
+      "Refund",
+      "172.49 USD (179.99 minus the 7.50 fee)"
+     ],
+     [
+      "Timing",
+      "Return label by email within 1 business day. Refund 5 to 7 business days after we receive the return"
+     ]
+    ],
     "checks": [
      "The email matches the order",
      "Delivered September 29, inside the 30-day return window, which ends October 29, 2026",
@@ -290,7 +343,7 @@
     "nodes": [
      {
       "node": "sanitize",
-      "ms": 0.0
+      "ms": 0.1
      },
      {
       "node": "context",
@@ -298,11 +351,11 @@
      },
      {
       "node": "route",
-      "ms": 1331.7
+      "ms": 1221.5
      },
      {
       "node": "order_tools",
-      "ms": 1299.5
+      "ms": 940.3
      },
      {
       "node": "gate",
@@ -318,7 +371,7 @@
       "kind": "tool",
       "name": "get_order_status",
       "args": {
-       "order_number": "#1022",
+       "order_number": "1022",
        "email": "j\u2022\u2022\u2022@example.com"
       },
       "result": {
@@ -405,7 +458,7 @@
          "fee": "A flat 7.50 USD fee for the prepaid return label is deducted from the refund.",
          "label": "We email a prepaid return label within 1 business day.",
          "refund": "The refund goes to the original payment method within 5 to 7 business days after we receive and inspect the return.",
-         "approval": "The return is requested, and the store confirms it once it is reviewed.",
+         "approval": "The store confirms the return once it reviews the request.",
          "amount": "Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee)."
         }
        },
@@ -414,6 +467,29 @@
         "Delivered September 29, inside the 30-day return window, which ends October 29, 2026",
         "Not a final sale item",
         "Those items are still available to return"
+       ],
+       "title": "Return 1 x Stormline Rain Jacket (L) from order #1022",
+       "rows": [
+        [
+         "Reason",
+         "too large"
+        ],
+        [
+         "Condition",
+         "Unworn and unused, with original tags"
+        ],
+        [
+         "Fee",
+         "7.50 USD for the prepaid return label, taken from the refund"
+        ],
+        [
+         "Refund",
+         "172.49 USD (179.99 minus the 7.50 fee)"
+        ],
+        [
+         "Timing",
+         "Return label by email within 1 business day. Refund 5 to 7 business days after we receive the return"
+        ]
        ]
       }
      }
@@ -447,15 +523,15 @@
     "retrieved": [],
     "tokens": {
      "input_tokens": 23,
-     "output_tokens": 214,
-     "cache_creation_input_tokens": 0,
-     "cache_read_input_tokens": 5378,
+     "output_tokens": 213,
+     "cache_creation_input_tokens": 861,
+     "cache_read_input_tokens": 4638,
      "thinking_tokens": 0
     },
-    "cost_usd": 0.000163,
+    "cost_usd": 0.000263,
     "node_costs": {
-     "route": 3.2e-05,
-     "order_tools": 0.000131
+     "route": 3.5e-05,
+     "order_tools": 0.000227
     }
    }
   }
@@ -465,13 +541,13 @@
   "user_turn": 2,
   "last": "Yes",
   "response": {
-   "response": "A return is requested on order #1022. The return is requested, and the store confirms it once it is reviewed. We email a prepaid return label within 1 business day. A flat 7.50 USD fee for the prepaid return label is deducted from the refund. Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee). The refund goes to the original payment method within 5 to 7 business days after we receive and inspect the return. This is a demo store, so nothing is emailed and no money moves.",
+   "response": "A return is requested on order #1022. The store confirms the return once it reviews the request. We email a prepaid return label within 1 business day. A flat 7.50 USD fee for the prepaid return label is deducted from the refund. Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee). The refund goes to the original payment method within 5 to 7 business days after we receive and inspect the return. This is a demo store, so nothing is emailed and no money moves.",
    "intent": "order",
-   "latency_s": 0.04,
+   "latency_s": 0.02,
    "tokens": 0,
-   "release": "846abec68132",
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "return-confirm-2",
+   "session_state": null,
    "session_reset": false,
    "pending": null,
    "lead": null,
@@ -531,7 +607,7 @@
        "fee": "A flat 7.50 USD fee for the prepaid return label is deducted from the refund.",
        "label": "We email a prepaid return label within 1 business day.",
        "refund": "The refund goes to the original payment method within 5 to 7 business days after we receive and inspect the return.",
-       "approval": "The return is requested, and the store confirms it once it is reviewed.",
+       "approval": "The store confirms the return once it reviews the request.",
        "amount": "Refund for these items: 172.49 USD (179.99 USD minus the 7.50 USD label fee)."
       }
      }
@@ -573,15 +649,30 @@
   "response": {
    "response": "Just to confirm, I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method. This is a demo store, so nothing is emailed and no money moves. Should I go ahead? Please reply yes or no.",
    "intent": "order",
-   "latency_s": 2.35,
+   "latency_s": 2.13,
    "tokens": 193,
-   "release": "846abec68132",
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "cancel-question-1",
+   "session_state": null,
    "session_reset": false,
    "pending": {
     "action": "cancel_order",
     "summary": "cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method.",
+    "title": "Cancel order #1023",
+    "rows": [
+     [
+      "Items",
+      "1 x Trailblazer Merino Base Layer (L)"
+     ],
+     [
+      "Total",
+      "84.99 USD"
+     ],
+     [
+      "Refund",
+      "Any amount paid goes back to the original payment method"
+     ]
+    ],
     "checks": [
      "The email matches the order",
      "Not shipped yet",
@@ -612,11 +703,11 @@
      },
      {
       "node": "route",
-      "ms": 1224.8
+      "ms": 1276.0
      },
      {
       "node": "order_tools",
-      "ms": 1101.1
+      "ms": 819.9
      },
      {
       "node": "gate",
@@ -661,7 +752,7 @@
          {
           "title": "Trailblazer Merino Base Layer",
           "variant": "L",
-          "can_return": "no: Trailblazer Merino Base Layer from order #1023 has not been delivered yet. Returns open once it arrives."
+          "can_return": "no: Order #1023 has not been delivered yet, so the Trailblazer Merino Base Layer cannot be returned until it arrives."
          }
         ]
        }
@@ -704,6 +795,21 @@
         "The email matches the order",
         "Not shipped yet",
         "Inside the 2-hour change window, 60 minutes left"
+       ],
+       "title": "Cancel order #1023",
+       "rows": [
+        [
+         "Items",
+         "1 x Trailblazer Merino Base Layer (L)"
+        ],
+        [
+         "Total",
+         "84.99 USD"
+        ],
+        [
+         "Refund",
+         "Any amount paid goes back to the original payment method"
+        ]
        ]
       }
      }
@@ -740,13 +846,13 @@
      "input_tokens": 25,
      "output_tokens": 168,
      "cache_creation_input_tokens": 0,
-     "cache_read_input_tokens": 5249,
+     "cache_read_input_tokens": 5374,
      "thinking_tokens": 0
     },
-    "cost_usd": 0.000139,
+    "cost_usd": 0.00014,
     "node_costs": {
      "route": 3.1e-05,
-     "order_tools": 0.000108
+     "order_tools": 0.000109
     }
    }
   }
@@ -756,17 +862,32 @@
   "user_turn": 2,
   "last": "Before I decide, what is your return policy?",
   "response": {
-   "response": "Items can be returned within 30 days of the delivery date, and they must be unworn and unused with original tags attached and original packaging included. Gift cards, items marked FINAL SALE at checkout, and opened consumables like ski wax cannot be returned [policy-returns-final-sale-items]. To start a return, email support@auroraoutfitters.com with your order number and the items you want to return, and US orders get a prepaid return label, with a flat 7.50 USD return shipping fee deducted from the refund [policy-returns-how-to-start-a-return] [policy-returns-return-shipping-cost]. The return window and conditions are covered in [policy-returns-return-window]. The cancellation is still waiting for your answer: I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method.\n\nYour change is still waiting: I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method. Should I go ahead? Please reply yes or no.",
+   "response": "Items can be returned within 30 days of the delivery date, and they must be unworn and unused, with original tags attached and original packaging included [policy-returns-return-window]. Gift cards and items marked FINAL SALE at checkout cannot be returned or exchanged [policy-returns-final-sale-items]. To start a return, email support@auroraoutfitters.com with your order number and the items you want to return [policy-returns-how-to-start-a-return]. For US orders, a flat 7.50 USD return shipping fee is deducted from your refund when you use the prepaid label, though that fee is waived if the item arrived damaged, defective, or not as ordered [policy-returns-return-shipping-cost]. Your question is about returns, so the cancellation is still waiting on your yes or no. Would you like me to cancel order #1023?\n\nYour change is still waiting: I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method. Should I go ahead? Please reply yes or no.",
    "intent": "policy",
-   "latency_s": 4.76,
-   "tokens": 1860,
-   "release": "846abec68132",
+   "latency_s": 6.03,
+   "tokens": 1830,
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "cancel-question-2",
+   "session_state": null,
    "session_reset": false,
    "pending": {
     "action": "cancel_order",
     "summary": "cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method.",
+    "title": "Cancel order #1023",
+    "rows": [
+     [
+      "Items",
+      "1 x Trailblazer Merino Base Layer (L)"
+     ],
+     [
+      "Total",
+      "84.99 USD"
+     ],
+     [
+      "Refund",
+      "Any amount paid goes back to the original payment method"
+     ]
+    ],
     "checks": [
      "The email matches the order",
      "Not shipped yet",
@@ -775,8 +896,13 @@
     ],
     "note": "This is a demo store, so nothing is emailed and no money moves."
    },
-   "lead": "Items can be returned within 30 days of the delivery date, and they must be unworn and unused with original tags attached and original packaging included. Gift cards, items marked FINAL SALE at checkout, and opened consumables like ski wax cannot be returned [policy-returns-final-sale-items]. To start a return, email support@auroraoutfitters.com with your order number and the items you want to return, and US orders get a prepaid return label, with a flat 7.50 USD return shipping fee deducted from the refund [policy-returns-how-to-start-a-return] [policy-returns-return-shipping-cost]. The return window and conditions are covered in [policy-returns-return-window]. The cancellation is still waiting for your answer: I will cancel order #1023 (1 x Trailblazer Merino Base Layer (L), total 84.99 USD), with any amount paid going back to the original payment method.",
+   "lead": "Items can be returned within 30 days of the delivery date, and they must be unworn and unused, with original tags attached and original packaging included [policy-returns-return-window]. Gift cards and items marked FINAL SALE at checkout cannot be returned or exchanged [policy-returns-final-sale-items]. To start a return, email support@auroraoutfitters.com with your order number and the items you want to return [policy-returns-how-to-start-a-return]. For US orders, a flat 7.50 USD return shipping fee is deducted from your refund when you use the prepaid label, though that fee is waived if the item arrived damaged, defective, or not as ordered [policy-returns-return-shipping-cost]. Your question is about returns, so the cancellation is still waiting on your yes or no. Would you like me to cancel order #1023?",
    "sources": [
+    {
+     "id": "policy-returns-return-window",
+     "title": "Returns and Exchanges: Return window",
+     "text": "Returns and Exchanges, Return window\nYou have 30 days from the delivery date to start a return. Items must be unworn and unused, with original tags attached and original packaging included. Items showing wear, wash, or outdoor use cannot be accepted."
+    },
     {
      "id": "policy-returns-final-sale-items",
      "title": "Returns and Exchanges: Final sale items",
@@ -791,11 +917,6 @@
      "id": "policy-returns-return-shipping-cost",
      "title": "Returns and Exchanges: Return shipping cost",
      "text": "Returns and Exchanges, Return shipping cost\nA flat 7.50 USD return shipping fee is deducted from your refund when you use our prepaid label. Prepaid labels are for US returns: Canadian customers ship returns at their own cost, so no fee is deducted. The fee is waived entirely if the item arrived damaged, defective, or not as ordered."
-    },
-    {
-     "id": "policy-returns-return-window",
-     "title": "Returns and Exchanges: Return window",
-     "text": "Returns and Exchanges, Return window\nYou have 30 days from the delivery date to start a return. Items must be unworn and unused, with original tags attached and original packaging included. Items showing wear, wash, or outdoor use cannot be accepted."
     }
    ],
    "trace": {
@@ -820,23 +941,23 @@
      },
      {
       "node": "confirm",
-      "ms": 1145.8
+      "ms": 1175.0
      },
      {
       "node": "route",
-      "ms": 1277.5
+      "ms": 1279.9
      },
      {
       "node": "retrieve",
-      "ms": 555.6
+      "ms": 2021.8
      },
      {
       "node": "respond",
-      "ms": 1739.2
+      "ms": 1524.0
      },
      {
       "node": "verify",
-      "ms": 3.7
+      "ms": 3.6
      },
      {
       "node": "reconfirm",
@@ -862,7 +983,7 @@
      {
       "check": "numbers",
       "ok": true,
-      "detail": "3 found in sources"
+      "detail": "2 found in sources"
      },
      {
       "check": "identifiers",
@@ -886,16 +1007,16 @@
     ],
     "tokens": {
      "input_tokens": 1509,
-     "output_tokens": 351,
+     "output_tokens": 321,
      "cache_creation_input_tokens": 119,
      "cache_read_input_tokens": 1170,
      "thinking_tokens": 0
     },
-    "cost_usd": 0.000353,
+    "cost_usd": 0.000338,
     "node_costs": {
      "confirm": 4.9e-05,
      "route": 4.8e-05,
-     "respond": 0.000256
+     "respond": 0.000241
     }
    }
   }
@@ -905,13 +1026,13 @@
   "user_turn": 1,
   "last": "Where is my order #1001? My email is maya.thompson@example.com",
   "response": {
-   "response": "The order record for #1001 was already retrieved, so I can share it now. Order #1001 has shipped and is not delivered yet. It contains a Stormline Rain Jacket (size M) and a Wander Insulated Bottle 32oz (Slate). You can track it with UPS, tracking number 1Z999AA10123456784:\n\nhttps://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456784",
+   "response": "Your order #1001 has shipped but has not been delivered yet. It's on its way with UPS, tracking number:\n\n1Z999AA10123456784\n\nTrack it here: https://www.ups.com/WebTracking?loc=en_US&requester=ST&trackNums=1Z999AA10123456784\n\nThe order includes the Stormline Rain Jacket (size M) and the Wander Insulated Bottle 32oz (Slate).",
    "intent": "order",
-   "latency_s": 3.44,
-   "tokens": 199,
-   "release": "846abec68132",
+   "latency_s": 2.38,
+   "tokens": 187,
+   "release": "883d61c6230b",
    "sandbox": true,
-   "session_state": "track-1",
+   "session_state": null,
    "session_reset": false,
    "pending": null,
    "lead": null,
@@ -935,15 +1056,15 @@
      },
      {
       "node": "route",
-      "ms": 1314.9
+      "ms": 1290.8
      },
      {
       "node": "order_tools",
-      "ms": 2109.2
+      "ms": 1070.6
      },
      {
       "node": "verify",
-      "ms": 0.8
+      "ms": 5.6
      }
     ],
     "tools": [
@@ -991,12 +1112,12 @@
          {
           "title": "Stormline Rain Jacket",
           "variant": "M",
-          "can_return": "no: Stormline Rain Jacket from order #1001 has not been delivered yet. Returns open once it arrives."
+          "can_return": "no: Order #1001 has not been delivered yet, so the Stormline Rain Jacket cannot be returned until it arrives."
          },
          {
           "title": "Wander Insulated Bottle 32oz",
           "variant": "Slate",
-          "can_return": "no: Wander Insulated Bottle 32oz from order #1001 has not been delivered yet. Returns open once it arrives."
+          "can_return": "no: Order #1001 has not been delivered yet, so the Wander Insulated Bottle 32oz cannot be returned until it arrives."
          }
         ]
        }
@@ -1027,15 +1148,15 @@
     "retrieved": [],
     "tokens": {
      "input_tokens": 8,
-     "output_tokens": 191,
-     "cache_creation_input_tokens": 0,
-     "cache_read_input_tokens": 5290,
+     "output_tokens": 179,
+     "cache_creation_input_tokens": 781,
+     "cache_read_input_tokens": 4638,
      "thinking_tokens": 0
     },
-    "cost_usd": 0.000149,
+    "cost_usd": 0.000234,
     "node_costs": {
-     "route": 3.1e-05,
-     "order_tools": 0.000118
+     "route": 3.4e-05,
+     "order_tools": 0.000201
     }
    }
   }

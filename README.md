@@ -6,7 +6,7 @@
 
 **[Try the live demo](https://shopify-support-agent.vercel.app)** | **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** | [Technical write-up](docs/write-up.md)
 
-<img src="docs/demo.gif" width="100%" alt="The live demo store with the assistant panel open beside it. The customer taps Return an item. The assistant shows the exact return, the store checks it passed, and the refund, and the step rail under the card holds at the gate. The customer taps Yes, a Done message confirms the return from the store's records, and the details panel lists each step the reply took." />
+<img src="docs/demo.gif" width="100%" alt="The live demo store with the assistant panel open beside it. The customer taps Return an item. The assistant shows the exact return in short rows (reason, condition, fee, refund, timing) with the store checks it passed, and the step rail under the card holds at the gate. The customer taps Yes, a Done message confirms the return from the store's records, and the details panel lists each step the reply took." />
 
 ## The headline
 
@@ -32,12 +32,12 @@ There was no significant difference in resolution: +0.025, with a 95% paired int
 >
 > - **Model:** Claude Haiku 5.5 for routing and answers, thinking off
 > - **Gate:** on, confirmation on, reflection off; write actions on
-> - **Release:** `8a19a662a0e1` from commit `32e9fd1`
+> - **Release:** `883d61c6230b` from commit `e56917b`
 <!-- live-config:end -->
 
 In the public demo, write actions change only the visitor's private sandbox copy of the store.
 
-A reply the model writes took 2.0 to 3.2 seconds (median 2.4s over 9 replies) when the scenario check ran on the live demo on October 13, 2026; a yes that runs a change comes back at once.
+A reply the model writes took 2.2 to 2.7 seconds (median 2.5s over 9 replies) when the scenario check ran on the live demo on October 13, 2026; a yes that runs a change comes back at once.
 
 **Stack:** Python, LangGraph, FastAPI, Claude Haiku 5.5 with thinking off (Haiku 4.5 in the headline runs), a self-built MCP server over the Shopify Admin GraphQL API, Chroma, AWS Lambda, and a vanilla JavaScript site on Vercel. Tested with a tau-bench-style simulator (Qwen 3.8 Flash as the customer, Claude Sonnet 5.5 as the judge).
 
@@ -105,7 +105,7 @@ Key decisions:
 - **A held-out set.** Ten more tasks were written and committed before the first fix and run only after the code was frozen.
 - **A grader audit.** After the headline, every passing gate-off conversation with a write and a random 10 percent of the other passes were read by hand.
 
-**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, and the browser tests. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
+**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, the browser tests, and the UI audit at six widths. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
 
 ## Results
 

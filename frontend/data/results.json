@@ -577,13 +577,13 @@
   }
  },
  "latency": {
-  "run": "evals/results/scenarios/20261013-203909_v2-2-audit.json",
+  "run": "evals/results/scenarios/20261013-215923_v2-2-1.json",
   "measured_on": "October 13, 2026",
   "model_replies": 9,
-  "model_median_s": 2.4,
-  "model_min_s": 2.0,
-  "model_max_s": 3.2,
-  "instant_max_s": 0.03
+  "model_median_s": 2.5,
+  "model_min_s": 2.2,
+  "model_max_s": 2.7,
+  "instant_max_s": 0.04
  },
  "catalog": {
   "products": 15

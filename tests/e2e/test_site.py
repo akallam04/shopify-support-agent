@@ -73,7 +73,7 @@ def test_cancel_then_decline_keeps_the_order_and_settles_the_card(browser: Any, 
     page = open_page(browser, site, viewport=DESKTOP)
     starter(page, "Cancel an order")
     card = page.locator(".confirm").first
-    expect(card).to_contain_text("I will cancel order #1023")
+    expect(card).to_contain_text("Cancel order #1023")
     card.get_by_role("button", name="No, keep it").click()
     expect(card.locator(".sandbox-tag")).to_have_text("You said no")
     expect(page.locator(".outcome--kept")).to_contain_text("Nothing changed")
@@ -84,6 +84,8 @@ def test_return_then_confirm_files_the_return(browser: Any, site: str) -> None:
     starter(page, "Return an item")
     card = page.locator(".confirm").first
     expect(card).to_contain_text("172.49 USD")
+    expect(card.locator(".confirm__rows dt")).to_have_text(["Reason", "Condition", "Fee", "Refund", "Timing"])
+    expect(card.locator(".sandbox-tag")).to_have_text("Demo store")
     card.get_by_role("button", name="Yes, go ahead").click()
     expect(card.locator(".sandbox-tag")).to_have_text("You said yes")
     expect(page.locator(".outcome--done")).to_contain_text("A return is requested on order #1022")
@@ -93,12 +95,12 @@ def test_a_question_during_confirmation_gets_an_answer_and_the_same_change_again
     page = open_page(browser, site, viewport=DESKTOP)
     starter(page, "Cancel an order")
     first = page.locator(".confirm").first
-    expect(first).to_contain_text("I will cancel order #1023")
+    expect(first).to_contain_text("Cancel order #1023")
     page.fill("#input", "Before I decide, what is your return policy?")
     page.click("#send")
     expect(first.locator(".sandbox-tag")).to_have_text("You asked a question")
     expect(page.locator(".confirm")).to_have_count(2)
-    expect(page.locator(".confirm").nth(1)).to_contain_text("I will cancel order #1023")
+    expect(page.locator(".confirm").nth(1)).to_contain_text("Cancel order #1023")
     expect(page.locator(".msg--agent .bubble", has_text="30 days")).to_be_visible()
 
 
@@ -194,7 +196,7 @@ def test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything(b
     page = load(browser, site, sent=sent, viewport=DESKTOP, reduced_motion="reduce")
     page.locator("#welcome .tour-btn").click()
     count, nxt = page.locator(".tour-panel__count"), page.locator(".tour-panel__next")
-    expect(page.locator(".tour-label")).to_contain_text("Replay of a real conversation")
+    expect(page.locator(".tour-label")).to_have_text("Replay of a real conversation in the demo store")
     expect(count).to_have_text("1 of 5")
     expect(page.locator(".tour-panel__title")).to_have_text("A customer wants to return a jacket that's too big.")
     expect(page.locator("#input")).to_be_disabled()
@@ -236,7 +238,7 @@ def test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything(b
     expect(page.locator("#input")).to_be_enabled()
     expect(page.locator("#input")).to_have_attribute("placeholder", "Ask about an order or gear")
     starter(page, "Cancel an order")
-    expect(page.locator(".confirm").first).to_contain_text("I will cancel order #1023")
+    expect(page.locator(".confirm").first).to_contain_text("Cancel order #1023")
     assert len(sent) == 1
 
 
@@ -275,8 +277,9 @@ def test_the_tour_on_a_phone_fills_the_screen_with_the_panel_below_the_chat(brow
     assert log["y"] + log["height"] <= panel["y"] + 1
     assert panel["y"] + panel["height"] <= composer["y"] + 1
     assert composer["y"] + composer["height"] <= 812 + 1
-    card = page.locator(".confirm").bounding_box()
-    assert card["y"] >= log["y"] - 1
+    for key in (".confirm__actions", ".confirm__hint"):
+        box = page.locator(key).bounding_box()
+        assert box["y"] >= log["y"] - 1 and box["y"] + box["height"] <= log["y"] + log["height"] + 1, key
     assert page.evaluate("document.documentElement.scrollWidth") <= 375
 
 
@@ -414,3 +417,23 @@ def test_a_scenario_button_during_the_tour_ends_it_and_sends_the_request(browser
     expect(page.locator("#input")).to_be_enabled()
     expect(page.locator(".msg--user")).to_have_count(1)
     assert len(sent) == 1
+
+
+FOCUS = [[".msg--user"], [".confirm__actions", ".confirm__hint"], [".msg--user"], [".outcome__head"], [".tour-stat__tiles"]]
+
+
+@pytest.mark.parametrize("context", [{"viewport": DESKTOP}, PHONE, {"viewport": {"width": 320, "height": 568}, "is_mobile": True, "has_touch": True}], ids=["desktop", "phone", "small-phone"])
+def test_each_tour_step_shows_its_focus_fully_above_the_panel(browser: Any, site: str, context: dict) -> None:
+    page = load(browser, site, reduced_motion="reduce", **context)
+    page.locator("#welcome .tour-btn").click()
+    for step, selectors in enumerate(FOCUS):
+        expect(page.locator(".tour-panel__count")).to_have_text(f"{step + 1} of 5")
+        page.wait_for_timeout(150)
+        log = page.locator("#log").bounding_box()
+        panel = page.locator(".tour-panel").bounding_box()
+        assert log["y"] + log["height"] <= panel["y"] + 1
+        for selector in selectors:
+            box = page.locator(selector).last.bounding_box()
+            assert box["y"] >= log["y"] - 1 and box["y"] + box["height"] <= log["y"] + log["height"] + 1, (step + 1, selector)
+        if step < 4:
+            page.locator(".tour-panel__next").click()
