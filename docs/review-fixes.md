@@ -88,7 +88,7 @@ check plus 22 live conversations read reply by reply, a code pass, and a docs pa
 | A UK address got a request for the full address again instead of the US and Canada rule. | The address wording check is skipped for a country the store does not ship to, so the policy refusal runs. | `test_an_address_outside_the_us_and_canada_gets_the_rule_not_a_request_for_the_address` |
 | Refusals read "Alpine Crossing Hiking Boots was delivered" and "was sold as FINAL SALE". | The reasons no longer put the product name before a singular verb. | `test_refusal_reasons_read_naturally_for_plural_product_names` |
 | The return receipt said "requested" twice in a row. | Reworded the approval sentence. | `test_the_return_receipt_says_requested_only_once` |
-| An order answer opened with "The order record is already in front of me". | The header on looked-up records asks for a direct answer. | 53 of 53 on the 53-case suite (`evals/results/20261013-202533_v2-2-audit.json`) |
+| An order answer opened with "The order record is already in front of me". | Looked-up records are marked as already fetched, and the order prompt says to start with the answer and never describe where a record came from. Locally, 0 of 8 order answers narrated afterwards, against 3 of 3 before. | `test_a_scenario_can_forbid_a_phrase_such_as_narrating_the_lookup` (the tracking scenario now fails on that phrase); 53 of 53 on the 53-case suite (`evals/results/20261013-203625_v2-2-audit-final.json`) |
 | An unused function was left over from the old source check. | Removed. | Existing tests |
 
 Layout fixes with no test of their own, checked in the audit screenshots: the "Time" column header

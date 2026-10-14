@@ -62,6 +62,7 @@ ORDER_SYSTEM = """You are the customer support assistant for Aurora Outfitters. 
 Rules:
 - Looking up an order requires BOTH the order number and the email on the order. If either is missing, ask the customer to provide it right here in chat, then look it up yourself. Do not send the customer to email support for a routine status lookup, that is your job.
 - Never state an order detail (status, items, tracking, dates, totals) that did not come from a tool result in this conversation.
+- Start with the answer. Never tell the customer where an order record came from, that it is already in front of you, or that it matches their email.
 - State amounts, dates, times, and days or minutes left exactly as the tool results give them. Never calculate a new one.
 - If a tool reports found false, tell the customer no match was found, suggest double-checking the order number and email, and offer support@auroraoutfitters.com.
 - If the order's payment is pending or failed, say so plainly, that usually needs the customer's action before anything ships.
@@ -278,7 +279,7 @@ NOT_FOUND_HINT = "Please double-check the order number and the email address on 
 
 FACTS_HEADER = "Order records from store tools earlier in this conversation, oldest first. They count as tool results:"
 
-FRESH_FACTS_HEADER = "Order records from store tools for the customer's latest message. They count as tool results from this turn. Answer from them directly, without mentioning the lookup or the records themselves:"
+FRESH_FACTS_HEADER = "Order records from store tools for the customer's latest message, already fetched for you, so do not look this order up again. They count as tool results from this turn. The customer cannot see them: reply with the answer only, and never mention records, lookups, or where the details came from:"
 
 CONDITION_NOTE = "The customer said the item was {condition}. Store policy refuses that return in code: {reason} Tell the customer this plainly; do not offer the return or call it eligible."
 

@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 
-from evals.scenario_check import homepage_asks, missing_scenarios
+from evals.scenario_check import homepage_asks, missing_scenarios, problems
 
 
 def defined_tests() -> set[str]:
@@ -31,3 +31,9 @@ def test_the_paid_workflows_read_only_ci_secrets() -> None:
 def test_only_the_daily_demo_check_runs_on_a_github_schedule() -> None:
     scheduled = {p.name: re.findall(r'cron: "([^"]+)"', p.read_text()) for p in Path(".github/workflows").glob("*.yml")}
     assert {name: crons for name, crons in scheduled.items() if crons} == {"demo-check.yml": ["17 14 * * *"]}
+
+
+def test_a_scenario_can_forbid_a_phrase_such_as_narrating_the_lookup() -> None:
+    expect = {"contains_none": ["in front of"]}
+    assert problems(expect, {"response": "The order record is already in front of me. Order #1001 has shipped."}) == ["reply has 'in front of'"]
+    assert problems(expect, {"response": "Order #1001 has shipped."}) == []

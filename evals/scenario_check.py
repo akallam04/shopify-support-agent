@@ -48,6 +48,9 @@ def problems(expect: dict[str, Any], data: dict[str, Any]) -> list[str]:
             found.append(f"reply lacks {text!r}")
     if expect.get("contains_any") and not any(t.lower() in reply for t in expect["contains_any"]):
         found.append(f"reply has none of {expect['contains_any']}")
+    for text in expect.get("contains_none", []):
+        if text.lower() in reply:
+            found.append(f"reply has {text!r}")
     if "intent" in expect and data.get("intent") != expect["intent"]:
         found.append(f"intent is {data.get('intent')}, expected {expect['intent']}")
     if "blocked" in expect and bool(trace.get("blocked")) != expect["blocked"]:
