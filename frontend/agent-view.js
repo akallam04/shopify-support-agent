@@ -20,6 +20,15 @@ const STEP_NODES = {
 
 const STEP_COSTS = { route: ["route"], lookup: ["order_tools"], gate: ["confirm", "reflect"], reply: ["respond"] };
 
+const STEP_HELP = {
+  guard: "Blocks obvious tricks before anything else runs.",
+  route: "Works out what you're asking for.",
+  lookup: "Checks the store's records.",
+  gate: "Waits for your yes before changing anything.",
+  verify: "Checks that the reply's numbers, dates and order details come from the store's records or policies.",
+  reply: "Sends the answer.",
+};
+
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -168,7 +177,7 @@ function detailsPanel(data, steps, id) {
   const t = data.trace;
   const rows = steps.map((s) =>
     el("tr", { class: `is-${s.state}` }, [
-      el("th", { scope: "row", text: s.name }),
+      el("th", { scope: "row" }, [el("span", { class: "step-name", text: s.name }), el("span", { class: "step-help", text: STEP_HELP[s.key] })]),
       el("td", { text: s.state === "skip" ? s.note || "did not run" : s.note || "done" }),
       el("td", { text: s.state === "skip" ? "" : stepTime(t.nodes, s.key) }),
       el("td", { text: s.state === "skip" ? "" : stepCost(t.node_costs || {}, s.key) }),
@@ -217,6 +226,27 @@ function detailsPanel(data, steps, id) {
 
 let railCount = 0;
 
+function addStepTips(button) {
+  const nodes = [...button.querySelectorAll(".step")];
+  let at = -1;
+  const tip = (i) => {
+    at = Math.max(0, Math.min(nodes.length - 1, i));
+    nodes.forEach((n, k) => n.classList.toggle("is-tipped", k === at));
+  };
+  button.addEventListener("focus", () => {
+    if (button.matches(":focus-visible")) tip(0);
+  });
+  button.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    tip(at + (e.key === "ArrowRight" ? 1 : -1));
+  });
+  button.addEventListener("blur", () => {
+    at = -1;
+    nodes.forEach((n) => n.classList.remove("is-tipped"));
+  });
+}
+
 function buildBrain(data) {
   const steps = stepModel(data);
   const id = `inside-${++railCount}`;
@@ -233,6 +263,7 @@ function buildBrain(data) {
     const node = el("span", { class: `step is-${s.state}${s.loop ? " has-loop" : ""}`, "data-step": s.key, style: `--order:${orderOf[s.key] ?? 0}` }, [
       el("span", { class: "step__dot" }, s.loop ? svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 4v4h-4M20 12a8 8 0 0 1-14 5.3M4 20v-4h4" />', "step__loop") : null),
       el("span", { class: "step__name", text: s.name }),
+      el("span", { class: "step__tip", "aria-hidden": "true", text: STEP_HELP[s.key] }),
     ]);
     if (i) track.append(el("span", { class: `rail__link${s.state === "skip" ? "" : " is-on"}`, style: `--order:${orderOf[s.key] ?? 0}` }));
     track.append(node);
@@ -246,7 +277,9 @@ function buildBrain(data) {
   }
   for (const c of chips) notes.append(el("span", { class: "chip", style: `--order:${orderOf[c.step] ?? 0}`, text: c.text }));
 
-  const button = el("button", { class: "rail", type: "button", "aria-expanded": "false", "aria-controls": id, "aria-label": railLabel(steps) }, [
+  const helpId = `${id}-help`;
+  const help = el("span", { class: "sr-only", id: helpId, text: steps.map((s) => `${s.name}: ${STEP_HELP[s.key]}`).join(" ") });
+  const button = el("button", { class: "rail", type: "button", "aria-expanded": "false", "aria-controls": id, "aria-label": railLabel(steps), "aria-describedby": helpId }, [
     track,
     notes,
     el("span", { class: "rail__more", "aria-hidden": "true", text: "Details" }),
@@ -257,7 +290,8 @@ function buildBrain(data) {
     button.setAttribute("aria-expanded", String(open));
     panel.hidden = !open;
   });
-  const brain = el("div", { class: "brain" }, [button, panel]);
+  addStepTips(button);
+  const brain = el("div", { class: "brain" }, [button, help, panel]);
   if (!REDUCED_MOTION.matches) {
     brain.classList.add("is-playing");
   }

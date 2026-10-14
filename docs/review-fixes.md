@@ -110,3 +110,11 @@ five-column table on How it works ran past its box on phones; every table now fi
 | A pending-payment order past its window was said to have "entered processing" and to "ship as placed". | That refusal no longer says so when the payment is pending. | `test_a_pending_payment_order_past_its_window_is_not_said_to_ship_as_placed` |
 | Visitors saw "Sandbox", and the card was one long paragraph. | "Demo store", and the card shows a short title with rows built in code: reason, condition, fee, refund, and timing for a return. | `test_the_card_rows_split_the_return_into_fee_refund_and_timing`, `test_canadian_and_fee_waived_returns_show_no_fee_on_the_card`, `test_cancel_and_address_cards_get_short_rows`, `test_return_then_confirm_files_the_return` |
 | Layout problems could reach the live site. | The UI audit runs in the free CI tier and fails on any problem. | `.github/workflows/ci.yml` |
+
+## v2.2.2
+
+| Change | Tests |
+|---|---|
+| During the tour the confirmation card uses a compact layout, so the whole card, title included, fits above the panel on 1440 by 900 and 1366 by 768 screens. The UI audit covers both sizes. | `test_the_whole_card_fits_during_the_tour_on_laptop_screens` |
+| A confirmed cancel, address change, or return updates that order's State in the Test orders table ("Cancelled in your demo copy") with a short highlight, from the visitor's own session. A new conversation resets it, the tour never touches it, on phones the highlight plays when the chat closes, and reduced motion gets no animation. | `test_a_confirmed_change_shows_in_the_test_orders_table_until_a_new_conversation`, `test_on_a_phone_the_table_highlight_plays_when_the_chat_closes`, `test_reduced_motion_updates_the_table_without_a_flash`, `test_the_tour_and_a_declined_change_never_touch_the_table` |
+| Each step on the rail has one plain sentence: under the step in the details panel, as a tooltip on hover or keyboard focus on desktop, and as the rail's description for screen readers. Tapping the rail on a phone still opens the details. | `test_each_step_has_a_plain_sentence_in_the_details_tooltips_and_for_screen_readers`, `test_tapping_the_rail_on_a_phone_still_opens_the_details_with_the_sentences` |

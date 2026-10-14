@@ -82,14 +82,19 @@ flowchart TD
     FIXED --> OUT
 ```
 
-Key decisions:
+Two pieces that run on every reply:
 
-- **A state machine, not one big prompt.** Control flow lives in typed LangGraph nodes and conditional edges, so routing is auditable and guardrails are code. The whole graph is on one page in `app/agent/graph.py`.
-- **The gate is code, not a request.** A proposed change goes through the policy engine in `mcp_server/policy.py`, then a fixed confirmation template, then waits in graph state. Only the next turn's clear yes runs it. A complete request goes straight to the card; a return needs the reason in the customer's own words; a cancellation reason is optional and never guessed. The headline compares this against asking for confirmation in the prompt.
-- **One tool contract, two backends.** The same tools run against the live Shopify Admin GraphQL API or a simulated store built from a snapshot of it, and contract tests check that both return identical results. The simulated store has a frozen clock, so time windows never go stale.
 - **Facts are checked against their sources.** The verify node checks that citations point to retrieved passages, that every amount, date, and duration appears in store data or the cited policy, that order numbers, tracking numbers, and links come from store tools, and that a reply never offers a lookup by name, phone, or email alone. Numbers a reply needs, such as the refund after the fee, are calculated in code. A failing reply gets one rewrite, then a safe fallback.
-- **Stateless serving with a signed session.** Lambda keeps nothing between requests. The pending change and the sandbox's changes travel in an HMAC-signed token the browser holds, and a pending change is re-checked against the rebuilt store before it can run.
 - **Every response names its release.** A manifest of the git commit, prompt and knowledge hashes, models, and gate settings is stamped on every reply, log line, and eval run, and `/release` shows it for the deployed API.
+
+## Design decisions
+
+- **A LangGraph state machine, not a free agent loop.** Control flow lives in typed nodes and conditional edges ([`app/agent/graph.py`](app/agent/graph.py)), so routing is auditable and the guardrails are code. The trade-off is flexibility: a new behavior needs a node or an edge instead of a prompt change.
+- **The confirmation gate in code, not the prompt.** A proposed change is checked by the policy engine, shown from a fixed template, and held in graph state until the next turn's clear yes. Asking in the prompt is simpler, and it let 42 of 200 conversations change something the customer never agreed to ([the headline](#the-headline)). The cost is one extra turn for every change.
+- **A custom MCP server with two backends.** The same tools run against the live Shopify Admin GraphQL API or the demo store, a simulated copy built from a snapshot of it. Contract tests ([`tests/test_contract_live.py`](tests/test_contract_live.py), run against the development store with `SHOPIFY_LIVE_TESTS=1`) check that both return the same results. More code than calling Shopify directly, but the evals and the public demo never touch the real store.
+- **A signed token instead of a database for demo sessions.** Each visitor's changes and any pending change travel in an HMAC-signed token the browser holds, so Lambda keeps nothing and the demo costs nothing at rest. The token can be replayed while it is valid; the limits are in [Production boundaries](#production-boundaries).
+- **An injectable clock.** Store time comes from a clock the backends are given ([`mcp_server/clock.py`](mcp_server/clock.py)): frozen for the demo store and the evals, so "placed 30 minutes ago" and the time windows read the same every day, and the system clock for the live store.
+- **Switching to Haiku 5.5 under a rule written before the run.** No unsafe writes, and resolved safely not worse beyond noise, decided before either model ran ([docs/model-switch-rule.md](docs/model-switch-rule.md)). It costs a comparison run per switch, but the decision rests on a test set in advance rather than on the result.
 
 ## How it is tested
 
@@ -105,7 +110,7 @@ Key decisions:
 - **A held-out set.** Ten more tasks were written and committed before the first fix and run only after the code was frozen.
 - **A grader audit.** After the headline, every passing gate-off conversation with a write and a random 10 percent of the other passes were read by hand.
 
-**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, contract, and offline graph tests, task validation with the gold replay, the browser tests, and the UI audit at seven screen sizes. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
+**Checks around them.** A scenario check (`evals/scenario_check.py`) runs every homepage button against the deployed agent, browser tests (`tests/e2e/`) drive the gate flows, the 60-second tour, and the phone layout on recorded replies, and an offline set (`evals/claim_checks.json`) scores what the source check catches. The free tiers run on every push: lint, unit, policy, and offline graph tests, task validation with the gold replay, the browser tests, and the UI audit at seven screen sizes. The model-based checks, the scenario check, the 53-case suite, and simulations, run by hand before releases; a CI tier for them is in place and skips until a CI key is added ([docs/ci.md](docs/ci.md)). Model switches follow a rule written down in advance ([docs/model-switch-rule.md](docs/model-switch-rule.md)).
 
 ## Results
 

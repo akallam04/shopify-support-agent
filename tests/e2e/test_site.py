@@ -451,3 +451,97 @@ def test_the_whole_card_fits_during_the_tour_on_laptop_screens(browser: Any, sit
         for selector in selectors:
             box = page.locator(selector).bounding_box()
             assert box["y"] >= log["y"] - 1 and box["y"] + box["height"] <= log["y"] + log["height"] + 1, (step, selector, box, log)
+
+
+def state_cell(page: Any, order: str) -> Any:
+    return page.locator("#ordersBody tr", has=page.locator("td.num", has_text=order)).locator("td").nth(2)
+
+
+def confirm_return(page: Any) -> None:
+    starter(page, "Return an item")
+    page.locator(".confirm").first.get_by_role("button", name="Yes, go ahead").click()
+    expect(page.locator(".outcome--done")).to_be_visible()
+
+
+def test_a_confirmed_change_shows_in_the_test_orders_table_until_a_new_conversation(browser: Any, site: str) -> None:
+    page = open_page(browser, site, viewport=DESKTOP)
+    cell = state_cell(page, "#1022")
+    original = cell.inner_text()
+    confirm_return(page)
+    expect(cell).to_have_text("Return requested in your demo copy")
+    expect(cell).to_have_class("is-changed")
+    expect(page.locator("#ordersBody tr.is-flash")).to_have_count(1)
+    page.click("#restart")
+    expect(cell).to_have_text(original)
+    expect(page.locator("#ordersBody td.is-changed")).to_have_count(0)
+
+
+def test_on_a_phone_the_table_highlight_plays_when_the_chat_closes(browser: Any, site: str) -> None:
+    page = open_page(browser, site, **PHONE)
+    confirm_return(page)
+    cell = state_cell(page, "#1022")
+    expect(cell).to_have_text("Return requested in your demo copy")
+    expect(page.locator("#ordersBody tr.is-flash")).to_have_count(0)
+    page.click("#close")
+    expect(page.locator("#ordersBody tr.is-flash")).to_have_count(1)
+    page.wait_for_function("(() => { const r = [...document.querySelectorAll('#ordersBody tr.is-flash')][0].getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()")
+
+
+def test_reduced_motion_updates_the_table_without_a_flash(browser: Any, site: str) -> None:
+    page = open_page(browser, site, viewport=DESKTOP, reduced_motion="reduce")
+    confirm_return(page)
+    expect(state_cell(page, "#1022")).to_have_text("Return requested in your demo copy")
+    assert page.evaluate("[...document.querySelectorAll('#ordersBody tr')].every(r => getComputedStyle(r).animationName === 'none')")
+
+
+def test_the_tour_and_a_declined_change_never_touch_the_table(browser: Any, site: str) -> None:
+    page = open_page(browser, site, viewport=DESKTOP, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    for _ in range(4):
+        page.locator(".tour-panel__next").click()
+    expect(page.locator(".tour-panel__count")).to_have_text("5 of 5")
+    assert page.locator("#ordersBody td.is-changed").count() == 0
+    page.get_by_role("button", name="Try it yourself").click()
+    starter(page, "Cancel an order")
+    page.locator(".confirm").first.get_by_role("button", name="No, keep it").click()
+    expect(page.locator(".outcome--kept")).to_be_visible()
+    assert page.locator("#ordersBody td.is-changed").count() == 0
+
+
+STEP_HELP = [
+    "Blocks obvious tricks before anything else runs.",
+    "Works out what you're asking for.",
+    "Checks the store's records.",
+    "Waits for your yes before changing anything.",
+    "Checks that the reply's numbers, dates and order details come from the store's records or policies.",
+    "Sends the answer.",
+]
+
+
+def test_each_step_has_a_plain_sentence_in_the_details_tooltips_and_for_screen_readers(browser: Any, site: str) -> None:
+    page = open_page(browser, site, viewport=DESKTOP)
+    starter(page, "Track an order")
+    rail = page.locator(".rail").last
+    expect(rail).to_be_visible()
+    described = page.locator(f"#{rail.get_attribute('aria-describedby')}").inner_text()
+    assert all(s in described for s in STEP_HELP)
+    rail.locator('.step[data-step="gate"]').hover()
+    expect(rail.locator('.step[data-step="gate"] .step__tip')).to_be_visible()
+    expect(rail.locator('.step[data-step="gate"] .step__tip')).to_have_text(STEP_HELP[3])
+    page.mouse.move(0, 0)
+    rail.focus()
+    page.keyboard.press("ArrowRight")
+    expect(rail.locator('.step.is-tipped .step__tip')).to_be_visible()
+    rail.click()
+    expect(page.locator(".steps-table .step-help").last).to_be_visible()
+    expect(page.locator(".steps-table").last.locator(".step-help")).to_have_text(STEP_HELP)
+
+
+def test_tapping_the_rail_on_a_phone_still_opens_the_details_with_the_sentences(browser: Any, site: str) -> None:
+    page = open_page(browser, site, **PHONE)
+    starter(page, "Track an order")
+    rail = page.locator(".rail").last
+    rail.tap()
+    expect(rail).to_have_attribute("aria-expanded", "true")
+    expect(page.locator(".steps-table").last.locator(".step-help")).to_have_text(STEP_HELP)
+    assert page.locator(".step__tip:visible").count() == 0

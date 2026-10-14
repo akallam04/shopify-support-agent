@@ -183,7 +183,8 @@ function closeChat() {
   launcherEl.setAttribute("aria-expanded", "false");
   document.body.classList.remove("chat-docked");
   cover(false);
-  launcherEl.focus();
+  launcherEl.focus({ preventScroll: true });
+  showUnseenChanges();
 }
 
 function scrollLog() {
@@ -214,6 +215,66 @@ function renderWelcome() {
   logEl.append(wrap);
 }
 
+const ORDER_STATES = {
+  cancel_order: "Cancelled in your demo copy",
+  update_shipping_address: "Address changed in your demo copy",
+  request_return: "Return requested in your demo copy",
+};
+let proposedChange = null;
+const unseenChanges = new Set();
+
+function orderRow(order) {
+  return [...document.querySelectorAll("#ordersBody tr")].find((tr) => tr.cells[0]?.textContent.trim() === order) || null;
+}
+
+function flashOrder(row) {
+  if (REDUCED_MOTION.matches) return;
+  row.classList.remove("is-flash");
+  void row.offsetWidth;
+  row.classList.add("is-flash");
+}
+
+function markOrder(action, order) {
+  const row = order && orderRow(order);
+  const text = ORDER_STATES[action];
+  if (!row || !text) return;
+  const cell = row.cells[2];
+  if (!("original" in cell.dataset)) cell.dataset.original = cell.textContent;
+  cell.textContent = text;
+  cell.classList.add("is-changed");
+  if (DOCK.matches) flashOrder(row);
+  else unseenChanges.add(row);
+}
+
+function resetOrders() {
+  proposedChange = null;
+  unseenChanges.clear();
+  for (const cell of document.querySelectorAll("#ordersBody td.is-changed")) {
+    cell.textContent = cell.dataset.original;
+    cell.classList.remove("is-changed");
+    cell.closest("tr").classList.remove("is-flash");
+  }
+}
+
+function showUnseenChanges() {
+  const rows = [...unseenChanges];
+  unseenChanges.clear();
+  if (!rows.length) return;
+  rows[0].scrollIntoView({ block: "center", behavior: REDUCED_MOTION.matches ? "auto" : "smooth" });
+  rows.forEach(flashOrder);
+}
+
+function noteChange(data) {
+  if (data.pending) {
+    const match = (data.pending.summary || "").match(/order (#\d+)/);
+    proposedChange = { action: data.pending.action, order: match ? match[1] : null };
+    return;
+  }
+  const done = (data.trace?.gate || []).find((g) => g.step === "executed");
+  if (done && proposedChange) markOrder(done.action, proposedChange.order);
+  if (done) proposedChange = null;
+}
+
 function ensureWelcome() {
   if (!logEl.children.length && !chatEl.classList.contains("is-touring")) renderWelcome();
 }
@@ -228,6 +289,7 @@ function clearChat() {
   openCard = null;
   openBrain = null;
   logEl.innerHTML = "";
+  resetOrders();
 }
 
 function resetChat() {
@@ -330,6 +392,7 @@ function settlePending(trace) {
 }
 
 function addAgent(data) {
+  noteChange(data);
   settlePending(data.trace);
   let msg;
   if (data.pending) {
@@ -419,7 +482,10 @@ async function deliver(text) {
     if (!request.isCurrent()) return;
     warm = true;
     sessionState = data.session_state ?? null;
-    if (data.session_reset) addAgentText(RESET_NOTE);
+    if (data.session_reset) {
+      resetOrders();
+      addAgentText(RESET_NOTE);
+    }
     addAgent(data);
     history.push({ role: "assistant", content: data.response });
     renderActions();
