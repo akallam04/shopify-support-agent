@@ -171,7 +171,7 @@ def test_refund_amounts_follow_the_fee_rules() -> None:
 
 def test_a_return_past_its_window_names_the_day_it_closed(backend: SimStoreBackend) -> None:
     returns = tools.get_order_status(backend, "#1016", MAYA)["eligibility"]["returns"]
-    assert "which ended on September 19, 2026" in returns[0]["can_return"]
+    assert "ended on September 19, 2026" in returns[0]["can_return"]
 
 
 def test_the_trace_names_each_check_and_the_reply_carries_the_cited_passage() -> None:

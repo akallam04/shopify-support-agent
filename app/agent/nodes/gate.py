@@ -40,7 +40,7 @@ from app.agent.reasons import condition_mentions, customer_texts, grounded, item
 from app.agent.state import AgentState
 from app.agent.usage import usage_record
 from app.config import Settings
-from mcp_server.policy import condition_refusal
+from mcp_server.policy import SHIP_TO_COUNTRIES, condition_refusal
 from mcp_server.tools import ToolInputError, idempotency_key
 
 YES_RE = re.compile(
@@ -176,7 +176,8 @@ def make_gate_node(client: AsyncAnthropic, model: str, tools: Any, settings: Set
                 condition = found.condition
                 args = {**args, "condition": condition}
         if name == "update_shipping_address":
-            missing = ungrounded_parts(args, customer_texts(state))
+            country = str(args.get("country_code") or "").upper()
+            missing = [] if country and country not in SHIP_TO_COUNTRIES else ungrounded_parts(args, customer_texts(state))
             trace.append({"step": "address_check", "action": name, "missing": missing})
             if missing:
                 return {"draft": ADDRESS_ASK, "system_draft": True, "candidate_action": None, "gate_trace": trace}

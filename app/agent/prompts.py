@@ -278,7 +278,7 @@ NOT_FOUND_HINT = "Please double-check the order number and the email address on 
 
 FACTS_HEADER = "Order records from store tools earlier in this conversation, oldest first. They count as tool results:"
 
-FRESH_FACTS_HEADER = "Order records from store tools, looked up just now for the customer's latest message. They count as tool results from this turn:"
+FRESH_FACTS_HEADER = "Order records from store tools for the customer's latest message. They count as tool results from this turn. Answer from them directly, without mentioning the lookup or the records themselves:"
 
 CONDITION_NOTE = "The customer said the item was {condition}. Store policy refuses that return in code: {reason} Tell the customer this plainly; do not offer the return or call it eligible."
 

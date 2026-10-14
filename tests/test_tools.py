@@ -253,8 +253,8 @@ def test_order_status_shows_delivery_and_returns_only_when_the_backend_reads_the
     [
         ("#1023", "maya.thompson@example.com", "yes, for 60 more minutes, until 6:03 pm Mountain Time; a new address must be in the US or Canada", "not been delivered yet"),
         ("#1011", "priya.patel@example.com", "no: Order #1011 was placed more than 2 hours ago", "not been delivered yet"),
-        ("#1018", "sofia.ramirez@example.com", "no: Order #1018 has already shipped", "FINAL SALE"),
-        ("#1016", "maya.thompson@example.com", "no: Order #1016 has already shipped", "outside our 30-day return window"),
+        ("#1018", "sofia.ramirez@example.com", "no: Order #1018 has already shipped", "final sale"),
+        ("#1016", "maya.thompson@example.com", "no: Order #1016 has already shipped", "30-day return window for the"),
         ("#1017", "jordan.lee@example.com", "no: Order #1017 has already shipped", "nothing left to return"),
         ("#1022", "jordan.lee@example.com", "no: Order #1022 has already shipped", "yes, 1 until October 29, 2026"),
     ],

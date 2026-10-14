@@ -56,8 +56,3 @@ def facts_block(state: AgentState, fresh: list[dict[str, Any]], records: bool = 
     if handoff.get("recorded"):
         parts.append(HANDOFF_STATUS[bool(state.get("sandbox"))])
     return "\n\n".join(parts) or None
-
-
-def grounding_text(state: AgentState) -> str:
-    facts = " ".join(json.dumps(f["result"]) for f in state.get("verified_facts") or [])
-    return f"{facts} {' '.join(receipts(state))}"

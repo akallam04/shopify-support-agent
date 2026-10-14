@@ -251,3 +251,18 @@ def test_a_specific_reason_in_an_earlier_message_beats_a_vague_one_later() -> No
     ]
     assert stated_reason(said).codes == ("wrong_item",)
     assert stated_reason(said[2:]).codes == ("wrong_item",)
+
+
+def test_an_address_outside_the_us_and_canada_gets_the_rule_not_a_request_for_the_address(backend: SimStoreBackend) -> None:
+    uk = {**ADDRESS_CALL, "address1": "10 Downing Street", "city": "London", "province_code": "ENG", "zip": "SW1A 2AA", "country_code": "GB"}
+    graph, _ = graph_for(backend, {"route": [ADDRESS_ROUTE], "order_tools": [("update_shipping_address", uk)]})
+    state = run(graph, [{"role": "user", "content": "Please change the address on #1021 to 10 Downing Street, London SW1A 2AA, UK. My email is jordan.lee@example.com"}])
+    assert state["response"].startswith("We currently ship only to the United States and Canada") and state.get("pending_action") is None
+
+
+def test_refusal_reasons_read_naturally_for_plural_product_names() -> None:
+    import re
+    from pathlib import Path
+
+    reasons = re.findall(r'f"([^"]*\{line\.title\}[^"]*)"', Path("mcp_server/policy.py").read_text())
+    assert reasons and not [r for r in reasons if re.search(r"\{line\.title\} (was|has|is)\b", r)]

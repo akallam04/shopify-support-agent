@@ -213,19 +213,19 @@ def can_return(
         if FINAL_SALE_TAG in {t.lower() for t in product.tags}:
             return refuse(
                 "final_sale",
-                f"{line.title} was sold as FINAL SALE, and final sale items cannot be returned or exchanged.",
+                f"Final sale items cannot be returned or exchanged, and order {order.name} lists the {line.title} as final sale.",
             )
         delivered = delivered_at(order, line)
         if delivered is None:
             return refuse(
                 "not_delivered",
-                f"{line.title} from order {order.name} has not been delivered yet. Returns open once it arrives.",
+                f"Order {order.name} has not been delivered yet, so the {line.title} cannot be returned until it arrives.",
             )
         if now - delivered > RETURN_WINDOW:
             return refuse(
                 "return_window_passed",
-                f"{line.title} was delivered on {store_date(delivered)}, more than 30 days ago, "
-                f"so it is outside our 30-day return window, which ended on {store_date(delivered + RETURN_WINDOW)}.",
+                f"The 30-day return window for the {line.title} on order {order.name} ended on "
+                f"{store_date(delivered + RETURN_WINDOW)}, 30 days after delivery on {store_date(delivered)}.",
             )
         requested_before = already_requested(order, line)
         returnable = delivered_quantity(order, line) - requested_before
@@ -274,7 +274,7 @@ def return_terms(reason: str, country_code: str | None, items_total: Decimal | N
         "label": label,
         "refund": "The refund goes to the original payment method within 5 to 7 business days after "
         "we receive and inspect the return.",
-        "approval": "The return is requested, and the store confirms it once it is reviewed.",
+        "approval": "The store confirms the return once it reviews the request.",
     }
     if items_total is not None:
         terms["amount"] = refund_text(items_total, reason, country_code, currency)

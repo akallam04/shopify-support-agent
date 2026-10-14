@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 
@@ -110,7 +111,7 @@ def test_final_sale_items_cannot_be_returned(db: SimDB, tag: str) -> None:
     now = parse_instant(DELIVERED) + timedelta(days=1)
     decision = can_return(db.orders["#1001"], lines(db, (0, 1)), db.products, "unwanted", now)
     assert decision.code == "final_sale"
-    assert "FINAL SALE" in decision.reason
+    assert "final sale" in decision.reason
 
 
 def test_gift_cards_cannot_be_returned(db: SimDB) -> None:
@@ -166,3 +167,11 @@ def test_a_second_return_of_the_same_item_says_a_return_already_exists(db: SimDB
     assert decision.code == "quantity_exceeds"
     assert "A return was already requested for Stormline Rain Jacket" in decision.reason
     assert "nothing left to return" in decision.reason
+
+
+def test_the_return_receipt_says_requested_only_once() -> None:
+    from app.agent.nodes.gate import result_message
+
+    terms = return_terms("size_too_large", "US", Decimal("179.99"))
+    receipt = result_message({"ok": True, "action": "request_return", "message": "A return is requested on order #1022.", **terms})
+    assert receipt.lower().count("requested") == 1 and receipt.startswith("A return is requested on order #1022. The store confirms")
