@@ -6,7 +6,7 @@
 
 **[Try the live demo](https://shopify-support-agent.vercel.app)** | **[How it works](https://shopify-support-agent.vercel.app/how-it-works.html)** | [Technical write-up](docs/write-up.md)
 
-<img src="docs/demo.gif" width="100%" alt="On the desktop store, with the assistant panel open, the customer asks to cancel an order. The assistant shows the exact change and the policy checks it passed, the step rail holds at the gate, the customer says yes, and a new Done message confirms the order is cancelled." />
+<img src="docs/demo.gif" width="100%" alt="The live demo store with the assistant panel open beside it. The customer taps Return an item. The assistant shows the exact return, the store checks it passed, and the refund, and the step rail under the card holds at the gate. The customer taps Yes, a Done message confirms the return from the store's records, and the details panel lists each step the reply took." />
 
 ## The headline
 
@@ -264,6 +264,8 @@ Fill in `.env` before anything that calls a model or the store: `ANTHROPIC_API_K
 
 - **Compare two runs:** `.venv/bin/python -m evals.sim.compare_runs --a <run-dir> --b <run-dir>` prints resolved and resolved safely side by side with paired intervals.
 - **Deploy:** `sh deploy/deploy.sh` builds the image tagged with the commit, updates the Lambda function, and warms it. The function holds only a read-only Shopify token.
+- **The tour and the GIF above:** `.venv/bin/python -m scripts.record_demo` records one return and a yes on the deployed API, saves it for the 60-second tour, and plays the same conversation on the local site to record `docs/demo.gif`, so the two always show the same release. `--gif-only` rebuilds the GIF without an API call.
+- **Screenshots of every page and state:** `.venv/bin/python -m scripts.ui_audit` captures the site at 320 to 1440 pixels wide from recorded replies and lists any sideways scroll, clipped text, or overlap.
 
 ## Limitations
 
@@ -287,7 +289,7 @@ app/                 FastAPI service and agent: graph, nodes, prompts, gate, san
 mcp_server/          tool contract, policy engine, live Shopify and simulated store backends, MCP server
 evals/               53-case suite; evals/sim holds the simulator, tasks, grader, and every saved run
 frontend/            the demo store, chat, and How it works page
-scripts/             snapshot export, site data export, live demo check
+scripts/             snapshot export, site data export, live demo check, the demo GIF and tour recorder, the UI audit
 deploy/              container, deploy script, AWS notes
 docs/                write-up, fix log, design plan, site audit
 tests/               unit, contract, and browser tests (tests/e2e)

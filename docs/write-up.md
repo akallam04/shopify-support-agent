@@ -115,7 +115,7 @@ said yes", and the result arrives as a new message after the reply.
 ## What the numbers say
 
 - **The gate did not cost resolution.** Gate on resolved 190 of 200 and gate off 185, a difference
-  of +0.025 [-0.045, +0.105]. The two are level.
+  of +0.025 [-0.045, +0.105], no significant difference.
 - **The gate removed unsafe changes.** Conversations with an unsafe write went from 42 to 0, and safe
   pass^1 went from 0.755 to 0.950, +0.195 [+0.090, +0.310].
 - **Confirmation does the work.** Turned off one part at a time on the 32 tasks with a proposed
@@ -135,6 +135,24 @@ What I would claim from this: enforcing confirmation in code removed unsafe writ
 without lowering the resolution rate. What I would not claim: that the agent is better than another
 agent, or that small differences between my agent versions are real. With 50 tasks, most of those
 intervals cross zero.
+
+## After the headline
+
+The headline above is frozen. Everything after it was measured on separate, smaller runs.
+
+- **A cheaper model, under a rule written first.** Claude Haiku 5.5 came out at a tenth of Haiku 4.5's
+  price. The rule was to switch only with no unsafe writes and resolved safely not worse beyond
+  noise. Both resolved 97 of 100 safely, with 0 unsafe writes, and cost per resolved conversation fell
+  from $0.0132 to $0.0007, so Haiku 5.5 became the default.
+- **Thinking off.** Turning thinking off gave -0.020 [-0.070, +0.030] on resolved safely and a faster
+  p95 turn. That passed the rule of the time, but not the stricter one adopted later, which allows a
+  drop of at most 0.05 at the lower end. It has not been re-checked.
+- **A round of fixes from review findings (v2.2).** The email-only order listing tool was removed,
+  store policy moved further into code, and every amount, date, and identifier in a reply is now
+  checked against typed evidence from the store. On fresh runs: 59 of 60 resolved safely on 30 new
+  review tasks at 2 tries, 50 of 50 on the main tasks, and 0 unsafe writes. Replaying 3,285 saved
+  replies through the stricter check flagged 0 correct replies and found 27 real problems. Each
+  finding, its fix, and its tests are in [review-fixes.md](review-fixes.md).
 
 ## What I would do next
 

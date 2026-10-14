@@ -2,19 +2,25 @@
  "what": "An AI support agent for a Shopify store that asks before it acts.",
  "guarantees": [
   {
+   "key": "yes",
    "title": "Nothing changes until you say yes",
    "text": "A change is shown exactly as it will run, and it runs once, only after a clear yes.",
-   "code": "app/agent/nodes/gate.py"
+   "code": "app/agent/nodes/gate.py",
+   "plain": "Nothing happens until the customer says yes."
   },
   {
+   "key": "rules",
    "title": "Store policy is enforced in code",
    "text": "Change windows, final sale, item condition, quantities, and addresses are checked before a change is shown.",
-   "code": "mcp_server/policy.py"
+   "code": "mcp_server/policy.py",
+   "plain": "The assistant checks the store's rules first."
   },
   {
+   "key": "facts",
    "title": "Facts come from the store",
    "text": "Amounts, dates, order numbers, and tracking numbers in a reply are checked against store data or the cited policy.",
-   "code": "app/agent/nodes/verify.py"
+   "code": "app/agent/nodes/verify.py",
+   "plain": "The receipt comes from the store's records, not from the assistant's own words."
   }
  ]
 }

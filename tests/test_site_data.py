@@ -78,7 +78,9 @@ def test_the_three_guarantees_read_the_same_on_the_page_in_the_readme_and_in_the
     for g in SUMMARY["guarantees"]:
         assert f"<b>{g['title']}.</b> {g['text']}" in PAGE
         assert g["title"] in readme and g["text"] in readme and g["code"] in readme
-    assert "summary.guarantees" in (FRONTEND / "tour.js").read_text()
+    tour = (FRONTEND / "tour.js").read_text()
+    for g in SUMMARY["guarantees"]:
+        assert g["plain"] and f'plain(data.summary, "{g["key"]}")' in tour
 
 
 def test_the_tour_replays_a_saved_conversation_through_the_card_and_a_yes() -> None:
@@ -117,3 +119,10 @@ def test_the_readme_live_box_matches_the_saved_release_manifest_and_the_tour_ran
     tour = json.loads((FRONTEND / "data" / "tour.json").read_text())
     assert readme_box(Path("README.md").read_text()) == render(live)
     assert tour["release"] == live["release"]
+
+
+def test_the_readme_gif_and_the_tour_show_the_same_recorded_conversation() -> None:
+    tour = json.loads((FRONTEND / "data" / "tour.json").read_text())
+    demo = json.loads(Path("docs/demo.json").read_text())
+    assert (demo["release"], demo["recorded_on"]) == (tour["release"], tour["recorded_on"])
+    assert demo["conversation"] == "frontend/data/tour.json" and Path("docs/demo.gif").stat().st_size > 100_000

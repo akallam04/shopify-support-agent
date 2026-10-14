@@ -141,7 +141,7 @@ async function warmUp() {
     setStatus("ready", "Ready");
     return true;
   } catch {
-    setStatus("offline", "Not reachable right now");
+    setStatus("offline", "Can't connect");
     return false;
   } finally {
     clearTimeout(timer);
@@ -177,7 +177,7 @@ function openChat({ focus = true, entrance = false, peek = false } = {}) {
 
 function expandChat() {
   if (!chatEl.classList.contains("is-peek")) return;
-  chatEl.classList.remove("is-peek");
+  chatEl.classList.remove("is-peek", "has-entrance");
   cover(MOBILE.matches);
 }
 

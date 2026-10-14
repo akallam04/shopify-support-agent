@@ -73,4 +73,25 @@ Added to the site in the same round:
 | Change | Tests |
 |---|---|
 | The assistant opens on every visit: a side panel beside the store on desktop, a half-height card on a phone that fills the screen when tapped. Closing it keeps it closed for the visit. It never takes keyboard focus, skips the slide for reduced motion, and the greeting makes no API call. | `test_the_assistant_opens_beside_the_store_on_desktop_without_taking_focus`, `test_the_phone_card_shows_the_greeting_and_three_scenarios_and_fills_the_screen_when_tapped`, `test_closing_keeps_it_closed_for_the_visit_and_a_new_visit_opens_it_again`, `test_reduced_motion_opens_the_assistant_without_the_slide` |
-| "Show me in 60 seconds" replays a real saved return through the card and a yes, with captions, then ends with the headline numbers, the three guarantees, and the scenario buttons. Nothing is sent to the API. | `test_the_tour_replays_a_real_conversation_without_sending_anything_and_ends_with_the_numbers`, `test_the_tour_on_a_phone_opens_the_card_to_full_screen`, `test_the_tour_replays_a_saved_conversation_through_the_card_and_a_yes` |
+| "Show me in 60 seconds" replays a real saved return through the card and a yes, with captions, then ends with the headline numbers, the three guarantees, and the scenario buttons. Nothing is sent to the API. | `test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything`, `test_the_tour_plays_on_its_own_and_pause_holds_it`, `test_the_tour_on_a_phone_fills_the_screen_with_the_panel_below_the_chat`, `test_escape_leaves_the_tour_and_keeps_the_chat_open`, `test_the_tour_replays_a_saved_conversation_through_the_card_and_a_yes` |
+
+## Final audit
+
+A full audit after v2.2: every page and state at six widths (`scripts/ui_audit.py`), the scenario
+check plus 22 live conversations read reply by reply, a code pass, and a docs pass.
+
+| Finding | Fix | Tests |
+|---|---|---|
+| The 60-second tour lost non-technical viewers: a banner over the card, Next at the top and the caption at the bottom, greyed-out Yes and No buttons, and words like gate and policy check. | Five plain steps with a fixed panel at the bottom (Back, Pause, a large Next, progress), a tap animation on Yes, no step rail during the tour, and the text box locked with "Tour playing". | `test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything`, `test_the_tour_plays_on_its_own_and_pause_holds_it`, `test_the_tour_on_a_phone_fills_the_screen_with_the_panel_below_the_chat`, `test_escape_leaves_the_tour_and_keeps_the_chat_open` |
+| The README GIF showed an older interface than the live site. | `scripts/record_demo.py` records the tour conversation and the GIF together. | `test_the_readme_gif_and_the_tour_show_the_same_recorded_conversation` |
+| Tapping the half-height card on a phone restarted the chat's fade-in. | The entrance animation is dropped when the card expands. | `test_the_phone_card_shows_the_greeting_and_three_scenarios_and_fills_the_screen_when_tapped` |
+| A UK address got a request for the full address again instead of the US and Canada rule. | The address wording check is skipped for a country the store does not ship to, so the policy refusal runs. | `test_an_address_outside_the_us_and_canada_gets_the_rule_not_a_request_for_the_address` |
+| Refusals read "Alpine Crossing Hiking Boots was delivered" and "was sold as FINAL SALE". | The reasons no longer put the product name before a singular verb. | `test_refusal_reasons_read_naturally_for_plural_product_names` |
+| The return receipt said "requested" twice in a row. | Reworded the approval sentence. | `test_the_return_receipt_says_requested_only_once` |
+| An order answer opened with "The order record is already in front of me". | The header on looked-up records asks for a direct answer. | 53 of 53 on the 53-case suite (`evals/results/20261013-202533_v2-2-audit.json`) |
+| An unused function was left over from the old source check. | Removed. | Existing tests |
+
+Layout fixes with no test of their own, checked in the audit screenshots: the "Time" column header
+wrapped in the details panel, the headline broke into five lines at 1024 pixels with the chat docked,
+the offline status wrapped to three lines at 320 pixels ("Can't connect" now), the text box
+placeholder was cut off at 320 pixels, and the last tour step hid its numbers on short screens.

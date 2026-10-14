@@ -211,6 +211,11 @@
   .data th, .data td { padding: 9px 8px; }
 }
 
+@media (max-width: 359px) {
+  .data { font-size: 13px; }
+  .data th, .data td { padding: 8px 5px; }
+}
+
 /* forest plot */
 .forest { display: grid; gap: 14px; }
 .forest__row { display: grid; grid-template-columns: 11rem 1fr; align-items: center; gap: 12px; }

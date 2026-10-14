@@ -21,3 +21,4 @@ chroma_db/
 node_modules/
 
 .claude/
+audit-screenshots/

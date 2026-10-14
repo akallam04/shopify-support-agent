@@ -156,6 +156,7 @@ def test_the_phone_card_shows_the_greeting_and_three_scenarios_and_fills_the_scr
     assert page.evaluate("document.activeElement === document.body")
     page.locator("#welcome h3").tap()
     expect(page.locator("#chat.is-peek")).to_have_count(0)
+    assert page.evaluate("getComputedStyle(document.querySelector('#chat')).opacity") == "1"
     expect(page.locator("#input")).to_be_visible()
     page.wait_for_function("document.querySelector('#chat').getBoundingClientRect().height === innerHeight")
     expect(page.locator("body")).to_have_class("chat-locked")
@@ -181,47 +182,112 @@ def test_reduced_motion_opens_the_assistant_without_the_slide(browser: Any, site
     assert page.evaluate("getComputedStyle(document.querySelector('#chat')).animationName") == "none"
 
 
-def test_the_tour_replays_a_real_conversation_without_sending_anything_and_ends_with_the_numbers(browser: Any, site: str) -> None:
+JARGON = ("gate", "policy", "tool", "trace", "verify", "pending", "intent", "sandbox")
+
+
+def panel_copy(page: Any) -> str:
+    return page.locator(".tour-panel__title").inner_text() + " " + page.locator(".tour-panel__text").inner_text()
+
+
+def test_the_tour_tells_the_story_in_five_plain_steps_without_sending_anything(browser: Any, site: str) -> None:
     sent: list = []
     page = load(browser, site, sent=sent, viewport=DESKTOP, reduced_motion="reduce")
-    page.locator(".tour-btn").click()
-    bar = page.locator(".tour-bar")
-    expect(bar).to_contain_text("Replay of a real conversation")
-    expect(bar).to_contain_text("Nothing is sent")
+    page.locator("#welcome .tour-btn").click()
+    count, nxt = page.locator(".tour-panel__count"), page.locator(".tour-panel__next")
+    expect(page.locator(".tour-label")).to_contain_text("Replay of a real conversation")
+    expect(count).to_have_text("1 of 5")
+    expect(page.locator(".tour-panel__title")).to_have_text("A customer wants to return a jacket that's too big.")
+    expect(page.locator("#input")).to_be_disabled()
+    expect(page.locator("#input")).to_have_attribute("placeholder", "Tour playing")
+    copy = [panel_copy(page)]
+    nxt.click()
+    expect(count).to_have_text("2 of 5")
+    expect(page.locator(".confirm")).to_be_visible()
+    expect(page.locator(".confirm__actions button:disabled")).to_have_count(0)
+    copy.append(panel_copy(page))
+    nxt.click()
+    expect(count).to_have_text("3 of 5")
+    expect(page.locator(".confirm .sandbox-tag")).to_have_text("You said yes")
+    expect(page.locator(".msg--user")).to_have_count(2)
+    copy.append(panel_copy(page))
+    page.locator(".tour-panel__back").click()
+    expect(count).to_have_text("2 of 5")
+    expect(page.locator(".confirm")).to_have_attribute("data-state", "open")
     expect(page.locator(".msg--user")).to_have_count(1)
-    steps = [
-        (".caption", "Nothing happens until you say yes"),
-        (".caption", "the steps it took"),
-        (".caption", "Your yes went to the gate"),
-        (".caption", "the store's own receipt"),
-    ]
-    for selector, text in steps:
-        bar.get_by_role("button", name="Next").click()
-        expect(page.locator(selector)).to_have_count(1)
-        expect(page.locator(selector)).to_contain_text(text)
-    expect(page.locator(".confirm .sandbox-tag").first).to_have_text("You said yes")
-    expect(page.locator(".confirm__actions button:enabled")).to_have_count(0)
-    bar.get_by_role("button", name="Next").click()
-    end = page.locator(".tour-end")
+    nxt.click()
+    nxt.click()
+    expect(count).to_have_text("4 of 5")
+    expect(page.locator(".outcome--done")).to_contain_text("A return is requested on order #1022")
+    copy.append(panel_copy(page))
+    nxt.click()
+    expect(count).to_have_text("5 of 5")
     h = RESULTS["headline"]
-    expect(end).to_contain_text(f"fell from {h['off']['unsafe_conversations']} to {h['on']['unsafe_conversations']}")
-    expect(end).to_contain_text("Nothing changes until you say yes")
-    expect(end.get_by_role("link", name="How it works")).to_be_visible()
-    expect(end).to_contain_text("Now try it yourself")
-    expect(page.locator(".caption")).to_have_count(0)
+    expect(page.locator(".tour-stat__tile--off strong")).to_have_text(str(h["off"]["unsafe_conversations"]))
+    expect(page.locator(".tour-stat__tile--on strong")).to_have_text(str(h["on"]["unsafe_conversations"]))
+    expect(page.locator(".tour-panel__text")).to_contain_text(f"{h['off']['unsafe_conversations']} of {h['off']['conversations']} test conversations")
+    expect(page.get_by_role("link", name="See how it was tested")).to_have_attribute("href", "./how-it-works.html")
+    expect(page.get_by_role("link", name="View the code")).to_have_attribute("href", "https://github.com/akallam04/shopify-support-agent")
+    copy.append(panel_copy(page))
+    assert not [w for w in JARGON if w in " ".join(copy).lower()]
+    assert page.locator("#log .brain, #log .rail, #log .msg__meta, #log .source").count() == 0
     assert sent == []
-    end.locator(".starter", has_text="Cancel an order").click()
-    expect(page.locator(".tour-bar")).to_have_count(0)
+    page.get_by_role("button", name="Try it yourself").click()
+    expect(page.locator(".tour-panel")).to_have_count(0)
+    expect(page.locator("#input")).to_be_enabled()
+    expect(page.locator("#input")).to_have_attribute("placeholder", "Ask about an order or gear")
+    starter(page, "Cancel an order")
     expect(page.locator(".confirm").first).to_contain_text("I will cancel order #1023")
     assert len(sent) == 1
 
 
-def test_the_tour_on_a_phone_opens_the_card_to_full_screen(browser: Any, site: str) -> None:
+def test_the_tour_plays_on_its_own_and_pause_holds_it(browser: Any, site: str) -> None:
+    page = browser.new_context(viewport=DESKTOP).new_page()
+    page.clock.install()
+    page.route("**/health", lambda route: route.fulfill(json=HEALTH))
+    page.goto(site)
+    page.locator("#welcome .tour-btn").click()
+    count = page.locator(".tour-panel__count")
+    expect(count).to_have_text("1 of 5")
+    page.clock.run_for(4600)
+    expect(count).to_have_text("2 of 5")
+    page.locator(".tour-panel__play").click()
+    expect(page.locator(".tour-panel__play")).to_have_attribute("aria-label", "Play the tour")
+    page.clock.run_for(30000)
+    expect(count).to_have_text("2 of 5")
+    page.locator(".tour-panel__play").click()
+    page.clock.run_for(8100)
+    expect(count).to_have_text("3 of 5")
+    page.clock.run_for(14100)
+    expect(count).to_have_text("5 of 5")
+    page.clock.run_for(30000)
+    expect(count).to_have_text("5 of 5")
+
+
+def test_the_tour_on_a_phone_fills_the_screen_with_the_panel_below_the_chat(browser: Any, site: str) -> None:
     page = load(browser, site, reduced_motion="reduce", **PHONE)
-    page.locator(".tour-btn").tap()
-    expect(page.locator(".tour-bar")).to_be_visible()
+    page.locator("#welcome .tour-btn").tap()
+    expect(page.locator(".tour-panel__count")).to_have_text("1 of 5")
     expect(page.locator("#chat.is-peek")).to_have_count(0)
+    page.wait_for_function("document.querySelector('#chat').getBoundingClientRect().height === innerHeight")
+    page.locator(".tour-panel__next").tap()
+    expect(page.locator(".confirm")).to_be_visible()
+    log, panel, composer = (page.locator(s).bounding_box() for s in ("#log", ".tour-panel", ".composer"))
+    assert log["y"] + log["height"] <= panel["y"] + 1
+    assert panel["y"] + panel["height"] <= composer["y"] + 1
+    assert composer["y"] + composer["height"] <= 812 + 1
+    card = page.locator(".confirm").bounding_box()
+    assert card["y"] >= log["y"] - 1
     assert page.evaluate("document.documentElement.scrollWidth") <= 375
+
+
+def test_escape_leaves_the_tour_and_keeps_the_chat_open(browser: Any, site: str) -> None:
+    page = load(browser, site, viewport=DESKTOP, reduced_motion="reduce")
+    page.locator("#welcome .tour-btn").click()
+    expect(page.locator(".tour-panel")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.locator(".tour-panel")).to_have_count(0)
+    expect(page.locator("#chat.is-open")).to_be_visible()
+    expect(page.locator("#welcome")).to_be_visible()
 
 
 def test_an_unreachable_api_shows_a_retry_that_recovers(browser: Any, site: str) -> None:
@@ -229,7 +295,7 @@ def test_an_unreachable_api_shows_a_retry_that_recovers(browser: Any, site: str)
     up: list = []
     page.route("**/health", lambda route: route.fulfill(json=HEALTH) if up else route.abort())
     page.goto(site)
-    expect(page.locator("#statusText")).to_have_text("Not reachable right now")
+    expect(page.locator("#statusText")).to_have_text("Can't connect")
     expect(page.locator("#orders table")).to_be_visible()
     up.append(True)
     page.click("#statusRetry")

@@ -938,7 +938,7 @@ button { font: inherit; color: inherit; }
 .steps-table thead th { color: #9fb0bd; font-size: 12px; font-weight: 600; border-bottom: 1px solid #2c3d4a; }
 .steps-table tbody th { color: #fff; font-weight: 600; white-space: nowrap; }
 .steps-table td:nth-child(3), .steps-table td:nth-child(4) { white-space: nowrap; text-align: right; }
-.steps-table thead th:nth-child(3), .steps-table thead th:nth-child(4) { text-align: right; }
+.steps-table thead th:nth-child(3), .steps-table thead th:nth-child(4) { white-space: nowrap; text-align: right; }
 .steps-table tr.is-skip th, .steps-table tr.is-skip td { color: #9fb0bd; }
 .inside__row { display: grid; gap: 4px; }
 .inside__key { color: #9fb0bd; font-size: 12px; font-weight: 600; }
@@ -951,6 +951,12 @@ button { font: inherit; color: inherit; }
 .gate-lines .hold::before { background: #f2c46d; }
 
 /* desktop: the chat docks beside the store instead of covering it */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  body.chat-docked .hero { grid-template-columns: minmax(0, 1fr); }
+  body.chat-docked .hero__art { display: none; }
+  body.chat-docked .hero h1 { max-width: 16ch; }
+}
+
 @media (min-width: 1024px) {
   body.chat-docked { padding-right: 420px; }
   body.chat-docked .chat {
@@ -1005,71 +1011,147 @@ button { font: inherit; color: inherit; }
 
 .tour-btn svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
 
-.tour-bar {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin: -4px -4px 4px;
-  padding: 10px 12px;
-  border: 1px solid var(--amber-line);
-  border-radius: var(--radius-m);
-  background: var(--amber-soft);
-  color: var(--ink);
-  font-size: 13px;
-}
+.chat.is-touring .chat__bar,
+.chat.is-touring #restart { display: none; }
+.chat.is-touring .msg { transition: opacity 0.3s ease; }
+.chat.is-touring .tour-past { opacity: 0.4; }
+.chat.is-touring .tour-seen,
+.chat.is-touring .tour-seen .confirm,
+.chat.is-touring .tour-seen .shield__check { animation: none; }
+.chat.is-touring .composer { padding-top: 8px; padding-bottom: 8px; }
+.chat.is-touring .composer input { min-height: 44px; }
+.chat.is-touring .send { width: 44px; height: 44px; }
+.chat.is-touring .composer input:disabled { border-color: var(--line); background: var(--mist); }
+.chat.is-touring .composer input:disabled::placeholder { color: var(--granite); font-weight: 600; }
 
-.tour-bar p { flex: 1 1 14rem; margin: 0; }
-.tour-bar strong { font-weight: 700; }
-.tour-bar__actions { display: flex; gap: 6px; }
+.confirm--replay .confirm__actions .btn { pointer-events: none; }
+.confirm__actions .btn.is-tapping { position: relative; overflow: visible; }
 
-.caption {
-  position: relative;
-  max-width: 36ch;
-  margin: 2px 0 6px 14px;
-  padding: 10px 12px;
-  border-radius: var(--radius-m);
-  background: var(--ink);
-  color: #fff;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.caption::before {
-  content: "";
+.tap {
   position: absolute;
-  top: -6px;
-  left: 18px;
-  width: 12px;
-  height: 12px;
-  background: var(--ink);
-  transform: rotate(45deg);
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: rgba(19, 32, 42, 0.32);
+  box-shadow: 0 4px 12px rgba(19, 32, 42, 0.3);
+  pointer-events: none;
 }
 
-.is-spotlight { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: var(--radius-m); }
-
-.tour-end {
+.tour-panel {
+  flex: none;
   display: grid;
   gap: 10px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: 0 -12px 24px -20px rgba(19, 32, 42, 0.4);
+}
+
+.tour-panel [hidden] { display: none !important; }
+.tour-panel__top { display: flex; align-items: center; gap: 12px; }
+.tour-panel__exit { flex: none; min-height: 36px; font-size: 14px; }
+.tour-progress { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.tour-progress__seg { height: 4px; overflow: hidden; border-radius: 999px; background: var(--line); }
+.tour-progress__seg i { display: block; width: 0; height: 100%; background: var(--glacier); }
+.tour-progress__seg.is-done i,
+.tour-progress__seg.is-now i { width: 100%; }
+.tour-panel__count { flex: none; color: var(--glacier-deep); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tour-panel__title { font-family: var(--display); font-size: 18px; line-height: 1.3; }
+
+.tour-label {
+  align-self: center;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--mist);
+  color: var(--granite);
+  font-size: 13px;
+  text-align: center;
+}
+.tour-panel__text { margin-top: 4px; color: var(--granite); font-size: 15px; line-height: 1.45; }
+.tour-panel__controls { display: grid; grid-template-columns: auto auto 1fr; gap: 8px; }
+.tour-panel__controls .btn,
+.tour-panel__finish .btn { gap: 6px; min-height: 48px; }
+.tour-panel__next { font-size: 16px; }
+.tour-panel .btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tour-panel__finish { display: grid; gap: 8px; }
+
+@media (max-height: 640px) {
+  .chat.is-touring .tour-stat__head { display: none; }
+  .chat.is-touring .tour-stat { padding: 10px; }
+  .chat.is-touring .tour-stat__tile { padding: 8px 10px; }
+  .chat.is-touring .tour-stat__num strong { font-size: 28px; }
+  .tour-panel { gap: 8px; padding: 10px 14px 12px; }
+  .tour-panel__controls .btn,
+  .tour-panel__finish .btn { min-height: 44px; }
+}
+
+@media (max-width: 359px) {
+  .tour-panel__back span,
+  .tour-panel__play span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .tour-panel__back,
+  .tour-panel__play { width: 48px; padding: 0; }
+}
+
+.tour-stat {
+  display: grid;
+  gap: 12px;
+  width: 100%;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-l);
-  background: var(--mist);
+  background: var(--paper);
 }
 
-.tour-end h3 { font-size: 18px; }
-.tour-end ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: var(--ink); font-size: 14px; }
-.tour-end__links { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; }
-.tour-end__links a { font-weight: 600; }
+.tour-stat__head { color: var(--granite); font-size: 14px; font-weight: 600; }
+.tour-stat__tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tour-stat__tile { padding: 12px; border: 1px solid; border-radius: var(--radius-m); }
+.tour-stat__tile--off { border-color: #f1b8b3; background: var(--rose-soft); }
+.tour-stat__tile--on { border-color: #9fd3bf; background: var(--pine-soft); }
+.tour-stat__label { color: var(--ink); font-size: 13px; font-weight: 600; }
+.tour-stat__num { margin-top: 6px; color: var(--granite); font-size: 14px; }
+.tour-stat__num strong { margin-right: 2px; font-family: var(--display); font-size: 34px; line-height: 1; }
+.tour-stat__tile--off strong { color: var(--rose); }
+.tour-stat__tile--on strong { color: var(--pine); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tap { animation: tap-move 1.5s var(--ease-out) both; }
+  .btn.is-tapping { animation: tap-press 1.5s ease both; }
+  .tour-progress__seg.is-now i { animation: fill var(--step-ms) linear both; }
+  .tour-panel.is-paused .tour-progress__seg.is-now i { animation-play-state: paused; }
+}
+
+@keyframes tap-move {
+  0% { opacity: 0; transform: translate(80px, 64px); }
+  45% { opacity: 1; transform: translate(0, 0) scale(1); }
+  58% { transform: scale(0.78); box-shadow: 0 0 0 0 rgba(31, 111, 178, 0.45); }
+  78% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 14px rgba(31, 111, 178, 0); }
+  100% { opacity: 0; }
+}
+
+@keyframes tap-press {
+  0%, 52% { transform: none; }
+  60% { transform: scale(0.96); background: var(--glacier-deep); }
+  76%, 100% { transform: none; }
+}
+
+@keyframes fill { from { width: 0; } to { width: 100%; } }
 
 @media (prefers-reduced-motion: no-preference) {
   .chat.is-peek.has-entrance { animation: peek-in 0.5s var(--ease-out) both; }
   body.chat-docked .chat.has-entrance { animation: dock-in 0.5s var(--ease-out) both; }
   body.chat-docked { transition: padding-right 0.45s var(--ease-out); }
-  .caption { animation: rise 0.35s var(--ease-out) both; }
 }
 
 @keyframes peek-in { from { transform: translateY(100%); } }
